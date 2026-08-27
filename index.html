@@ -267,7 +267,7 @@ var PBARI=[
 {m:'Bari 65 12x65',l:'$65.000,00',p:'$120.000,00'},
 {m:'Bari 24kd 12x75 Cajon Largo',l:'$75.000,00',p:'$130.000,00'}
 ];
-var CAMS=[{n:'Emi',c:'stock_emi'},{n:'Mario',c:'stock_mario'},{n:'Mateo',c:'stock_mateo'}];
+var CAMS=[{n:'Emi',c:'stock_emi'},{n:'Mario',c:'stock_mario'},{n:'Mateo',c:'stock_mateo'},{n:'Deposito',c:'stock_deposito',dep:true}];
 var datos=[],cam=null,marca='',qty={};
 function sync(t){document.getElementById('sync').textContent=t;}
 function titulo(t){document.getElementById('titulo').textContent=t;}
@@ -406,6 +406,7 @@ function cargar(){
         d.stock_emi=parseInt(d.stock_emi)||0;
         d.stock_mario=parseInt(d.stock_mario)||0;
         d.stock_mateo=parseInt(d.stock_mateo)||0;
+        d.stock_deposito=parseInt(d.stock_deposito)||0;
         return d;
       });
       sync('Sincronizado');
@@ -416,16 +417,18 @@ function cargar(){
 }
 function errLoad(msg){document.getElementById('p0load').innerHTML='<div class="err">'+msg+'<button class="bp" style="margin-top:10px" onclick="cargar()">Reintentar</button></div>';sync('Error');}
 function guardar(id,campo,val){sync('Guardando...');api('actualizarStock',{id:id,campo:campo,valor:val}).then(function(){sync('Sincronizado');});}
+function nombreCam(c){return c.dep?'Deposito':'Camioneta '+c.n;}
 function rCams(){
   titulo('Stock Baterias');
   var h='<div class="grid">';
   CAMS.forEach(function(c){
     var t=datos.reduce(function(s,m){return s+(m[c.c]||0);},0);
-    h+='<button class="card" onclick="vCam(\''+c.c+'\')"><div class="icon">&#128661;</div><div class="ci"><h2>Camioneta '+c.n+'</h2><p>'+t+' baterias en stock</p></div><span class="arr">&#8250;</span></button>';
+    var icon=c.dep?'&#127974;':'&#128661;';
+    h+='<button class="card" onclick="vCam(\''+c.c+'\')"><div class="icon">'+icon+'</div><div class="ci"><h2>'+nombreCam(c)+'</h2><p>'+t+' baterias en stock</p></div><span class="arr">&#8250;</span></button>';
   });
   h+='</div>';document.getElementById('l1').innerHTML=h;
 }
-function vCam(c){cam=CAMS.filter(function(x){return x.c===c;})[0];document.getElementById('p1').classList.add('hidden');document.getElementById('p2').classList.remove('hidden');titulo('Camioneta '+cam.n);rMarcas();}
+function vCam(c){cam=CAMS.filter(function(x){return x.c===c;})[0];document.getElementById('p1').classList.add('hidden');document.getElementById('p2').classList.remove('hidden');titulo(nombreCam(cam));rMarcas();}
 function vC(){document.getElementById('p2').classList.add('hidden');document.getElementById('p1').classList.remove('hidden');rCams();}
 function rMarcas(){
   var ms={};
@@ -435,7 +438,7 @@ function rMarcas(){
   h+='</div>';document.getElementById('l2').innerHTML=h;
 }
 function vMarca(m){marca=m;document.getElementById('p2').classList.add('hidden');document.getElementById('p3').classList.remove('hidden');titulo(m);document.getElementById('bus').value='';rMod();}
-function vM(){document.getElementById('p3').classList.add('hidden');document.getElementById('p2').classList.remove('hidden');titulo('Camioneta '+cam.n);}
+function vM(){document.getElementById('p3').classList.add('hidden');document.getElementById('p2').classList.remove('hidden');titulo(nombreCam(cam));}
 function rMod(){
   var b=document.getElementById('bus').value.toLowerCase();
   var c=cam.c;

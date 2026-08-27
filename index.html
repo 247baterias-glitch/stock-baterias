@@ -471,6 +471,9 @@ function bl(s){return s===0?'AGOTADO - COMPRAR STOCK':s<=2?'COMPRAR STOCK':'Disp
 var colId=null,colPago='',colUbi='';
 function abrirColocacion(id,codigo){
   colId=id;colPago='';colUbi='';
+  confirmandoColocacion=false;
+  var btnC=document.querySelector('#colOverlay .bp');
+  if(btnC){btnC.disabled=false;btnC.textContent='Confirmar';}
   document.getElementById('colVehiculo').value='';
   document.getElementById('colAnio').value='';
   document.getElementById('colFecha').value=hoyStr();
@@ -492,27 +495,45 @@ function setColUbi(v,btn){
   document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
   btn.style.background='#111';btn.style.color='#fff';
 }
+var confirmandoColocacion=false;
 function confirmarColocacion(){
+  if(confirmandoColocacion)return;
   var m=datos.filter(function(x){return x.id===colId;})[0];
   if(!m){toast('Error: bateria no encontrada');return;}
   if(m[cam.c]===0){toast('Sin stock disponible');return;}
+  var fecha=document.getElementById('colFecha').value||hoyStr();
   var vehiculo=document.getElementById('colVehiculo').value.trim();
+  var anio=document.getElementById('colAnio').value.trim();
+  var motor=document.getElementById('colMotor').value.trim();
+  var combustible=document.getElementById('colCombustible').value.trim();
+  var precio=document.getElementById('colPrecio').value.trim();
   if(!vehiculo){toast('Completa el vehiculo');return;}
+  if(!anio){toast('Completa el anio del vehiculo');return;}
+  if(!motor){toast('Completa el motor');return;}
+  if(!combustible){toast('Completa el combustible');return;}
+  if(!precio){toast('Completa el precio');return;}
+  if(!colPago){toast('Elegi la forma de pago');return;}
+  if(!colUbi){toast('Elegi la ubicacion');return;}
   var nuevoStock=m[cam.c]-1;
+  confirmandoColocacion=true;
+  var btnConfirmar=document.querySelector('#colOverlay .bp');
+  if(btnConfirmar){btnConfirmar.disabled=true;btnConfirmar.textContent='Guardando...';}
   sync('Guardando...');
   api('registrarColocacion',{
     id:colId,campo:cam.c,valor:nuevoStock,
-    fecha:document.getElementById('colFecha').value||hoyStr(),
+    fecha:fecha,
     vehiculo:vehiculo,
-    anio_vehiculo:document.getElementById('colAnio').value.trim(),
-    motor:document.getElementById('colMotor').value.trim(),
-    combustible:document.getElementById('colCombustible').value.trim(),
+    anio_vehiculo:anio,
+    motor:motor,
+    combustible:combustible,
     modelo_bateria:m.codigo||m.nombre,
-    precio:document.getElementById('colPrecio').value.trim(),
+    precio:precio,
     forma_pago:colPago,
     ubicacion:colUbi,
     tecnico:cam.n
   }).then(function(r){
+    confirmandoColocacion=false;
+    if(btnConfirmar){btnConfirmar.disabled=false;btnConfirmar.textContent='Confirmar';}
     if(r.ok){
       m[cam.c]=nuevoStock;
       sync('Sincronizado');
@@ -522,7 +543,7 @@ function confirmarColocacion(){
     }else{
       sync('Error');toast('Error al guardar');
     }
-  }).catch(function(e){sync('Error');toast('Error: '+e.message);});
+  }).catch(function(e){confirmandoColocacion=false;if(btnConfirmar){btnConfirmar.disabled=false;btnConfirmar.textContent='Confirmar';}sync('Error');toast('Error: '+e.message);});
 }
 function mostrarResumen(){
   document.getElementById('p0').classList.add('hidden');

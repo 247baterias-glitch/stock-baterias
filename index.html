@@ -147,7 +147,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <div id="p7" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
 <div class="twrap" style="margin-bottom:16px"><table class="ptable">
-<thead><tr><th>Fecha</th><th>Vehiculo</th><th>Motor</th><th>Comb.</th><th>Modelo</th><th>Precio</th><th>Pago</th><th>Ubicacion</th><th>Tecnico</th><th>Estado</th></tr></thead><tbody id="historialBody"><tr><td colspan="10" class="loading">Cargando...</td></tr></tbody></table></div>
+<thead><tr><th>Fecha</th><th>Vehiculo</th><th>Anio</th><th>Motor</th><th>Comb.</th><th>Modelo</th><th>Precio</th><th>Pago</th><th>Ubicacion</th><th>Tecnico</th><th>Estado</th></tr></thead><tbody id="historialBody"><tr><td colspan="11" class="loading">Cargando...</td></tr></tbody></table></div>
 <div id="resumenBody"></div>
 </div>
 <div class="toast" id="toast"></div>
@@ -155,6 +155,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px">Datos de la colocación</div>
 <div class="gfield"><label>Vehiculo</label><input type="text" id="colVehiculo" placeholder="Ej: Corolla 2018"/></div>
+<div class="gfield"><label>Anio del vehiculo</label><input type="text" id="colAnio" placeholder="Ej: 2018"/></div>
 <div class="gfield"><label>Motor</label><input type="text" id="colMotor" placeholder="Ej: 1.8"/></div>
 <div class="gfield"><label>Combustible</label><input type="text" id="colCombustible" placeholder="Ej: Nafta, Diesel, GNC..."/></div>
 <div class="gfield"><label>Precio</label><input type="text" id="colPrecio" placeholder="Ej: $150.000"/></div>
@@ -466,6 +467,7 @@ var colId=null,colPago='',colUbi='';
 function abrirColocacion(id,codigo){
   colId=id;colPago='';colUbi='';
   document.getElementById('colVehiculo').value='';
+  document.getElementById('colAnio').value='';
   document.getElementById('colMotor').value='';
   document.getElementById('colCombustible').value='';
   document.getElementById('colPrecio').value='';
@@ -495,6 +497,7 @@ function confirmarColocacion(){
   api('registrarColocacion',{
     id:colId,campo:cam.c,valor:nuevoStock,
     vehiculo:vehiculo,
+    anio_vehiculo:document.getElementById('colAnio').value.trim(),
     motor:document.getElementById('colMotor').value.trim(),
     combustible:document.getElementById('colCombustible').value.trim(),
     modelo_bateria:m.codigo||m.nombre,
@@ -518,11 +521,11 @@ function mostrarResumen(){
   document.getElementById('p0').classList.add('hidden');
   document.getElementById('p7').classList.remove('hidden');
   titulo('Resumen');
-  document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="loading">Cargando...</td></tr>';
+  document.getElementById('historialBody').innerHTML='<tr><td colspan="11" class="loading">Cargando...</td></tr>';
   document.getElementById('resumenBody').innerHTML='<div class="loading">Cargando...</div>';
   api('getHistorial').then(function(r){
-    if(!r.ok){document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="err">Error al cargar</td></tr>';return;}
-    if(!r.data.length){document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="no-res">Sin servicios este mes</td></tr>';return;}
+    if(!r.ok){document.getElementById('historialBody').innerHTML='<tr><td colspan="11" class="err">Error al cargar</td></tr>';return;}
+    if(!r.data.length){document.getElementById('historialBody').innerHTML='<tr><td colspan="11" class="no-res">Sin servicios este mes</td></tr>';return;}
     var h='';
     var grupos={};
     var ordenFechas=[];
@@ -543,7 +546,7 @@ function mostrarResumen(){
       }
     });
     document.getElementById('historialBody').innerHTML=h;
-  }).catch(function(e){document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="err">Error: '+e.message+'</td></tr>';});
+  }).catch(function(e){document.getElementById('historialBody').innerHTML='<tr><td colspan="11" class="err">Error: '+e.message+'</td></tr>';});
   api('getResumen').then(function(r){
     if(!r.ok){document.getElementById('resumenBody').innerHTML='<div class="err">Error al cargar</div>';return;}
     var h='';
@@ -575,7 +578,7 @@ function filaServicio(s,hiddenClass){
   var bg=pagado?'#dcfce7':'#fee2e2';
   var col=pagado?'#166534':'#991b1b';
   var label=pagado?'PAGADO':'NO PAGADO';
-  return '<tr'+clsAttr+styleAttr+'><td>'+fmtFecha(s.fecha)+'</td><td>'+s.vehiculo+'</td><td>'+s.motor+'</td><td>'+s.combustible+'</td><td>'+s.modelo_bateria+'</td><td>$'+s.precio+'</td><td>'+s.forma_pago+'</td><td>'+s.ubicacion+'</td><td>'+s.tecnico+'</td><td><button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago('+s.fila+',\''+s.estado_pago+'\',this)">'+label+'</button></td></tr>';
+  return '<tr'+clsAttr+styleAttr+'><td>'+fmtFecha(s.fecha)+'</td><td>'+s.vehiculo+'</td><td>'+(s.anio_vehiculo||'')+'</td><td>'+s.motor+'</td><td>'+s.combustible+'</td><td>'+s.modelo_bateria+'</td><td>$'+s.precio+'</td><td>'+s.forma_pago+'</td><td>'+s.ubicacion+'</td><td>'+s.tecnico+'</td><td><button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago('+s.fila+',\''+s.estado_pago+'\',this)">'+label+'</button></td></tr>';
 }
 function toggleDia(id){
   var filas=document.querySelectorAll('.'+id);

@@ -517,7 +517,7 @@ function mostrarResumen(){
   document.getElementById('p0').classList.add('hidden');
   document.getElementById('p7').classList.remove('hidden');
   titulo('Resumen');
-  document.getElementById('historialBody').innerHTML='<tr><td colspan="9" class="loading">Cargando...</td></tr>';
+  document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="loading">Cargando...</td></tr>';
   document.getElementById('resumenBody').innerHTML='<div class="loading">Cargando...</div>';
   api('getHistorial').then(function(r){
     if(!r.ok){document.getElementById('historialBody').innerHTML='<tr><td colspan="9" class="err">Error al cargar</td></tr>';return;}

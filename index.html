@@ -75,6 +75,8 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 .gtabs{display:flex;gap:4px;margin-bottom:12px;background:#e5e5e5;padding:4px;border-radius:10px}
 .gtab{flex:1;text-align:center;padding:9px;font-size:14px;border-radius:7px;cursor:pointer;border:none;background:transparent;color:#666}
 .gtab.active{background:#fff;color:#111;font-weight:600}
+.col-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.col-overlay.hidden{display:none}
 </style>
 </head>
 <body>
@@ -146,7 +148,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <div id="resumenBody"><div class="loading">Cargando...</div></div>
 </div>
 <div class="toast" id="toast"></div>
-<div id="colOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center">
+<div id="colOverlay" class="hidden col-overlay">
 <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px">Datos de la colocación</div>
 <div class="gfield"><label>Vehiculo</label><input type="text" id="colVehiculo" placeholder="Ej: Corolla 2018"/></div>

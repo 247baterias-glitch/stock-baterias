@@ -154,6 +154,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <div id="colOverlay" class="hidden col-overlay">
 <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px">Datos de la colocación</div>
+<div class="gfield"><label>Fecha</label><input type="date" id="colFecha"/></div>
 <div class="gfield"><label>Vehiculo</label><input type="text" id="colVehiculo" placeholder="Ej: Corolla 2018"/></div>
 <div class="gfield"><label>Anio del vehiculo</label><input type="text" id="colAnio" placeholder="Ej: 2018"/></div>
 <div class="gfield"><label>Motor</label><input type="text" id="colMotor" placeholder="Ej: 1.8"/></div>
@@ -468,6 +469,7 @@ function abrirColocacion(id,codigo){
   colId=id;colPago='';colUbi='';
   document.getElementById('colVehiculo').value='';
   document.getElementById('colAnio').value='';
+  document.getElementById('colFecha').value=hoyStr();
   document.getElementById('colMotor').value='';
   document.getElementById('colCombustible').value='';
   document.getElementById('colPrecio').value='';
@@ -496,6 +498,7 @@ function confirmarColocacion(){
   sync('Guardando...');
   api('registrarColocacion',{
     id:colId,campo:cam.c,valor:nuevoStock,
+    fecha:document.getElementById('colFecha').value||hoyStr(),
     vehiculo:vehiculo,
     anio_vehiculo:document.getElementById('colAnio').value.trim(),
     motor:document.getElementById('colMotor').value.trim(),

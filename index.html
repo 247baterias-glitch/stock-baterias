@@ -146,6 +146,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 <div id="p7" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
+<div class="twrap" style="margin-bottom:16px"><table class="ptable">
 <thead><tr><th>Fecha</th><th>Vehiculo</th><th>Motor</th><th>Comb.</th><th>Modelo</th><th>Precio</th><th>Pago</th><th>Ubicacion</th><th>Tecnico</th><th>Estado</th></tr></thead><tbody id="historialBody"><tr><td colspan="10" class="loading">Cargando...</td></tr></tbody></table></div>
 <div id="resumenBody"></div>
 </div>
@@ -521,19 +522,19 @@ function mostrarResumen(){
   document.getElementById('resumenBody').innerHTML='<div class="loading">Cargando...</div>';
   api('getHistorial').then(function(r){
     if(!r.ok){document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="err">Error al cargar</td></tr>';return;}
-          if(!r.data.length){document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="no-res">Sin servicios este mes</td></tr>';return;}
-      var h='';
-      r.data.forEach(function(s){
-        var pagado=s.estado_pago==='Pagado';
-        var rowStyle=pagado?'':' style="font-weight:700"';
-        var bg=pagado?'#dcfce7':'#fee2e2';
-        var col=pagado?'#166534':'#991b1b';
-        var label=pagado?'PAGADO':'NO PAGADO';
-        var idr=s.id_registro||'';
-        h+='<tr'+rowStyle+'><td>'+s.fecha+'</td><td>'+s.vehiculo+'</td><td>'+s.motor+'</td><td>'+s.combustible+'</td><td>'+s.modelo_bateria+'</td><td>$'+s.precio+'</td><td>'+s.forma_pago+'</td><td>'+s.ubicacion+'</td><td>'+s.tecnico+'</td><td><button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago(\''+idr+'\',\''+s.estado_pago+'\',this)"'+(idr?'':' disabled title="Registro viejo sin ID"')+'>'+label+'</button></td></tr>';
-      });
-      document.getElementById('historialBody').innerHTML=h;
-    }).catch(function(e){document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="err">Error: '+e.message+'</td></tr>';});
+    if(!r.data.length){document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="no-res">Sin servicios este mes</td></tr>';return;}
+    var h='';
+    r.data.forEach(function(s){
+      var pagado=s.estado_pago==='Pagado';
+      var rowStyle=pagado?'':' style="font-weight:700"';
+      var bg=pagado?'#dcfce7':'#fee2e2';
+      var col=pagado?'#166534':'#991b1b';
+      var label=pagado?'PAGADO':'NO PAGADO';
+      var idr=s.id_registro||'';
+      h+='<tr'+rowStyle+'><td>'+s.fecha+'</td><td>'+s.vehiculo+'</td><td>'+s.motor+'</td><td>'+s.combustible+'</td><td>'+s.modelo_bateria+'</td><td>$'+s.precio+'</td><td>'+s.forma_pago+'</td><td>'+s.ubicacion+'</td><td>'+s.tecnico+'</td><td><button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago(\''+idr+'\',\''+s.estado_pago+'\',this)"'+(idr?'':' disabled title="Registro viejo sin ID"')+'>'+label+'</button></td></tr>';
+    });
+    document.getElementById('historialBody').innerHTML=h;
+  }).catch(function(e){document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="err">Error: '+e.message+'</td></tr>';});
   api('getResumen').then(function(r){
     if(!r.ok){document.getElementById('resumenBody').innerHTML='<div class="err">Error al cargar</div>';return;}
     var h='';
@@ -553,27 +554,25 @@ function mostrarResumen(){
     document.getElementById('resumenBody').innerHTML=h;
   }).catch(function(e){document.getElementById('resumenBody').innerHTML='<div class="err">Error: '+e.message+'</div>';});
 }
-
 function togglePago(id,estadoActual,btn){
-558     if(!id){toast('Registro viejo, sin ID');return;}
-559     var nuevo=estadoActual==='Pagado'?'No pagado':'Pagado';
-560     btn.disabled=true;
-561     api('actualizarPago',{id:id,estado:nuevo}).then(function(r){
-562       btn.disabled=false;
-563       if(r.ok){
-564         var pagado=nuevo==='Pagado';
-565         btn.textContent=pagado?'PAGADO':'NO PAGADO';
-566         btn.style.background=pagado?'#dcfce7':'#fee2e2';
-567         btn.style.color=pagado?'#166534':'#991b1b';
-568         btn.setAttribute('onclick',"togglePago('"+id+"','"+nuevo+"',this)");
-569         btn.closest('tr').style.fontWeight=pagado?'':'700';
-570         toast(pagado?'Marcado como pagado':'Marcado como no pagado');
-571       }else{toast('Error al actualizar');}
-572     }).catch(function(e){btn.disabled=false;toast('Error: '+e.message);});
-573   }
-574
-575   cargar();
-576   </script>
+  if(!id){toast('Registro viejo, sin ID');return;}
+  var nuevo=estadoActual==='Pagado'?'No pagado':'Pagado';
+  btn.disabled=true;
+  api('actualizarPago',{id:id,estado:nuevo}).then(function(r){
+    btn.disabled=false;
+    if(r.ok){
+      var pagado=nuevo==='Pagado';
+      btn.textContent=pagado?'PAGADO':'NO PAGADO';
+      btn.style.background=pagado?'#dcfce7':'#fee2e2';
+      btn.style.color=pagado?'#166534':'#991b1b';
+      btn.setAttribute('onclick',"togglePago('"+id+"','"+nuevo+"',this)");
+      btn.closest('tr').style.fontWeight=pagado?'':'700';
+      toast(pagado?'Marcado como pagado':'Marcado como no pagado');
+    }else{toast('Error al actualizar');}
+  }).catch(function(e){btn.disabled=false;toast('Error: '+e.message);});
+}
 
+cargar();
+</script>
 </body>
 </html>

@@ -530,8 +530,7 @@ function mostrarResumen(){
       var bg=pagado?'#dcfce7':'#fee2e2';
       var col=pagado?'#166534':'#991b1b';
       var label=pagado?'PAGADO':'NO PAGADO';
-      var idr=s.id_registro||'';
-      h+='<tr'+rowStyle+'><td>'+s.fecha+'</td><td>'+s.vehiculo+'</td><td>'+s.motor+'</td><td>'+s.combustible+'</td><td>'+s.modelo_bateria+'</td><td>$'+s.precio+'</td><td>'+s.forma_pago+'</td><td>'+s.ubicacion+'</td><td>'+s.tecnico+'</td><td><button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago(\''+idr+'\',\''+s.estado_pago+'\',this)"'+(idr?'':' disabled title="Registro viejo sin ID"')+'>'+label+'</button></td></tr>';
+      h+='<tr'+rowStyle+'><td>'+s.fecha+'</td><td>'+s.vehiculo+'</td><td>'+s.motor+'</td><td>'+s.combustible+'</td><td>'+s.modelo_bateria+'</td><td>$'+s.precio+'</td><td>'+s.forma_pago+'</td><td>'+s.ubicacion+'</td><td>'+s.tecnico+'</td><td><button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago('+s.fila+',\''+s.estado_pago+'\',this)">'+label+'</button></td></tr>';
     });
     document.getElementById('historialBody').innerHTML=h;
   }).catch(function(e){document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="err">Error: '+e.message+'</td></tr>';});
@@ -554,18 +553,17 @@ function mostrarResumen(){
     document.getElementById('resumenBody').innerHTML=h;
   }).catch(function(e){document.getElementById('resumenBody').innerHTML='<div class="err">Error: '+e.message+'</div>';});
 }
-function togglePago(id,estadoActual,btn){
-  if(!id){toast('Registro viejo, sin ID');return;}
+function togglePago(fila,estadoActual,btn){
   var nuevo=estadoActual==='Pagado'?'No pagado':'Pagado';
   btn.disabled=true;
-  api('actualizarPago',{id:id,estado:nuevo}).then(function(r){
+  api('actualizarPago',{fila:fila,estado:nuevo}).then(function(r){
     btn.disabled=false;
     if(r.ok){
       var pagado=nuevo==='Pagado';
       btn.textContent=pagado?'PAGADO':'NO PAGADO';
       btn.style.background=pagado?'#dcfce7':'#fee2e2';
       btn.style.color=pagado?'#166534':'#991b1b';
-      btn.setAttribute('onclick',"togglePago('"+id+"','"+nuevo+"',this)");
+      btn.setAttribute('onclick',"togglePago("+fila+",'"+nuevo+"',this)");
       btn.closest('tr').style.fontWeight=pagado?'':'700';
       toast(pagado?'Marcado como pagado':'Marcado como no pagado');
     }else{toast('Error al actualizar');}

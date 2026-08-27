@@ -75,7 +75,8 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 .gtabs{display:flex;gap:4px;margin-bottom:12px;background:#e5e5e5;padding:4px;border-radius:10px}
 .gtab{flex:1;text-align:center;padding:9px;font-size:14px;border-radius:7px;cursor:pointer;border:none;background:transparent;color:#666}
 .gtab.active{background:#fff;color:#111;font-weight:600}
-.col-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem}.col-overlay.hidden{display:none}
+.col-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.col-overlay.hidden{display:none}
 </style>
 </head>
 <body>
@@ -151,7 +152,8 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 <div class="toast" id="toast"></div>
 <div id="colOverlay" class="hidden col-overlay">
-<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto"><div style="font-size:19px;font-weight:700;margin-bottom:14px">Datos del servicio</div>
+<div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
+<div style="font-size:19px;font-weight:700;margin-bottom:14px">Datos de la colocación</div>
 <div class="gfield"><label>Vehiculo</label><input type="text" id="colVehiculo" placeholder="Ej: Corolla 2018"/></div>
 <div class="gfield"><label>Motor</label><input type="text" id="colMotor" placeholder="Ej: 1.8"/></div>
 <div class="gfield"><label>Combustible</label><input type="text" id="colCombustible" placeholder="Ej: Nafta, Diesel, GNC..."/></div>
@@ -522,13 +524,23 @@ function mostrarResumen(){
     if(!r.ok){document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="err">Error al cargar</td></tr>';return;}
     if(!r.data.length){document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="no-res">Sin servicios este mes</td></tr>';return;}
     var h='';
+    var grupos={};
+    var ordenFechas=[];
     r.data.forEach(function(s){
-      var pagado=s.estado_pago==='Pagado';
-      var rowStyle=pagado?'':' style="font-weight:700"';
-      var bg=pagado?'#dcfce7':'#fee2e2';
-      var col=pagado?'#166534':'#991b1b';
-      var label=pagado?'PAGADO':'NO PAGADO';
-      h+='<tr'+rowStyle+'><td>'+s.fecha+'</td><td>'+s.vehiculo+'</td><td>'+s.motor+'</td><td>'+s.combustible+'</td><td>'+s.modelo_bateria+'</td><td>$'+s.precio+'</td><td>'+s.forma_pago+'</td><td>'+s.ubicacion+'</td><td>'+s.tecnico+'</td><td><button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago('+s.fila+',\''+s.estado_pago+'\',this)">'+label+'</button></td></tr>';
+      if(!grupos[s.fecha]){grupos[s.fecha]=[];ordenFechas.push(s.fecha);}
+      grupos[s.fecha].push(s);
+    });
+    ordenFechas.sort(function(a,b){return a<b?1:a>b?-1:0;});
+    var hoy=hoyStr();
+    ordenFechas.forEach(function(fecha){
+      var lista=grupos[fecha];
+      if(fecha===hoy){
+        lista.forEach(function(s){h+=filaServicio(s);});
+      }else{
+        var gid='sum-'+fecha.replace(/-/g,'');
+        h+='<tr class="dia-summary" style="cursor:pointer;background:#f5f5f5" onclick="toggleDia(\''+gid+'\')"><td colspan="10"><span id="'+gid+'-icon">&#9656;</span>&nbsp; '+fecha+' — '+lista.length+' servicio'+(lista.length===1?'':'s')+'</td></tr>';
+        lista.forEach(function(s){h+=filaServicio(s,gid);});
+      }
     });
     document.getElementById('historialBody').innerHTML=h;
   }).catch(function(e){document.getElementById('historialBody').innerHTML='<tr><td colspan="10" class="err">Error: '+e.message+'</td></tr>';});
@@ -550,6 +562,26 @@ function mostrarResumen(){
     h+='</div>';
     document.getElementById('resumenBody').innerHTML=h;
   }).catch(function(e){document.getElementById('resumenBody').innerHTML='<div class="err">Error: '+e.message+'</div>';});
+}
+function hoyStr(){var d=new Date();var y=d.getFullYear();var m=String(d.getMonth()+1).padStart(2,'0');var day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day;}
+function filaServicio(s,hiddenClass){
+  var pagado=s.estado_pago==='Pagado';
+  var styleParts=[];
+  if(!pagado)styleParts.push('font-weight:700');
+  if(hiddenClass)styleParts.push('display:none');
+  var styleAttr=styleParts.length?' style="'+styleParts.join(';')+'"':'';
+  var clsAttr=hiddenClass?' class="'+hiddenClass+'"':'';
+  var bg=pagado?'#dcfce7':'#fee2e2';
+  var col=pagado?'#166534':'#991b1b';
+  var label=pagado?'PAGADO':'NO PAGADO';
+  return '<tr'+clsAttr+styleAttr+'><td>'+s.fecha+'</td><td>'+s.vehiculo+'</td><td>'+s.motor+'</td><td>'+s.combustible+'</td><td>'+s.modelo_bateria+'</td><td>$'+s.precio+'</td><td>'+s.forma_pago+'</td><td>'+s.ubicacion+'</td><td>'+s.tecnico+'</td><td><button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago('+s.fila+',\''+s.estado_pago+'\',this)">'+label+'</button></td></tr>';
+}
+function toggleDia(id){
+  var filas=document.querySelectorAll('.'+id);
+  var icon=document.getElementById(id+'-icon');
+  var visible=filas.length && filas[0].style.display!=='none';
+  filas.forEach(function(f){f.style.display=visible?'none':'table-row';});
+  if(icon)icon.innerHTML=visible?'&#9656;':'&#9662;';
 }
 function togglePago(fila,estadoActual,btn){
   var nuevo=estadoActual==='Pagado'?'No pagado':'Pagado';

@@ -18,7 +18,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 .ci{flex:1}.ci h2{font-size:19px;font-weight:700}.ci p{font-size:14px;color:#888;margin-top:2px}
 .arr{font-size:24px;color:#ccc}
 .mstat{text-align:right;flex-shrink:0;margin-right:8px}.mtot{font-size:28px;font-weight:700}.mlab{font-size:12px;color:#aaa}
-.back{display:flex;align-items:center;gap:8px;background:none;border:none;font-size:20px;color:#111;cursor:pointer;padding:14px 0;font-weight:600}
+.back{display:flex;align-items:center;gap:8px;background:none;border:none;font-size:16px;color:#555;cursor:pointer;padding:0 0 1rem 0;font-weight:500}
 .sbox{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:10px 12px;margin-bottom:12px}
 .sbox input{background:transparent;border:none;outline:none;font-size:16px;width:100%}
 .mc{background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:1.5rem;margin-bottom:10px}
@@ -89,6 +89,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <button class="card" onclick="mostrarPrecios()"><div class="icon green">&#128200;</div><div class="ci"><h2>Lista de Precios</h2><p>Precios con disponibilidad</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarBuscador()"><div class="icon orange">&#128269;</div><div class="ci"><h2>Buscador de Baterias</h2><p>Buscar por vehiculo</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarGarantias()"><div class="icon red">&#128220;</div><div class="ci"><h2>Garantias</h2><p>Registrar y consultar</p></div><span class="arr">&#8250;</span></button>
+<button class="card" onclick="mostrarResumen()"><div class="icon" style="background:#ede9fe">&#128202;</div><div class="ci"><h2>Resumen</h2><p>Servicios de hoy y la semana</p></div><span class="arr">&#8250;</span></button>
 </div>
 </div>
 <div id="p0load"><div class="loading">Cargando...</div></div>
@@ -140,7 +141,37 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 </div>
 </div>
+<div id="p7" class="hidden">
+<button class="back" onclick="volverInicio()">&#8592; Volver</button>
+<div id="resumenBody"><div class="loading">Cargando...</div></div>
+</div>
 <div class="toast" id="toast"></div>
+<div id="colOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center">
+<div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
+<div style="font-size:19px;font-weight:700;margin-bottom:14px">Datos de la colocación</div>
+<div class="gfield"><label>Vehiculo</label><input type="text" id="colVehiculo" placeholder="Ej: Corolla 2018"/></div>
+<div class="gfield"><label>Motor</label><input type="text" id="colMotor" placeholder="Ej: 1.8"/></div>
+<div class="gfield"><label>Combustible</label><input type="text" id="colCombustible" placeholder="Ej: Nafta, Diesel, GNC..."/></div>
+<div class="gfield"><label>Precio</label><input type="text" id="colPrecio" placeholder="Ej: $150.000"/></div>
+<div class="gfield"><label>Forma de pago</label>
+<div style="display:flex;gap:8px" id="colPagoBtns">
+<button type="button" class="bs" onclick="setColPago('Efectivo',this)" style="flex:1">Efectivo</button>
+<button type="button" class="bs" onclick="setColPago('Transferencia',this)" style="flex:1">Transferencia</button>
+<button type="button" class="bs" onclick="setColPago('Tarjeta',this)" style="flex:1">Tarjeta</button>
+</div>
+</div>
+<div class="gfield"><label>Ubicacion</label>
+<div style="display:flex;gap:8px" id="colUbiBtns">
+<button type="button" class="bs" onclick="setColUbi('Domicilio',this)" style="flex:1">Domicilio</button>
+<button type="button" class="bs" onclick="setColUbi('Deposito',this)" style="flex:1">Deposito</button>
+</div>
+</div>
+<div style="display:flex;gap:8px;margin-top:8px">
+<button class="bp" onclick="confirmarColocacion()">Confirmar</button>
+<button class="bs" onclick="cerrarColOverlay()">Cancelar</button>
+</div>
+</div>
+</div>
 <script>
 var API_URL='https://script.google.com/macros/s/AKfycbxnzT9AoCu3LFQf5I6CYLOh4xzTrZ71q7ne3il9yWjZO6UMzTizFKaD9wiJJZ2heXOfQQ/exec';
 function api(action,params){
@@ -258,7 +289,7 @@ function mostrarBuscador(){
 }
 function mostrarGarantias(){document.getElementById('p0').classList.add('hidden');document.getElementById('p6').classList.remove('hidden');titulo('Garantias');cambiarGTab(1);}
 function volverInicio(){
-  ['p1','p2','p3','p4','p5','p6'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
+  ['p1','p2','p3','p4','p5','p6','p7'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
   document.getElementById('p0').classList.remove('hidden');titulo('Stock Baterias');
 }
 function cambiarTab(n){
@@ -411,7 +442,7 @@ function rMod(){
     var badgeSSmod=esSSmod?'<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
     h+='<div class="mc"><div class="mh"><div class="mn">'+m.nombre+badgeSSmod+'</div><span class="badge '+bc(s)+'">'+bl(s)+'</span></div>';
     h+='<div class="sr"><span class="sn">'+s+'</span><span class="sl">Baterias<br>Disponibles</span></div>';
-    h+='<div class="acts"><button class="bp" onclick="restar(\''+m.id+'\')"'+(s===0?' disabled':'')+'>- RESTAR UNA</button><button class="bs" onclick="tRep(\''+m.id+'\')">+ SUMAR UNA</button></div>';
+    h+='<div class="acts"><button class="bp" onclick="abrirColocacion(\''+m.id+'\',\''+m.codigo+'\')"'+(s===0?' disabled':'')+'>- RESTAR UNA</button><button class="bs" onclick="tRep(\''+m.id+'\')">+ SUMAR UNA</button></div>';
     h+='<div class="rp" id="r'+m.id+'"><div style="font-size:13px;color:#888;margin-bottom:4px">Cuantas unidades agregas?</div>';
     h+='<div class="qr"><button class="qb" onclick="chQ(\''+m.id+'\',-1)">-</button><span class="qv" id="q'+m.id+'">1</span><button class="qb" onclick="chQ(\''+m.id+'\',1)">+</button></div>';
     h+='<div style="display:flex;gap:8px"><button class="bp" onclick="sumar(\''+m.id+'\')">Confirmar</button><button class="bs" onclick="tRep(\''+m.id+'\')">Cancelar</button></div></div></div>';
@@ -425,6 +456,82 @@ function sumar(id){var m=datos.filter(function(x){return x.id===id;})[0];if(!m)r
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
 function bc(s){return s===0?'out':s<=2?'low':'ok';}
 function bl(s){return s===0?'AGOTADO - COMPRAR STOCK':s<=2?'COMPRAR STOCK':'Disponible';}
+
+var colId=null,colPago='',colUbi='';
+function abrirColocacion(id,codigo){
+  colId=id;colPago='';colUbi='';
+  document.getElementById('colVehiculo').value='';
+  document.getElementById('colMotor').value='';
+  document.getElementById('colCombustible').value='';
+  document.getElementById('colPrecio').value='';
+  document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  document.getElementById('colOverlay').classList.remove('hidden');
+}
+function cerrarColOverlay(){document.getElementById('colOverlay').classList.add('hidden');}
+function setColPago(v,btn){
+  colPago=v;
+  document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  btn.style.background='#111';btn.style.color='#fff';
+}
+function setColUbi(v,btn){
+  colUbi=v;
+  document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  btn.style.background='#111';btn.style.color='#fff';
+}
+function confirmarColocacion(){
+  var m=datos.filter(function(x){return x.id===colId;})[0];
+  if(!m||m[cam.c]===0)return;
+  var vehiculo=document.getElementById('colVehiculo').value.trim();
+  if(!vehiculo){toast('Completa el vehiculo');return;}
+  var nuevoStock=m[cam.c]-1;
+  sync('Guardando...');
+  api('registrarColocacion',{
+    id:colId,campo:cam.c,valor:nuevoStock,
+    vehiculo:vehiculo,
+    motor:document.getElementById('colMotor').value.trim(),
+    combustible:document.getElementById('colCombustible').value.trim(),
+    modelo_bateria:m.codigo||m.nombre,
+    precio:document.getElementById('colPrecio').value.trim(),
+    forma_pago:colPago,
+    ubicacion:colUbi,
+    tecnico:cam.n
+  }).then(function(r){
+    if(r.ok){
+      m[cam.c]=nuevoStock;
+      sync('Sincronizado');
+      cerrarColOverlay();
+      rMod();
+      toast('- '+m.nombre+' quedan '+m[cam.c]);
+    }else{
+      sync('Error');toast('Error al guardar');
+    }
+  }).catch(function(e){sync('Error');toast('Error: '+e.message);});
+}
+function mostrarResumen(){
+  document.getElementById('p0').classList.add('hidden');
+  document.getElementById('p7').classList.remove('hidden');
+  titulo('Resumen');
+  document.getElementById('resumenBody').innerHTML='<div class="loading">Cargando...</div>';
+  api('getResumen').then(function(r){
+    if(!r.ok){document.getElementById('resumenBody').innerHTML='<div class="err">Error al cargar</div>';return;}
+    var h='';
+    h+='<div style="display:flex;gap:12px;margin-bottom:16px">';
+    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">HOY</div><div style="font-size:36px;font-weight:700">'+r.hoy+'</div><div style="font-size:12px;color:#888">servicios</div></div>';
+    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">ULTIMOS 7 DIAS</div><div style="font-size:36px;font-weight:700">'+r.semana+'</div><div style="font-size:12px;color:#888">servicios</div></div>';
+    h+='</div>';
+    h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por tecnico (7 dias)</div>';
+    Object.keys(r.porTecnico).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porTecnico[k]+'</span></div>';});
+    h+='</div>';
+    h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por marca (7 dias)</div>';
+    Object.keys(r.porMarca).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porMarca[k]+'</span></div>';});
+    h+='</div>';
+    h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por forma de pago (7 dias)</div>';
+    Object.keys(r.porPago).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porPago[k]+'</span></div>';});
+    h+='</div>';
+    document.getElementById('resumenBody').innerHTML=h;
+  }).catch(function(e){document.getElementById('resumenBody').innerHTML='<div class="err">Error: '+e.message+'</div>';});
+}
 cargar();
 </script>
 </body>

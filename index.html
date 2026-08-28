@@ -714,6 +714,9 @@ function mostrarResumen(){
     h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por marca (30 dias)</div>';
     Object.keys(r.porMarca).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porMarca[k]+'</span></div>';});
     h+='</div>';
+    h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por modelo (30 dias)</div>';
+    Object.keys(r.porModelo).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porModelo[k]+'</span></div>';});
+    h+='</div>';
     h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por forma de pago (30 dias)</div>';
     Object.keys(r.porPago).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porPago[k]+'</span></div>';});
     h+='</div>';

@@ -871,9 +871,8 @@ function renderTurnosMini(){
 function actualizarAlertaReservados(){
   var sub=document.getElementById('resumenSub');
   if(!sub)return;
-  var hoyS=hoyStr();
-  var hayHoy=turnos.some(function(t){return t.fecha===hoyS&&t.estado!=='Completado'&&t.estado!=='Cancelado';});
-  if(hayHoy){
+  var hayActivos=turnos.some(function(t){return t.estado!=='Completado'&&t.estado!=='Cancelado';});
+  if(hayActivos){
     sub.innerHTML='&#9888; HAY SERVICIOS RESERVADOS';
     sub.style.color='#c2410c';
     sub.style.fontWeight='800';

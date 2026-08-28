@@ -77,6 +77,20 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 .gtab.active{background:#fff;color:#111;font-weight:600}
 .col-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center}
 .col-overlay.hidden{display:none}
+.tmini{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid #f0f0f0}
+.tmini:last-child{border-bottom:none}
+.tmini-left{display:flex;align-items:center;gap:12px;min-width:0}
+.tmini-time{font-size:17px;font-weight:800;min-width:48px;flex-shrink:0}
+.tmini-info{font-size:14px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tmini-info b{color:#111}
+.tmini-tag{font-size:12px;font-weight:800;white-space:nowrap;flex-shrink:0}
+.tmini-tag.late{color:#991b1b}
+.tmini-tag.urgent{color:#dc2626}
+.tmini-tag.today{color:#c2410c}
+.tmini-tag.future{color:#999;font-weight:600}
+.tmini-actions{display:flex;gap:6px;flex-shrink:0}
+.tmini-x{width:26px;height:26px;border-radius:7px;border:1px solid #e5e5e5;background:#fff;color:#888;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tmini-ok{width:26px;height:26px;border-radius:7px;border:none;background:#111;color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 </style>
 </head>
 <body>
@@ -146,6 +160,13 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 <div id="p7" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
+<div class="mc" style="margin-bottom:16px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+<div style="font-weight:700;font-size:15px">Proximos turnos</div>
+<button class="tmini-ok" style="width:auto;padding:0 12px;height:28px;border-radius:8px;font-size:13px" onclick="abrirNuevoTurno()">+ Turno</button>
+</div>
+<div id="turnosMini"><div class="loading" style="padding:1rem">Cargando...</div></div>
+</div>
 <div class="twrap" style="margin-bottom:16px"><table class="ptable">
 <thead><tr><th>Fecha</th><th>Vehiculo</th><th>Año vehiculo</th><th>Motor</th><th>Comb.</th><th>Modelo</th><th>Precio</th><th>Pago</th><th>Ubicacion</th><th>Tecnico</th><th>Estado</th></tr></thead><tbody id="historialBody"><tr><td colspan="11" class="loading">Cargando...</td></tr></tbody></table></div>
 <div id="resumenBody"></div>
@@ -159,6 +180,29 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 </div>
 <div class="toast" id="toast"></div>
+<div id="turnoOverlay" class="hidden col-overlay">
+<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
+<div style="font-size:19px;font-weight:700;margin-bottom:14px">Nuevo turno</div>
+<div class="gfield"><label>Fecha</label><input type="date" id="tFecha"/></div>
+<div class="gfield"><label>Hora</label><input type="time" id="tHora"/></div>
+<div class="gfield"><label>Vehiculo</label><input type="text" id="tVehiculo" placeholder="Ej: Corolla 2018"/></div>
+<div class="gfield"><label>Cliente</label><input type="text" id="tCliente" placeholder="Nombre del cliente"/></div>
+<div class="gfield"><label>Telefono</label><input type="text" id="tTelefono" placeholder="Ej: 1123456789"/></div>
+<div class="gfield"><label>Direccion</label><input type="text" id="tDireccion" placeholder="Direccion o zona"/></div>
+<div class="gfield"><label>Tecnico</label>
+<div style="display:flex;gap:8px" id="tTecnicoBtns">
+<button type="button" class="bs" onclick="setTecnico('Emi',this)" style="flex:1">Emi</button>
+<button type="button" class="bs" onclick="setTecnico('Mario',this)" style="flex:1">Mario</button>
+<button type="button" class="bs" onclick="setTecnico('Mateo',this)" style="flex:1">Mateo</button>
+</div>
+</div>
+<div class="gfield"><label>Notas</label><input type="text" id="tNotas" placeholder="Detalles adicionales (opcional)"/></div>
+<div style="display:flex;gap:8px;margin-top:8px">
+<button class="bp" onclick="confirmarTurno()">Guardar turno</button>
+<button class="bs" onclick="cerrarTurnoOverlay()">Cancelar</button>
+</div>
+</div>
+</div>
 <div id="colOverlay" class="hidden col-overlay">
 <div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px">Datos de la colocación</div>
@@ -673,6 +717,7 @@ function mostrarResumen(){
   titulo('Resumen');
   document.getElementById('historialBody').innerHTML='<tr><td colspan="11" class="loading">Cargando...</td></tr>';
   document.getElementById('resumenBody').innerHTML='<div class="loading">Cargando...</div>';
+  cargarTurnos();
   api('getHistorial').then(function(r){
     if(!r.ok){document.getElementById('historialBody').innerHTML='<tr><td colspan="11" class="err">Error al cargar</td></tr>';return;}
     if(!r.data.length){document.getElementById('historialBody').innerHTML='<tr><td colspan="11" class="no-res">Sin servicios este mes</td></tr>';return;}
@@ -768,6 +813,126 @@ function togglePago(fila,estadoActual,btn){
       toast(pagado?'Marcado como pagado':'Marcado como no pagado');
     }else{toast('Error al actualizar');}
   }).catch(function(e){btn.disabled=false;toast('Error: '+e.message);});
+}
+
+var turnos=[],turnoTecnico='';
+
+function dateStr(d){var y=d.getFullYear();var m=String(d.getMonth()+1).padStart(2,'0');var day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day;}
+
+function cargarTurnos(){
+  var el=document.getElementById('turnosMini');
+  if(el)el.innerHTML='<div class="loading" style="padding:1rem">Cargando...</div>';
+  api('getTurnos').then(function(r){
+    if(!r.ok){if(el)el.innerHTML='<div class="err">Error al cargar</div>';return;}
+    turnos=r.data||[];
+    renderTurnosMini();
+  }).catch(function(e){if(el)el.innerHTML='<div class="err">Error: '+e.message+'</div>';});
+}
+
+function renderTurnosMini(){
+  var el=document.getElementById('turnosMini');
+  if(!el)return;
+  var activos=turnos.filter(function(t){return t.estado!=='Completado'&&t.estado!=='Cancelado';});
+  activos.sort(function(a,b){
+    var da=a.fecha+' '+(a.hora||'00:00');
+    var db=b.fecha+' '+(b.hora||'00:00');
+    return da<db?-1:da>db?1:0;
+  });
+  if(!activos.length){el.innerHTML='<div style="padding:.75rem 2px;color:#aaa;font-size:14px">No hay turnos agendados</div>';return;}
+  var ahora=new Date();
+  var hoyS=hoyStr();
+  var mananaD=new Date();mananaD.setDate(mananaD.getDate()+1);
+  var mananaS=dateStr(mananaD);
+  var h='';
+  activos.forEach(function(t){
+    var esHoy=t.fecha===hoyS;
+    var esManana=t.fecha===mananaS;
+    var dt=new Date(t.fecha+'T'+(t.hora||'00:00')+':00');
+    var diffMin=(dt-ahora)/60000;
+    var cls,relTxt;
+    if(diffMin<0){cls='late';relTxt='ATRASADO';}
+    else if(diffMin<=60){cls='urgent';relTxt='EN '+Math.max(0,Math.round(diffMin))+' MIN';}
+    else if(esHoy){cls='today';relTxt='HOY';}
+    else{cls='future';relTxt=esManana?'MAÑANA':fmtFecha(t.fecha);}
+    var infoParts=[];
+    if(t.vehiculo)infoParts.push('<b>'+t.vehiculo+'</b>');
+    if(t.cliente)infoParts.push(t.cliente);
+    if(t.direccion)infoParts.push(t.direccion);
+    var infoTxt=infoParts.join(' · ')||'-';
+    h+='<div class="tmini">';
+    h+='<div class="tmini-left"><div class="tmini-time">'+(t.hora||'--:--')+'</div><div class="tmini-info">'+infoTxt+'</div></div>';
+    h+='<div class="tmini-actions"><span class="tmini-tag '+cls+'">'+relTxt+'</span><button class="tmini-ok" title="Completado" onclick="completarTurno(\''+t.id+'\')">&#10003;</button><button class="tmini-x" title="Cancelar" onclick="cancelarTurno(\''+t.id+'\')">&#10005;</button></div>';
+    h+='</div>';
+  });
+  el.innerHTML=h;
+}
+
+function completarTurno(id){
+  api('actualizarTurno',{id:id,campo:'estado',valor:'Completado'}).then(function(r){
+    if(r.ok){toast('Turno completado');cargarTurnos();}else{toast('Error al actualizar');}
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function cancelarTurno(id){
+  api('actualizarTurno',{id:id,campo:'estado',valor:'Cancelado'}).then(function(r){
+    if(r.ok){toast('Turno cancelado');cargarTurnos();}else{toast('Error al actualizar');}
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+
+function abrirNuevoTurno(){
+  document.getElementById('tFecha').value=hoyStr();
+  document.getElementById('tHora').value='';
+  document.getElementById('tVehiculo').value='';
+  document.getElementById('tCliente').value='';
+  document.getElementById('tTelefono').value='';
+  document.getElementById('tDireccion').value='';
+  document.getElementById('tNotas').value='';
+  turnoTecnico='';
+  document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  confirmandoTurno=false;
+  var btnT=document.querySelector('#turnoOverlay .bp');
+  if(btnT){btnT.disabled=false;btnT.textContent='Guardar turno';}
+  document.getElementById('turnoOverlay').classList.remove('hidden');
+}
+function cerrarTurnoOverlay(){document.getElementById('turnoOverlay').classList.add('hidden');}
+function setTecnico(v,btn){
+  turnoTecnico=v;
+  document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  btn.style.background='#111';btn.style.color='#fff';
+}
+var confirmandoTurno=false;
+function confirmarTurno(){
+  if(confirmandoTurno)return;
+  var fecha=document.getElementById('tFecha').value;
+  var hora=document.getElementById('tHora').value;
+  var vehiculo=document.getElementById('tVehiculo').value.trim();
+  if(!fecha){toast('Completa la fecha');return;}
+  if(!hora){toast('Completa la hora');return;}
+  if(!vehiculo){toast('Completa el vehiculo');return;}
+  confirmandoTurno=true;
+  var btnT=document.querySelector('#turnoOverlay .bp');
+  if(btnT){btnT.disabled=true;btnT.textContent='Guardando...';}
+  api('guardarTurno',{
+    fecha:fecha,
+    hora:hora,
+    vehiculo:vehiculo,
+    cliente:document.getElementById('tCliente').value.trim(),
+    telefono:document.getElementById('tTelefono').value.trim(),
+    direccion:document.getElementById('tDireccion').value.trim(),
+    tecnico:turnoTecnico,
+    notas:document.getElementById('tNotas').value.trim()
+  }).then(function(r){
+    confirmandoTurno=false;
+    if(btnT){btnT.disabled=false;btnT.textContent='Guardar turno';}
+    if(r.ok){
+      cerrarTurnoOverlay();
+      toast('Turno guardado');
+      cargarTurnos();
+    }else{toast('Error al guardar');}
+  }).catch(function(e){
+    confirmandoTurno=false;
+    if(btnT){btnT.disabled=false;btnT.textContent='Guardar turno';}
+    toast('Error: '+e.message);
+  });
 }
 
 cargar();

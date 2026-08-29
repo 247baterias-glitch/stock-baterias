@@ -729,9 +729,20 @@ function mostrarResumen(){
       grupos[s.fecha].push(s);
     });
     ordenFechas.sort(function(a,b){return a<b?1:a>b?-1:0;});
+    var ordenTecnico={'Emi':0,'Mario':1,'Mateo':2};
+    function ordenarPorTecnico(lista){
+      lista.forEach(function(s,idx){s._idx=idx;});
+      lista.sort(function(a,b){
+        var oa=ordenTecnico.hasOwnProperty(a.tecnico)?ordenTecnico[a.tecnico]:99;
+        var ob=ordenTecnico.hasOwnProperty(b.tecnico)?ordenTecnico[b.tecnico]:99;
+        if(oa!==ob)return oa-ob;
+        return a._idx-b._idx;
+      });
+    }
     var hoy=hoyStr();
     ordenFechas.forEach(function(fecha){
       var lista=grupos[fecha];
+      ordenarPorTecnico(lista);
       if(fecha===hoy){
         lista.forEach(function(s){h+=filaServicio(s);});
       }else{

@@ -787,7 +787,17 @@ function mostrarResumen(){
     Object.keys(r.porMarca).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porMarca[k]+'</span></div>';});
     h+='</div>';
     h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por modelo (30 dias)</div>';
-    Object.keys(r.porModelo).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porModelo[k]+'</span></div>';});
+    var ordenMarca={'MOURA':0,'WILLARD':1,'SERMAT':2,'HERBO':3,'BARI':4};
+    var modelosOrdenados=Object.keys(r.porModelo).sort(function(ka,kb){
+      var ma=((r.modeloMarca&&r.modeloMarca[ka])||'').toUpperCase();
+      var mb=((r.modeloMarca&&r.modeloMarca[kb])||'').toUpperCase();
+      var oa=ordenMarca.hasOwnProperty(ma)?ordenMarca[ma]:99;
+      var ob=ordenMarca.hasOwnProperty(mb)?ordenMarca[mb]:99;
+      if(oa!==ob)return oa-ob;
+      if(ma!==mb)return ma<mb?-1:1;
+      return ka<kb?-1:ka>kb?1:0;
+    });
+    modelosOrdenados.forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porModelo[k]+'</span></div>';});
     h+='</div>';
     h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por forma de pago (30 dias)</div>';
     Object.keys(r.porPago).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porPago[k]+'</span> — <span>$'+formatMoney(r.porPagoMonto&&r.porPagoMonto[k]||0)+'</span></div>';});

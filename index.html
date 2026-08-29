@@ -790,12 +790,13 @@ function mostrarResumen(){
     Object.keys(r.porModelo).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porModelo[k]+'</span></div>';});
     h+='</div>';
     h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por forma de pago (30 dias)</div>';
-    Object.keys(r.porPago).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porPago[k]+'</span></div>';});
+    Object.keys(r.porPago).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porPago[k]+'</span> — <span>$'+formatMoney(r.porPagoMonto&&r.porPagoMonto[k]||0)+'</span></div>';});
     h+='</div>';
     document.getElementById('resumenBody').innerHTML=h;
   }).catch(function(e){document.getElementById('resumenBody').innerHTML='<div class="err">Error: '+e.message+'</div>';});
 }
 function hoyStr(){var d=new Date();var y=d.getFullYear();var m=String(d.getMonth()+1).padStart(2,'0');var day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day;}
+function formatMoney(v){var n=parseFloat(String(v||'').replace(/[^0-9.-]/g,''))||0;return n.toLocaleString('es-AR',{maximumFractionDigits:0});}
 function safeVal(v){if(!v)return '';if(/^\d{4}-\d{2}-\d{2}T/.test(v))return '';return v;}
 function fmtFecha(f){var p=f.split('-');return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:f;}
 function filaServicio(s,hiddenClass){
@@ -812,7 +813,7 @@ function filaServicio(s,hiddenClass){
   var bg=pagado?'#dcfce7':'#fee2e2';
   var col=pagado?'#166534':'#991b1b';
   var label=pagado?'PAGADO':'NO PAGADO';
-  return '<tr'+clsAttr+styleAttr+'>'+td+fmtFecha(s.fecha)+'</td>'+td+s.vehiculo+'</td>'+td+(s.anio_vehiculo||'')+'</td>'+td+safeVal(s.motor)+'</td>'+td+s.combustible+'</td>'+td+s.modelo_bateria+'</td>'+td+'$'+s.precio+'</td>'+td+s.forma_pago+'</td>'+td+s.ubicacion+'</td>'+td+s.tecnico+'</td>'+td+'<button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago('+s.fila+',\''+s.estado_pago+'\',this)">'+label+'</button></td></tr>';
+  return '<tr'+clsAttr+styleAttr+'>'+td+fmtFecha(s.fecha)+'</td>'+td+s.vehiculo+'</td>'+td+(s.anio_vehiculo||'')+'</td>'+td+safeVal(s.motor)+'</td>'+td+s.combustible+'</td>'+td+s.modelo_bateria+'</td>'+td+'$'+formatMoney(s.precio)+'</td>'+td+s.forma_pago+'</td>'+td+s.ubicacion+'</td>'+td+s.tecnico+'</td>'+td+'<button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago('+s.fila+',\''+s.estado_pago+'\',this)">'+label+'</button></td></tr>';
 }
 function toggleDia(id){
   var filas=document.querySelectorAll('.'+id);

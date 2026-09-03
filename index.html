@@ -189,6 +189,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <div class="gfield"><label>Cliente</label><input type="text" id="tCliente" placeholder="Nombre del cliente"/></div>
 <div class="gfield"><label>Telefono</label><input type="text" id="tTelefono" placeholder="Ej: 1123456789"/></div>
 <div class="gfield"><label>Direccion</label><input type="text" id="tDireccion" placeholder="Direccion o zona"/></div>
+<div class="gfield"><label>Precio</label><input type="text" id="tPrecio" placeholder="Ej: $150.000"/></div>
 <div class="gfield"><label>Tecnico</label>
 <div style="display:flex;gap:8px" id="tTecnicoBtns">
 <button type="button" class="bs" onclick="setTecnico('Emi',this)" style="flex:1">Emi</button>
@@ -892,6 +893,7 @@ function renderTurnosMini(){
     if(t.vehiculo)infoParts.push('<b>'+t.vehiculo+'</b>');
     if(t.cliente)infoParts.push(t.cliente);
     if(t.direccion)infoParts.push(t.direccion);
+    if(t.precio)infoParts.push('<b style="color:#166534">$'+formatMoney(t.precio)+'</b>');
     var infoTxt=infoParts.join(' · ')||'-';
     h+='<div class="tmini">';
     h+='<div class="tmini-left"><div class="tmini-time">'+(t.hora||'--:--')+'</div><div class="tmini-info">'+infoTxt+'</div></div>';
@@ -941,6 +943,7 @@ function abrirNuevoTurno(){
   document.getElementById('tCliente').value='';
   document.getElementById('tTelefono').value='';
   document.getElementById('tDireccion').value='';
+  document.getElementById('tPrecio').value='';
   document.getElementById('tNotas').value='';
   turnoTecnico='';
   document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
@@ -974,6 +977,7 @@ function confirmarTurno(){
     cliente:document.getElementById('tCliente').value.trim(),
     telefono:document.getElementById('tTelefono').value.trim(),
     direccion:document.getElementById('tDireccion').value.trim(),
+    precio:document.getElementById('tPrecio').value.trim(),
     tecnico:turnoTecnico,
     notas:document.getElementById('tNotas').value.trim()
   }).then(function(r){

@@ -172,6 +172,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <div class="twrap" style="margin-bottom:16px"><table class="ptable">
 <thead><tr><th>Fecha</th><th>Vehiculo</th><th>Año vehiculo</th><th>Motor</th><th>Comb.</th><th>Modelo</th><th>Precio</th><th>Pago</th><th>Ubicacion</th><th>Tecnico</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="historialBody"><tr><td colspan="12" class="loading">Cargando...</td></tr></tbody></table></div>
 <div id="resumenBody"></div>
+<div id="mesStatsBody"></div>
 </div>
 <div id="p8" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
@@ -788,6 +789,7 @@ function cargarHistorialMes(){
   api('getHistorial',{mes:mesSeleccionado,anio:anioSeleccionado}).then(function(r){
     if(!r.ok){document.getElementById('historialBody').innerHTML='<tr><td colspan="12" class="err">Error al cargar</td></tr>';return;}
     serviciosCache=r.data||[];
+    renderStatsMes();
     if(!r.data.length){document.getElementById('historialBody').innerHTML='<tr><td colspan="12" class="no-res">Sin servicios este mes</td></tr>';return;}
     var h='';
     var grupos={};
@@ -840,6 +842,7 @@ function mostrarResumen(){
   anioSeleccionado=hoyD.getFullYear();
   renderMesTabs();
   document.getElementById('resumenBody').innerHTML='<div class="loading">Cargando...</div>';
+  document.getElementById('mesStatsBody').innerHTML='<div class="loading">Cargando...</div>';
   cargarTurnos();
   cargarHistorialMes();
   api('getResumen').then(function(r){
@@ -855,35 +858,85 @@ function mostrarResumen(){
     var h='';
     h+='<div style="display:flex;gap:12px;margin-bottom:16px">';
     h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">HOY</div><div style="font-size:36px;font-weight:700">'+r.hoy+'</div><div style="font-size:12px;color:#888">servicios</div>'+extraHtml+'</div>';
-    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">ULTIMOS 30 DIAS</div><div style="font-size:36px;font-weight:700">'+r.semana+'</div><div style="font-size:12px;color:#888">servicios</div>'+extraHtml30+'</div>';
+    h+='<div class="mc" id="mesTotalCard" style="flex:1;text-align:center"><div class="loading" style="padding:0">Cargando...</div></div>';
     h+='</div>';
     h+='<div style="display:flex;gap:12px;margin-bottom:16px">';
     h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">SCRAP 10 DIAS</div><div style="font-size:36px;font-weight:700;color:#7c3aed">'+r.scrap10+'</div><div style="font-size:12px;color:#888">baterias recibidas</div><button style="margin-top:8px;background:transparent;border:1px solid #ddd;border-radius:8px;padding:6px 12px;font-size:12px;color:#7c3aed;font-weight:600;cursor:pointer" onclick="reiniciarScrap()">&#8635; Reiniciar contador</button></div>';
     h+='</div>';
-    h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por tecnico (30 dias)</div>';
-    Object.keys(r.porTecnico).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porTecnico[k]+'</span></div>';});
-    h+='</div>';
-    h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por marca (30 dias)</div>';
-    Object.keys(r.porMarca).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porMarca[k]+'</span></div>';});
-    h+='</div>';
-    h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por modelo (30 dias)</div>';
-    var ordenMarca={'MOURA':0,'WILLARD':1,'SERMAT':2,'HERBO':3,'BARI':4};
-    var modelosOrdenados=Object.keys(r.porModelo).sort(function(ka,kb){
-      var ma=((r.modeloMarca&&r.modeloMarca[ka])||'').toUpperCase();
-      var mb=((r.modeloMarca&&r.modeloMarca[kb])||'').toUpperCase();
-      var oa=ordenMarca.hasOwnProperty(ma)?ordenMarca[ma]:99;
-      var ob=ordenMarca.hasOwnProperty(mb)?ordenMarca[mb]:99;
-      if(oa!==ob)return oa-ob;
-      if(ma!==mb)return ma<mb?-1:1;
-      return ka<kb?-1:ka>kb?1:0;
-    });
-    modelosOrdenados.forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porModelo[k]+'</span></div>';});
-    h+='</div>';
-    h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por forma de pago (30 dias)</div>';
-    Object.keys(r.porPago).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porPago[k]+'</span> — <span>$'+formatMoney(r.porPagoMonto&&r.porPagoMonto[k]||0)+'</span></div>';});
-    h+='</div>';
     document.getElementById('resumenBody').innerHTML=h;
+    renderStatsMes();
   }).catch(function(e){document.getElementById('resumenBody').innerHTML='<div class="err">Error: '+e.message+'</div>';});
+}
+function calcularStatsMes(lista){
+  var porTecnico={}, porMarca={}, porModelo={}, modeloMarca={}, porPago={}, porPagoMonto={};
+  var totalColoc=0, totalArr=0, totalCarga=0;
+  lista.forEach(function(s){
+    var modelo=s.modelo_bateria||'Sin dato';
+    var esArranque=(modelo==='Arranque');
+    var esCarga=(modelo==='Carga de bateria');
+    var esExtra=esArranque||esCarga;
+    if(esArranque)totalArr++;
+    else if(esCarga)totalCarga++;
+    else totalColoc++;
+    var tec=s.tecnico||'Sin dato';
+    var pago=s.forma_pago||'Sin dato';
+    var marca=modelo;
+    if(!esExtra){
+      var m=datos.filter(function(d){return d.codigo===modelo;})[0];
+      if(m&&m.marca)marca=m.marca;
+    }
+    var monto=parseFloat(String(s.precio||'').replace(/[^0-9.-]/g,''))||0;
+    porTecnico[tec]=(porTecnico[tec]||0)+1;
+    porMarca[marca]=(porMarca[marca]||0)+1;
+    porModelo[modelo]=(porModelo[modelo]||0)+1;
+    modeloMarca[modelo]=marca;
+    porPago[pago]=(porPago[pago]||0)+1;
+    porPagoMonto[pago]=(porPagoMonto[pago]||0)+monto;
+  });
+  return {totalColoc:totalColoc,totalArr:totalArr,totalCarga:totalCarga,porTecnico:porTecnico,porMarca:porMarca,porModelo:porModelo,modeloMarca:modeloMarca,porPago:porPago,porPagoMonto:porPagoMonto};
+}
+function renderStatsMes(){
+  var mesLabel=NOMBRES_MES[mesSeleccionado]+(anioSeleccionado!==(new Date()).getFullYear()?' '+anioSeleccionado:'');
+  var st=calcularStatsMes(serviciosCache);
+  var extraTxt=[];
+  if(st.totalArr)extraTxt.push(st.totalArr+' arranque'+(st.totalArr===1?'':'s'));
+  if(st.totalCarga)extraTxt.push(st.totalCarga+' carga'+(st.totalCarga===1?'':'s')+' de bateria');
+  var extraHtml=extraTxt.length?'<div style="font-size:12px;color:#c2410c;font-weight:600;margin-top:4px">- '+extraTxt.join(', ')+'</div>':'';
+  var totalGeneral=st.totalColoc+st.totalArr+st.totalCarga;
+  var cardTotal=document.getElementById('mesTotalCard');
+  if(cardTotal){
+    cardTotal.innerHTML='<div style="font-size:13px;color:#888;margin-bottom:6px">TOTAL SERVICIOS '+mesLabel.toUpperCase()+'</div><div style="font-size:36px;font-weight:700">'+totalGeneral+'</div><div style="font-size:12px;color:#888">servicios</div>'+extraHtml;
+  }
+  var el=document.getElementById('mesStatsBody');
+  if(!el)return;
+  var h='';
+  h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por tecnico ('+mesLabel+')</div>';
+  Object.keys(st.porTecnico).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porTecnico[k]+'</span></div>';});
+  if(!Object.keys(st.porTecnico).length)h+='<div class="gcard-row" style="color:#aaa">Sin datos</div>';
+  h+='</div>';
+  h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por marca ('+mesLabel+')</div>';
+  Object.keys(st.porMarca).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porMarca[k]+'</span></div>';});
+  if(!Object.keys(st.porMarca).length)h+='<div class="gcard-row" style="color:#aaa">Sin datos</div>';
+  h+='</div>';
+  h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por modelo ('+mesLabel+')</div>';
+  var ordenMarca={'MOURA':0,'WILLARD':1,'SERMAT':2,'HERBO':3,'BARI':4};
+  var modelosOrdenados=Object.keys(st.porModelo).sort(function(ka,kb){
+    var ma=((st.modeloMarca&&st.modeloMarca[ka])||'').toUpperCase();
+    var mb=((st.modeloMarca&&st.modeloMarca[kb])||'').toUpperCase();
+    var oa=ordenMarca.hasOwnProperty(ma)?ordenMarca[ma]:99;
+    var ob=ordenMarca.hasOwnProperty(mb)?ordenMarca[mb]:99;
+    if(oa!==ob)return oa-ob;
+    if(ma!==mb)return ma<mb?-1:1;
+    return ka<kb?-1:ka>kb?1:0;
+  });
+  modelosOrdenados.forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porModelo[k]+'</span></div>';});
+  if(!modelosOrdenados.length)h+='<div class="gcard-row" style="color:#aaa">Sin datos</div>';
+  h+='</div>';
+  h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por forma de pago ('+mesLabel+')</div>';
+  Object.keys(st.porPago).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porPago[k]+'</span> — <span>$'+formatMoney(st.porPagoMonto&&st.porPagoMonto[k]||0)+'</span></div>';});
+  if(!Object.keys(st.porPago).length)h+='<div class="gcard-row" style="color:#aaa">Sin datos</div>';
+  h+='</div>';
+  el.innerHTML=h;
 }
 function hoyStr(){var d=new Date();var y=d.getFullYear();var m=String(d.getMonth()+1).padStart(2,'0');var day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day;}
 function formatMoney(v){var n=parseFloat(String(v||'').replace(/[^0-9.-]/g,''))||0;return n.toLocaleString('es-AR',{maximumFractionDigits:0});}

@@ -893,6 +893,7 @@ function renderTurnosMini(){
     if(t.vehiculo)infoParts.push('<b>'+t.vehiculo+'</b>');
     if(t.cliente)infoParts.push(t.cliente);
     if(t.direccion)infoParts.push(t.direccion);
+    if(t.telefono)infoParts.push(t.telefono);
     if(t.precio)infoParts.push('<b style="color:#166534">$'+formatMoney(t.precio)+'</b>');
     var infoTxt=infoParts.join(' · ')||'-';
     h+='<div class="tmini">';

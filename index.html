@@ -568,7 +568,7 @@ function rMarcas(){
   h+='</div>';document.getElementById('l2').innerHTML=h;
 }
 function vMarca(m){marca=m;document.getElementById('p2').classList.add('hidden');document.getElementById('p3').classList.remove('hidden');titulo(m);document.getElementById('bus').value='';rMod();}
-function vM(){document.getElementById('p3').classList.add('hidden');document.getElementById('p2').classList.remove('hidden');titulo(nombreCam(cam));}
+function vM(){document.getElementById('p3').classList.add('hidden');document.getElementById('p2').classList.remove('hidden');titulo(nombreCam(cam));rMarcas();}
 function rMod(){
   var b=document.getElementById('bus').value.toLowerCase();
   var c=cam.c;

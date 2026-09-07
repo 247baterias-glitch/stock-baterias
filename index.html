@@ -167,6 +167,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 <div id="turnosMini"><div class="loading" style="padding:1rem">Cargando...</div></div>
 </div>
+<div id="mesTabs" class="ptabs" style="margin-bottom:12px"></div>
 <div class="twrap" style="margin-bottom:16px"><table class="ptable">
 <thead><tr><th>Fecha</th><th>Vehiculo</th><th>Año vehiculo</th><th>Motor</th><th>Comb.</th><th>Modelo</th><th>Precio</th><th>Pago</th><th>Ubicacion</th><th>Tecnico</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="historialBody"><tr><td colspan="12" class="loading">Cargando...</td></tr></tbody></table></div>
 <div id="resumenBody"></div>
@@ -754,14 +755,36 @@ function confirmarServicioExtra(){
     sync('Error');toast('Error: '+e.message);
   });
 }
-function mostrarResumen(){
-  document.getElementById('p0').classList.add('hidden');
-  document.getElementById('p7').classList.remove('hidden');
-  titulo('Resumen');
-  document.getElementById('historialBody').innerHTML='<tr><td colspan="11" class="loading">Cargando...</td></tr>';
-  document.getElementById('resumenBody').innerHTML='<div class="loading">Cargando...</div>';
-  cargarTurnos();
-  api('getHistorial').then(function(r){
+var mesSeleccionado=null, anioSeleccionado=null;
+var NOMBRES_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function mesesDisponibles(){
+  var arr=[];
+  var hoy=new Date();
+  for(var i=0;i<6;i++){
+    var dt=new Date(hoy.getFullYear(), hoy.getMonth()-i, 1);
+    arr.push({mes:dt.getMonth(), anio:dt.getFullYear(), label:NOMBRES_MES[dt.getMonth()]+(dt.getFullYear()!==hoy.getFullYear()?' '+dt.getFullYear():'')});
+  }
+  return arr;
+}
+function renderMesTabs(){
+  var el=document.getElementById('mesTabs');
+  if(!el)return;
+  var metas=mesesDisponibles();
+  var h='';
+  metas.forEach(function(mt){
+    var activo=(mt.mes===mesSeleccionado&&mt.anio===anioSeleccionado);
+    h+='<button class="ptab'+(activo?' active':'')+'" onclick="cambiarMesHistorial('+mt.mes+','+mt.anio+')">'+mt.label+'</button>';
+  });
+  el.innerHTML=h;
+}
+function cambiarMesHistorial(mes,anio){
+  mesSeleccionado=mes;anioSeleccionado=anio;
+  renderMesTabs();
+  cargarHistorialMes();
+}
+function cargarHistorialMes(){
+  document.getElementById('historialBody').innerHTML='<tr><td colspan="12" class="loading">Cargando...</td></tr>';
+  api('getHistorial',{mes:mesSeleccionado,anio:anioSeleccionado}).then(function(r){
     if(!r.ok){document.getElementById('historialBody').innerHTML='<tr><td colspan="12" class="err">Error al cargar</td></tr>';return;}
     serviciosCache=r.data||[];
     if(!r.data.length){document.getElementById('historialBody').innerHTML='<tr><td colspan="12" class="no-res">Sin servicios este mes</td></tr>';return;}
@@ -806,6 +829,18 @@ function mostrarResumen(){
     });
     document.getElementById('historialBody').innerHTML=h;
   }).catch(function(e){document.getElementById('historialBody').innerHTML='<tr><td colspan="12" class="err">Error: '+e.message+'</td></tr>';});
+}
+function mostrarResumen(){
+  document.getElementById('p0').classList.add('hidden');
+  document.getElementById('p7').classList.remove('hidden');
+  titulo('Resumen');
+  var hoyD=new Date();
+  mesSeleccionado=hoyD.getMonth();
+  anioSeleccionado=hoyD.getFullYear();
+  renderMesTabs();
+  document.getElementById('resumenBody').innerHTML='<div class="loading">Cargando...</div>';
+  cargarTurnos();
+  cargarHistorialMes();
   api('getResumen').then(function(r){
     if(!r.ok){document.getElementById('resumenBody').innerHTML='<div class="err">Error al cargar</div>';return;}
     var extraTxt=[];
@@ -1044,7 +1079,7 @@ function eliminarServicioClick(fila){
   if(!confirm('Seguro que queres eliminar este servicio? Esta accion no se puede deshacer.'))return;
   sync('Eliminando...');
   api('eliminarServicio',{fila:fila}).then(function(r){
-    if(r.ok){sync('Sincronizado');toast('Servicio eliminado');mostrarResumen();}
+    if(r.ok){sync('Sincronizado');toast('Servicio eliminado');cargarHistorialMes();}
     else{sync('Error');toast('Error al eliminar');}
   }).catch(function(e){sync('Error');toast('Error: '+e.message);});
 }
@@ -1116,7 +1151,7 @@ function confirmarEditServicio(){
       sync('Sincronizado');
       cerrarEditServOverlay();
       toast('Servicio actualizado');
-      mostrarResumen();
+      cargarHistorialMes();
     }else{sync('Error');toast('Error al guardar');}
   }).catch(function(e){
     confirmandoEdit=false;

@@ -815,7 +815,7 @@ function mostrarResumen(){
     h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">ULTIMOS 30 DIAS</div><div style="font-size:36px;font-weight:700">'+r.semana+'</div><div style="font-size:12px;color:#888">servicios</div>'+extraHtml30+'</div>';
     h+='</div>';
     h+='<div style="display:flex;gap:12px;margin-bottom:16px">';
-    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">SCRAP 10 DIAS</div><div style="font-size:36px;font-weight:700;color:#7c3aed">'+r.scrap10+'</div><div style="font-size:12px;color:#888">baterias recibidas</div></div>';
+    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">SCRAP 10 DIAS</div><div style="font-size:36px;font-weight:700;color:#7c3aed">'+r.scrap10+'</div><div style="font-size:12px;color:#888">baterias recibidas</div><button style="margin-top:8px;background:transparent;border:1px solid #ddd;border-radius:8px;padding:6px 12px;font-size:12px;color:#7c3aed;font-weight:600;cursor:pointer" onclick="reiniciarScrap()">&#8635; Reiniciar contador</button></div>';
     h+='</div>';
     h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por tecnico (30 dias)</div>';
     Object.keys(r.porTecnico).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+r.porTecnico[k]+'</span></div>';});
@@ -1116,6 +1116,15 @@ function confirmarEditServicio(){
     if(btnE){btnE.disabled=false;btnE.textContent='Guardar cambios';}
     sync('Error');toast('Error: '+e.message);
   });
+}
+
+function reiniciarScrap(){
+  if(!confirm('Reiniciar el contador de scrap a 0? Se va a volver a contar desde ahora.'))return;
+  sync('Guardando...');
+  api('resetScrap').then(function(r){
+    if(r.ok){sync('Sincronizado');toast('Contador de scrap reiniciado');mostrarResumen();}
+    else{sync('Error');toast('Error al reiniciar');}
+  }).catch(function(e){sync('Error');toast('Error: '+e.message);});
 }
 
 cargar();

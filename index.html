@@ -168,7 +168,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <div id="turnosMini"><div class="loading" style="padding:1rem">Cargando...</div></div>
 </div>
 <div class="twrap" style="margin-bottom:16px"><table class="ptable">
-<thead><tr><th>Fecha</th><th>Vehiculo</th><th>Año vehiculo</th><th>Motor</th><th>Comb.</th><th>Modelo</th><th>Precio</th><th>Pago</th><th>Ubicacion</th><th>Tecnico</th><th>Estado</th></tr></thead><tbody id="historialBody"><tr><td colspan="11" class="loading">Cargando...</td></tr></tbody></table></div>
+<thead><tr><th>Fecha</th><th>Vehiculo</th><th>Año vehiculo</th><th>Motor</th><th>Comb.</th><th>Modelo</th><th>Precio</th><th>Pago</th><th>Ubicacion</th><th>Tecnico</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="historialBody"><tr><td colspan="12" class="loading">Cargando...</td></tr></tbody></table></div>
 <div id="resumenBody"></div>
 </div>
 <div id="p8" class="hidden">
@@ -254,6 +254,41 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <div style="display:flex;gap:8px;margin-top:8px">
 <button class="bp" onclick="confirmarServicioExtra()">Confirmar</button>
 <button class="bs" onclick="cerrarExtraOverlay()">Cancelar</button>
+</div>
+</div>
+</div>
+<div id="editServOverlay" class="hidden col-overlay">
+<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
+<div style="font-size:19px;font-weight:700;margin-bottom:14px">Editar servicio</div>
+<div class="gfield"><label>Vehiculo</label><input type="text" id="editVehiculo"/></div>
+<div class="gfield"><label>Año vehiculo</label><input type="text" id="editAnio"/></div>
+<div class="gfield"><label>Motor</label><input type="text" id="editMotor"/></div>
+<div class="gfield"><label>Combustible</label><input type="text" id="editCombustible"/></div>
+<div class="gfield"><label>Modelo bateria</label><input type="text" id="editModelo"/></div>
+<div class="gfield"><label>Precio</label><input type="text" id="editPrecio"/></div>
+<div class="gfield"><label>Forma de pago</label>
+<div style="display:flex;gap:8px" id="editPagoBtns">
+<button type="button" class="bs" onclick="setEditPago('Efectivo',this)" style="flex:1">Efectivo</button>
+<button type="button" class="bs" onclick="setEditPago('Transferencia',this)" style="flex:1">Transferencia</button>
+<button type="button" class="bs" onclick="setEditPago('Tarjeta',this)" style="flex:1">Tarjeta</button>
+</div>
+</div>
+<div class="gfield"><label>Ubicacion</label>
+<div style="display:flex;gap:8px" id="editUbiBtns">
+<button type="button" class="bs" onclick="setEditUbi('Domicilio',this)" style="flex:1">Domicilio</button>
+<button type="button" class="bs" onclick="setEditUbi('Deposito',this)" style="flex:1">Deposito</button>
+</div>
+</div>
+<div class="gfield"><label>Tecnico</label>
+<div style="display:flex;gap:8px" id="editTecnicoBtns">
+<button type="button" class="bs" onclick="setEditTecnico('Emi',this)" style="flex:1">Emi</button>
+<button type="button" class="bs" onclick="setEditTecnico('Mario',this)" style="flex:1">Mario</button>
+<button type="button" class="bs" onclick="setEditTecnico('Mateo',this)" style="flex:1">Mateo</button>
+</div>
+</div>
+<div style="display:flex;gap:8px;margin-top:8px">
+<button class="bp" onclick="confirmarEditServicio()">Guardar cambios</button>
+<button class="bs" onclick="cerrarEditServOverlay()">Cancelar</button>
 </div>
 </div>
 </div>
@@ -720,8 +755,9 @@ function mostrarResumen(){
   document.getElementById('resumenBody').innerHTML='<div class="loading">Cargando...</div>';
   cargarTurnos();
   api('getHistorial').then(function(r){
-    if(!r.ok){document.getElementById('historialBody').innerHTML='<tr><td colspan="11" class="err">Error al cargar</td></tr>';return;}
-    if(!r.data.length){document.getElementById('historialBody').innerHTML='<tr><td colspan="11" class="no-res">Sin servicios este mes</td></tr>';return;}
+    if(!r.ok){document.getElementById('historialBody').innerHTML='<tr><td colspan="12" class="err">Error al cargar</td></tr>';return;}
+    serviciosCache=r.data||[];
+    if(!r.data.length){document.getElementById('historialBody').innerHTML='<tr><td colspan="12" class="no-res">Sin servicios este mes</td></tr>';return;}
     var h='';
     var grupos={};
     var ordenFechas=[];
@@ -757,12 +793,12 @@ function mostrarResumen(){
         if(arrLista)extrasTxtDia.push(arrLista+' arranque'+(arrLista===1?'':'s'));
         if(cargLista)extrasTxtDia.push(cargLista+' carga'+(cargLista===1?'':'s'));
         if(extrasTxtDia.length)etiquetaDia+=' - '+extrasTxtDia.join(', ');
-        h+='<tr class="dia-summary" style="cursor:pointer" onclick="toggleDia(\''+gid+'\')"><td colspan="11" style="padding:14px 8px;background:#991b1b"><span style="display:flex;align-items:center;gap:10px"><span id="'+gid+'-icon" style="color:#fff;font-size:13px">&#9656;</span><span style="color:#fff;font-weight:700;font-size:15px">'+fmtFecha(fecha)+'</span><span style="background:#fff;color:#991b1b;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;margin-left:auto">'+etiquetaDia+'</span></span></td></tr>';
+        h+='<tr class="dia-summary" style="cursor:pointer" onclick="toggleDia(\''+gid+'\')"><td colspan="12" style="padding:14px 8px;background:#991b1b"><span style="display:flex;align-items:center;gap:10px"><span id="'+gid+'-icon" style="color:#fff;font-size:13px">&#9656;</span><span style="color:#fff;font-weight:700;font-size:15px">'+fmtFecha(fecha)+'</span><span style="background:#fff;color:#991b1b;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;margin-left:auto">'+etiquetaDia+'</span></span></td></tr>';
         lista.forEach(function(s){h+=filaServicio(s,gid);});
       }
     });
     document.getElementById('historialBody').innerHTML=h;
-  }).catch(function(e){document.getElementById('historialBody').innerHTML='<tr><td colspan="11" class="err">Error: '+e.message+'</td></tr>';});
+  }).catch(function(e){document.getElementById('historialBody').innerHTML='<tr><td colspan="12" class="err">Error: '+e.message+'</td></tr>';});
   api('getResumen').then(function(r){
     if(!r.ok){document.getElementById('resumenBody').innerHTML='<div class="err">Error al cargar</div>';return;}
     var extraTxt=[];
@@ -824,8 +860,10 @@ function filaServicio(s,hiddenClass){
   var bg=pagado?'#dcfce7':'#fee2e2';
   var col=pagado?'#166534':'#991b1b';
   var label=pagado?'PAGADO':'NO PAGADO';
-  return '<tr'+clsAttr+styleAttr+'>'+td+fmtFecha(s.fecha)+'</td>'+td+s.vehiculo+'</td>'+td+(s.anio_vehiculo||'')+'</td>'+td+safeVal(s.motor)+'</td>'+td+s.combustible+'</td>'+td+s.modelo_bateria+'</td>'+td+'$'+formatMoney(s.precio)+'</td>'+td+s.forma_pago+'</td>'+td+s.ubicacion+'</td>'+td+s.tecnico+'</td>'+td+'<button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago('+s.fila+',\''+s.estado_pago+'\',this)">'+label+'</button></td></tr>';
+  var accCell=td+'<div style="display:flex;gap:6px"><button style="width:28px;height:28px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#444;font-size:13px;cursor:pointer" title="Editar" onclick=\'editarServicioClick('+s.fila+')\'>&#9998;</button><button style="width:28px;height:28px;border-radius:7px;border:none;background:#fee2e2;color:#991b1b;font-size:13px;cursor:pointer" title="Eliminar" onclick="eliminarServicioClick('+s.fila+')">&#10005;</button></div></td>';
+  return '<tr'+clsAttr+styleAttr+' data-fila="'+s.fila+'">'+td+fmtFecha(s.fecha)+'</td>'+td+s.vehiculo+'</td>'+td+(s.anio_vehiculo||'')+'</td>'+td+safeVal(s.motor)+'</td>'+td+s.combustible+'</td>'+td+s.modelo_bateria+'</td>'+td+'$'+formatMoney(s.precio)+'</td>'+td+s.forma_pago+'</td>'+td+s.ubicacion+'</td>'+td+s.tecnico+'</td>'+td+'<button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago('+s.fila+',\''+s.estado_pago+'\',this)">'+label+'</button></td>'+accCell+'</tr>';
 }
+var serviciosCache=[];
 function toggleDia(id){
   var filas=document.querySelectorAll('.'+id);
   var icon=document.getElementById(id+'-icon');
@@ -893,7 +931,6 @@ function renderTurnosMini(){
     if(t.vehiculo)infoParts.push('<b>'+t.vehiculo+'</b>');
     if(t.cliente)infoParts.push(t.cliente);
     if(t.direccion)infoParts.push(t.direccion);
-    if(t.telefono)infoParts.push(t.telefono);
     if(t.precio)infoParts.push('<b style="color:#166534">$'+formatMoney(t.precio)+'</b>');
     var infoTxt=infoParts.join(' · ')||'-';
     h+='<div class="tmini">';
@@ -993,6 +1030,91 @@ function confirmarTurno(){
     confirmandoTurno=false;
     if(btnT){btnT.disabled=false;btnT.textContent='Guardar turno';}
     toast('Error: '+e.message);
+  });
+}
+
+function eliminarServicioClick(fila){
+  if(!confirm('Seguro que queres eliminar este servicio? Esta accion no se puede deshacer.'))return;
+  sync('Eliminando...');
+  api('eliminarServicio',{fila:fila}).then(function(r){
+    if(r.ok){sync('Sincronizado');toast('Servicio eliminado');mostrarResumen();}
+    else{sync('Error');toast('Error al eliminar');}
+  }).catch(function(e){sync('Error');toast('Error: '+e.message);});
+}
+
+var editFila=null,editPago='',editUbi='',editTecnico='';
+function editarServicioClick(fila){
+  var s=serviciosCache.filter(function(x){return x.fila===fila;})[0];
+  if(!s){toast('No se encontro el servicio');return;}
+  editFila=fila;
+  editPago=s.forma_pago||'';editUbi=s.ubicacion||'';editTecnico=s.tecnico||'';
+  document.getElementById('editVehiculo').value=s.vehiculo||'';
+  document.getElementById('editAnio').value=s.anio_vehiculo||'';
+  document.getElementById('editMotor').value=s.motor||'';
+  document.getElementById('editCombustible').value=s.combustible||'';
+  document.getElementById('editModelo').value=s.modelo_bateria||'';
+  document.getElementById('editPrecio').value=s.precio||'';
+  document.querySelectorAll('#editPagoBtns .bs').forEach(function(b){
+    b.style.background=b.textContent===editPago?'#111':'transparent';
+    b.style.color=b.textContent===editPago?'#fff':'#444';
+  });
+  document.querySelectorAll('#editUbiBtns .bs').forEach(function(b){
+    b.style.background=b.textContent===editUbi?'#111':'transparent';
+    b.style.color=b.textContent===editUbi?'#fff':'#444';
+  });
+  document.querySelectorAll('#editTecnicoBtns .bs').forEach(function(b){
+    b.style.background=b.textContent===editTecnico?'#111':'transparent';
+    b.style.color=b.textContent===editTecnico?'#fff':'#444';
+  });
+  document.getElementById('editServOverlay').classList.remove('hidden');
+}
+function cerrarEditServOverlay(){document.getElementById('editServOverlay').classList.add('hidden');}
+function setEditPago(v,btn){
+  editPago=v;
+  document.querySelectorAll('#editPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  btn.style.background='#111';btn.style.color='#fff';
+}
+function setEditUbi(v,btn){
+  editUbi=v;
+  document.querySelectorAll('#editUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  btn.style.background='#111';btn.style.color='#fff';
+}
+function setEditTecnico(v,btn){
+  editTecnico=v;
+  document.querySelectorAll('#editTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  btn.style.background='#111';btn.style.color='#fff';
+}
+var confirmandoEdit=false;
+function confirmarEditServicio(){
+  if(confirmandoEdit)return;
+  confirmandoEdit=true;
+  var btnE=document.querySelector('#editServOverlay .bp');
+  if(btnE){btnE.disabled=true;btnE.textContent='Guardando...';}
+  sync('Guardando...');
+  api('actualizarServicioCompleto',{
+    fila:editFila,
+    vehiculo:document.getElementById('editVehiculo').value.trim(),
+    anio_vehiculo:document.getElementById('editAnio').value.trim(),
+    motor:document.getElementById('editMotor').value.trim(),
+    combustible:document.getElementById('editCombustible').value.trim(),
+    modelo_bateria:document.getElementById('editModelo').value.trim(),
+    precio:document.getElementById('editPrecio').value.trim(),
+    forma_pago:editPago,
+    ubicacion:editUbi,
+    tecnico:editTecnico
+  }).then(function(r){
+    confirmandoEdit=false;
+    if(btnE){btnE.disabled=false;btnE.textContent='Guardar cambios';}
+    if(r.ok){
+      sync('Sincronizado');
+      cerrarEditServOverlay();
+      toast('Servicio actualizado');
+      mostrarResumen();
+    }else{sync('Error');toast('Error al guardar');}
+  }).catch(function(e){
+    confirmandoEdit=false;
+    if(btnE){btnE.disabled=false;btnE.textContent='Guardar cambios';}
+    sync('Error');toast('Error: '+e.message);
   });
 }
 

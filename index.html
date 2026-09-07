@@ -75,7 +75,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 .gtabs{display:flex;gap:4px;margin-bottom:12px;background:#e5e5e5;padding:4px;border-radius:10px}
 .gtab{flex:1;text-align:center;padding:9px;font-size:14px;border-radius:7px;cursor:pointer;border:none;background:transparent;color:#666}
 .gtab.active{background:#fff;color:#111;font-weight:600}
-.col-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.col-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem}
 .col-overlay.hidden{display:none}
 .tmini{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid #f0f0f0}
 .tmini:last-child{border-bottom:none}
@@ -205,7 +205,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 </div>
 <div id="colOverlay" class="hidden col-overlay">
-<div style="background:#fff;border-radius:20px 20px 0 0;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
+<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px">Datos de la colocación</div>
 <div class="gfield"><label>Fecha</label><input type="date" id="colFecha"/></div>
 <div class="gfield"><label>Vehiculo</label><input type="text" id="colVehiculo" placeholder="Ej: Corolla 2018"/></div>
@@ -583,6 +583,7 @@ function rMod(){
     h+='<div class="mc"><div class="mh"><div class="mn">'+m.nombre+badgeSSmod+'</div><span class="badge '+bc(s)+'">'+bl(s)+'</span></div>';
     h+='<div class="sr"><span class="sn">'+s+'</span><span class="sl">Baterias<br>Disponibles</span></div>';
     h+='<div class="acts"><button class="bp" onclick="abrirColocacion(\''+m.id+'\',\''+m.codigo+'\')"'+(s===0?' disabled':'')+'>- RESTAR UNA</button><button class="bs" onclick="tRep(\''+m.id+'\')">+ SUMAR UNA</button></div>';
+    h+='<button class="bs" style="margin-top:8px;width:100%;font-size:13px;color:#991b1b;border-color:#fee2e2"'+(s===0?' disabled':'')+' onclick="restarSinRegistrar(\''+m.id+'\')">Restar sin registrar servicio (bateria dañada / error)</button>';
     h+='<div class="rp" id="r'+m.id+'"><div style="font-size:13px;color:#888;margin-bottom:4px">Cuantas unidades agregas?</div>';
     h+='<div class="qr"><button class="qb" onclick="chQ(\''+m.id+'\',-1)">-</button><span class="qv" id="q'+m.id+'">1</span><button class="qb" onclick="chQ(\''+m.id+'\',1)">+</button></div>';
     h+='<div style="display:flex;gap:8px"><button class="bp" onclick="sumar(\''+m.id+'\')">Confirmar</button><button class="bs" onclick="tRep(\''+m.id+'\')">Cancelar</button></div></div></div>';
@@ -590,6 +591,12 @@ function rMod(){
   el.innerHTML=h;
 }
 function restar(id){var m=datos.filter(function(x){return x.id===id;})[0];if(!m||m[cam.c]===0)return;m[cam.c]--;guardar(id,cam.c,m[cam.c]);rMod();toast('- '+m.nombre+' quedan '+m[cam.c]);}
+function restarSinRegistrar(id){
+  var m=datos.filter(function(x){return x.id===id;})[0];
+  if(!m||m[cam.c]===0)return;
+  if(!confirm('Restar 1 unidad de '+m.nombre+' sin registrar un servicio?'))return;
+  restar(id);
+}
 function tRep(id){var p=document.getElementById('r'+id);if(!p)return;var o=p.classList.contains('open');document.querySelectorAll('.rp.open').forEach(function(x){x.classList.remove('open');});if(!o){p.classList.add('open');qty[id]=1;document.getElementById('q'+id).textContent=1;}}
 function chQ(id,d){qty[id]=Math.max(1,(qty[id]||1)+d);document.getElementById('q'+id).textContent=qty[id];}
 function sumar(id){var m=datos.filter(function(x){return x.id===id;})[0];if(!m)return;var q=qty[id]||1;m[cam.c]+=q;guardar(id,cam.c,m[cam.c]);document.getElementById('r'+id).classList.remove('open');rMod();toast('+'+q+' '+m.nombre+' stock: '+m[cam.c]);}

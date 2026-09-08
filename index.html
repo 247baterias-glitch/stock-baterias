@@ -215,6 +215,10 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <div class="gfield"><label>Año vehiculo</label><input type="text" id="colAnio" placeholder="Ej: 2018"/></div>
 <div class="gfield"><label>Motor</label><input type="text" id="colMotor" placeholder="Ej: 1.8"/></div>
 <div class="gfield"><label>Combustible</label><input type="text" id="colCombustible" placeholder="Ej: Nafta, Diesel, GNC..."/></div>
+<div class="gfield"><label>Dominio (patente)</label><input type="text" id="colDominio" placeholder="Ej: AF129EQ"/></div>
+<div class="gfield"><label>Carga alternador (opcional)</label><input type="text" id="colCargaAlternador" placeholder="Ej: 14.5"/></div>
+<div class="gfield"><label>Vigencia garantia</label><input type="text" id="colVigencia" value="12 meses"/></div>
+<div class="gfield"><label>Telefono cliente (opcional, para enviar garantia)</label><input type="text" id="colTelefonoCliente" placeholder="Ej: 1123456789"/></div>
 <div class="gfield"><label>Precio</label><input type="text" id="colPrecio" placeholder="Ej: $150.000"/></div>
 <div class="gfield"><label>Forma de pago</label>
 <div style="display:flex;gap:8px" id="colPagoBtns">
@@ -619,6 +623,10 @@ function abrirColocacion(id,codigo){
   document.getElementById('colFecha').value=hoyStr();
   document.getElementById('colMotor').value='';
   document.getElementById('colCombustible').value='';
+  document.getElementById('colDominio').value='';
+  document.getElementById('colCargaAlternador').value='';
+  document.getElementById('colVigencia').value='12 meses';
+  document.getElementById('colTelefonoCliente').value='';
   document.getElementById('colPrecio').value='';
   document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
   document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
@@ -646,6 +654,10 @@ function confirmarColocacion(){
   var anio=document.getElementById('colAnio').value.trim();
   var motor=document.getElementById('colMotor').value.trim();
   var combustible=document.getElementById('colCombustible').value.trim();
+  var dominio=document.getElementById('colDominio').value.trim();
+  var cargaAlternador=document.getElementById('colCargaAlternador').value.trim();
+  var vigencia=document.getElementById('colVigencia').value.trim()||'12 meses';
+  var telefonoCliente=document.getElementById('colTelefonoCliente').value.trim();
   var precio=document.getElementById('colPrecio').value.trim();
   if(!vehiculo){toast('Completa el vehiculo');return;}
   if(!anio){toast('Completa el anio del vehiculo');return;}
@@ -659,6 +671,8 @@ function confirmarColocacion(){
   var btnConfirmar=document.querySelector('#colOverlay .bp');
   if(btnConfirmar){btnConfirmar.disabled=true;btnConfirmar.textContent='Guardando...';}
   sync('Guardando...');
+  var modeloParaGarantia=m.codigo||m.nombre;
+  var marcaParaGarantia=m.marca||'';
   api('registrarColocacion',{
     id:colId,campo:cam.c,valor:nuevoStock,
     fecha:fecha,
@@ -666,11 +680,15 @@ function confirmarColocacion(){
     anio_vehiculo:anio,
     motor:motor,
     combustible:combustible,
-    modelo_bateria:m.codigo||m.nombre,
+    modelo_bateria:modeloParaGarantia,
     precio:precio,
     forma_pago:colPago,
     ubicacion:colUbi,
-    tecnico:cam.n
+    tecnico:cam.n,
+    dominio:dominio,
+    carga_alternador:cargaAlternador,
+    vigencia:vigencia,
+    telefono_cliente:telefonoCliente
   }).then(function(r){
     confirmandoColocacion=false;
     if(btnConfirmar){btnConfirmar.disabled=false;btnConfirmar.textContent='Confirmar';}
@@ -680,6 +698,12 @@ function confirmarColocacion(){
       cerrarColOverlay();
       rMod();
       toast('- '+m.nombre+' quedan '+m[cam.c]);
+      generarGarantiaClick({
+        fecha:fecha,vehiculo:vehiculo,anio_vehiculo:anio,dominio:dominio,
+        bateria:marcaParaGarantia,modelo_bateria:modeloParaGarantia,
+        vigencia:vigencia,combustible:combustible,carga_alternador:cargaAlternador,
+        telefono_cliente:telefonoCliente
+      });
     }else{
       sync('Error');toast('Error al guardar');
     }
@@ -1223,6 +1247,38 @@ function reiniciarScrap(){
   }).catch(function(e){sync('Error');toast('Error: '+e.message);});
 }
 
+function generarGarantiaClick(datosGarantia){
+  toast('Generando garantia PDF...');
+  api('generarGarantia',datosGarantia).then(function(r){
+    if(r.ok&&r.url){
+      mostrarResultadoGarantia(r.url,datosGarantia.telefono_cliente);
+    }else{
+      toast('No se pudo generar la garantia: '+(r.error||'error desconocido'));
+    }
+  }).catch(function(e){
+    toast('Error al generar garantia: '+e.message);
+  });
+}
+function mostrarResultadoGarantia(url,telefono){
+  var wa='';
+  if(telefono){
+    var limpio=telefono.replace(/[^0-9]/g,'');
+    if(limpio.length<=10)limpio='549'+limpio;
+    wa='https://wa.me/'+limpio+'?text='+encodeURIComponent('Hola! Te paso el certificado de garantia de tu bateria: '+url);
+  }
+  var h='<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:420px">';
+  h+='<div style="font-size:18px;font-weight:700;margin-bottom:12px">Garantia generada</div>';
+  h+='<div style="display:flex;flex-direction:column;gap:8px">';
+  h+='<a href="'+url+'" target="_blank" class="bp" style="text-decoration:none;text-align:center;display:block">Ver / Descargar PDF</a>';
+  if(wa)h+='<a href="'+wa+'" target="_blank" class="bp" style="text-decoration:none;text-align:center;display:block;background:#166534">Enviar por WhatsApp</a>';
+  h+='<button class="bs" onclick="document.getElementById(\'garantiaResultOverlay\').remove()">Cerrar</button>';
+  h+='</div></div>';
+  var overlay=document.createElement('div');
+  overlay.id='garantiaResultOverlay';
+  overlay.className='col-overlay';
+  overlay.innerHTML=h;
+  document.body.appendChild(overlay);
+}
 cargar();
 cargarAlertaReservados();
 </script>

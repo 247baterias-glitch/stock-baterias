@@ -1309,6 +1309,19 @@ function mostrarResultadoGarantia(url,telefono){
 }
 cargar();
 cargarAlertaReservados();
+document.addEventListener('keydown',function(ev){
+  if(ev.key!=='Escape')return;
+  var garantiaOv=document.getElementById('garantiaResultOverlay');
+  if(garantiaOv){garantiaOv.remove();return;}
+  var colOv=document.getElementById('colOverlay');
+  if(colOv&&!colOv.classList.contains('hidden')){cerrarColOverlay();return;}
+  var extraOv=document.getElementById('extraOverlay');
+  if(extraOv&&!extraOv.classList.contains('hidden')){cerrarExtraOverlay();return;}
+  var turnoOv=document.getElementById('turnoOverlay');
+  if(turnoOv&&!turnoOv.classList.contains('hidden')){cerrarTurnoOverlay();return;}
+  var editOv=document.getElementById('editServOverlay');
+  if(editOv&&!editOv.classList.contains('hidden')){cerrarEditServOverlay();return;}
+});
 </script>
 </body>
 </html>

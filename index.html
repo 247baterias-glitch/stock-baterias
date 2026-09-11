@@ -180,6 +180,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <button class="card" onclick="mostrarStock()"><div class="icon">&#128663;</div><div class="ci"><h2>Colocacion de bateria</h2><p>Elegir camioneta, marca y modelo</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="abrirTipoExtra('Arranque')"><div class="icon" style="background:#fff7ed">&#9889;</div><div class="ci"><h2>Arranque</h2><p>Servicio de arranque con arrancador</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="abrirTipoExtra('Carga de bateria')"><div class="icon" style="background:#dcfce7">&#128267;</div><div class="ci"><h2>Carga de bateria</h2><p>Servicio de carga de bateria</p></div><span class="arr">&#8250;</span></button>
+<button class="card" onclick="abrirTipoExtra('Visita tecnica')"><div class="icon" style="background:#ede9fe">&#128295;</div><div class="ci"><h2>Visita tecnica</h2><p>Revision sin cambio de bateria - $28.000</p></div><span class="arr">&#8250;</span></button>
 </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -724,7 +725,7 @@ function abrirExtraOverlay(){
   document.getElementById('extraTitulo').textContent='Datos del servicio: '+tipoExtra;
   document.getElementById('extraFecha').value=hoyStr();
   document.getElementById('extraVehiculo').value='';
-  document.getElementById('extraPrecio').value='';
+  document.getElementById('extraPrecio').value=(tipoExtra==='Visita tecnica')?'28000':'';
   document.querySelectorAll('#extraPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
   document.querySelectorAll('#extraUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
   confirmandoExtra=false;
@@ -842,14 +843,16 @@ function cargarHistorialMes(){
         lista.forEach(function(s){h+=filaServicio(s);});
       }else{
         var gid='sum-'+fecha.replace(/-/g,'');
-        var extrasLista=lista.filter(function(s){return s.modelo_bateria==='Arranque'||s.modelo_bateria==='Carga de bateria';});
+        var extrasLista=lista.filter(function(s){return s.modelo_bateria==='Arranque'||s.modelo_bateria==='Carga de bateria'||s.modelo_bateria==='Visita tecnica';});
         var colocLista=lista.length-extrasLista.length;
         var arrLista=lista.filter(function(s){return s.modelo_bateria==='Arranque';}).length;
         var cargLista=lista.filter(function(s){return s.modelo_bateria==='Carga de bateria';}).length;
+        var visLista=lista.filter(function(s){return s.modelo_bateria==='Visita tecnica';}).length;
         var etiquetaDia=colocLista+' servicio'+(colocLista===1?'':'s');
         var extrasTxtDia=[];
         if(arrLista)extrasTxtDia.push(arrLista+' arranque'+(arrLista===1?'':'s'));
         if(cargLista)extrasTxtDia.push(cargLista+' carga'+(cargLista===1?'':'s'));
+        if(visLista)extrasTxtDia.push(visLista+' visita tecnica'+(visLista===1?'':'s'));
         if(extrasTxtDia.length)etiquetaDia+=' - '+extrasTxtDia.join(', ');
         h+='<tr class="dia-summary" style="cursor:pointer" onclick="toggleDia(\''+gid+'\')"><td colspan="12" style="padding:14px 8px;background:#991b1b"><span style="display:flex;align-items:center;gap:10px"><span id="'+gid+'-icon" style="color:#fff;font-size:13px">&#9656;</span><span style="color:#fff;font-weight:700;font-size:15px">'+fmtFecha(fecha)+'</span><span style="background:#fff;color:#991b1b;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;margin-left:auto">'+etiquetaDia+'</span></span></td></tr>';
         lista.forEach(function(s){h+=filaServicio(s,gid);});
@@ -875,10 +878,12 @@ function mostrarResumen(){
     var extraTxt=[];
     if(r.hoyArranque)extraTxt.push(r.hoyArranque+' arranque'+(r.hoyArranque===1?'':'s'));
     if(r.hoyCarga)extraTxt.push(r.hoyCarga+' carga'+(r.hoyCarga===1?'':'s')+' de bateria');
+    if(r.hoyVisita)extraTxt.push(r.hoyVisita+' visita tecnica'+(r.hoyVisita===1?'':'s'));
     var extraHtml=extraTxt.length?'<div style="font-size:12px;color:#c2410c;font-weight:600;margin-top:4px">- '+extraTxt.join(', ')+'</div>':'';
     var extraTxt30=[];
     if(r.semanaArranque)extraTxt30.push(r.semanaArranque+' arranque'+(r.semanaArranque===1?'':'s'));
     if(r.semanaCarga)extraTxt30.push(r.semanaCarga+' carga'+(r.semanaCarga===1?'':'s')+' de bateria');
+    if(r.semanaVisita)extraTxt30.push(r.semanaVisita+' visita tecnica'+(r.semanaVisita===1?'':'s'));
     var extraHtml30=extraTxt30.length?'<div style="font-size:12px;color:#c2410c;font-weight:600;margin-top:4px">- '+extraTxt30.join(', ')+'</div>':'';
     var h='';
     h+='<div style="display:flex;gap:12px;margin-bottom:16px">';
@@ -894,14 +899,16 @@ function mostrarResumen(){
 }
 function calcularStatsMes(lista){
   var porTecnico={}, porMarca={}, porModelo={}, modeloMarca={}, porPago={}, porPagoMonto={};
-  var totalColoc=0, totalArr=0, totalCarga=0;
+  var totalColoc=0, totalArr=0, totalCarga=0, totalVis=0;
   lista.forEach(function(s){
     var modelo=s.modelo_bateria||'Sin dato';
     var esArranque=(modelo==='Arranque');
     var esCarga=(modelo==='Carga de bateria');
-    var esExtra=esArranque||esCarga;
+    var esVisita=(modelo==='Visita tecnica');
+    var esExtra=esArranque||esCarga||esVisita;
     if(esArranque)totalArr++;
     else if(esCarga)totalCarga++;
+    else if(esVisita)totalVis++;
     else totalColoc++;
     var tec=s.tecnico||'Sin dato';
     var pago=s.forma_pago||'Sin dato';
@@ -918,7 +925,7 @@ function calcularStatsMes(lista){
     porPago[pago]=(porPago[pago]||0)+1;
     porPagoMonto[pago]=(porPagoMonto[pago]||0)+monto;
   });
-  return {totalColoc:totalColoc,totalArr:totalArr,totalCarga:totalCarga,porTecnico:porTecnico,porMarca:porMarca,porModelo:porModelo,modeloMarca:modeloMarca,porPago:porPago,porPagoMonto:porPagoMonto};
+  return {totalColoc:totalColoc,totalArr:totalArr,totalCarga:totalCarga,totalVis:totalVis,porTecnico:porTecnico,porMarca:porMarca,porModelo:porModelo,modeloMarca:modeloMarca,porPago:porPago,porPagoMonto:porPagoMonto};
 }
 function renderStatsMes(){
   var mesLabel=NOMBRES_MES[mesSeleccionado]+(anioSeleccionado!==(new Date()).getFullYear()?' '+anioSeleccionado:'');
@@ -926,6 +933,7 @@ function renderStatsMes(){
   var extraTxt=[];
   if(st.totalArr)extraTxt.push(st.totalArr+' arranque'+(st.totalArr===1?'':'s'));
   if(st.totalCarga)extraTxt.push(st.totalCarga+' carga'+(st.totalCarga===1?'':'s')+' de bateria');
+  if(st.totalVis)extraTxt.push(st.totalVis+' visita tecnica'+(st.totalVis===1?'':'s'));
   var extraHtml=extraTxt.length?'<div style="font-size:12px;color:#c2410c;font-weight:600;margin-top:4px">- '+extraTxt.join(', ')+'</div>':'';
   var totalGeneral=st.totalColoc;
   var cardTotal=document.getElementById('mesTotalCard');
@@ -969,7 +977,7 @@ function safeVal(v){if(!v)return '';if(/^\d{4}-\d{2}-\d{2}T/.test(v))return '';r
 function fmtFecha(f){var p=f.split('-');return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:f;}
 function filaServicio(s,hiddenClass){
   var pagado=s.estado_pago==='Pagado';
-  var esExtra=s.modelo_bateria==='Arranque'||s.modelo_bateria==='Carga de bateria';
+  var esExtra=s.modelo_bateria==='Arranque'||s.modelo_bateria==='Carga de bateria'||s.modelo_bateria==='Visita tecnica';
   var esTarjeta=s.forma_pago==='Tarjeta';
   var rowBg=esExtra?'#fff7ed':(esTarjeta?'#eff6ff':'');
   var styleParts=[];

@@ -170,7 +170,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <div id="mesTabs" class="ptabs" style="margin-bottom:12px"></div>
 <button class="bp" style="width:auto;padding:10px 20px;font-size:14px;margin-bottom:12px;text-transform:uppercase" onclick="mostrarTipoServicio()">Registrar servicio</button>
 <div class="twrap" style="margin-bottom:16px"><table class="ptable">
-<thead><tr><th>Fecha</th><th>Vehiculo</th><th>Año vehiculo</th><th>Motor</th><th>Comb.</th><th>Modelo</th><th>Precio</th><th>Pago</th><th>Ubicacion</th><th>Tecnico</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="historialBody"><tr><td colspan="12" class="loading">Cargando...</td></tr></tbody></table></div>
+<thead><tr><th>Fecha</th><th>Vehiculo</th><th>Año vehiculo</th><th>Motor</th><th>Comb.</th><th>Modelo</th><th>Precio</th><th>Pago</th><th>Ubicacion</th><th>Tecnico</th><th>Estado</th><th>Garantia</th><th>Acciones</th></tr></thead><tbody id="historialBody"><tr><td colspan="13" class="loading">Cargando...</td></tr></tbody></table></div>
 <div id="resumenBody"></div>
 <div id="mesStatsBody"></div>
 </div>
@@ -811,12 +811,12 @@ function cambiarMesHistorial(mes,anio){
   cargarHistorialMes();
 }
 function cargarHistorialMes(){
-  document.getElementById('historialBody').innerHTML='<tr><td colspan="12" class="loading">Cargando...</td></tr>';
+  document.getElementById('historialBody').innerHTML='<tr><td colspan="13" class="loading">Cargando...</td></tr>';
   api('getHistorial',{mes:mesSeleccionado,anio:anioSeleccionado}).then(function(r){
-    if(!r.ok){document.getElementById('historialBody').innerHTML='<tr><td colspan="12" class="err">Error al cargar</td></tr>';return;}
+    if(!r.ok){document.getElementById('historialBody').innerHTML='<tr><td colspan="13" class="err">Error al cargar</td></tr>';return;}
     serviciosCache=r.data||[];
     renderStatsMes();
-    if(!r.data.length){document.getElementById('historialBody').innerHTML='<tr><td colspan="12" class="no-res">Sin servicios este mes</td></tr>';return;}
+    if(!r.data.length){document.getElementById('historialBody').innerHTML='<tr><td colspan="13" class="no-res">Sin servicios este mes</td></tr>';return;}
     var h='';
     var grupos={};
     var ordenFechas=[];
@@ -854,12 +854,12 @@ function cargarHistorialMes(){
         if(cargLista)extrasTxtDia.push(cargLista+' carga'+(cargLista===1?'':'s'));
         if(visLista)extrasTxtDia.push(visLista+' visita tecnica'+(visLista===1?'':'s'));
         if(extrasTxtDia.length)etiquetaDia+=' - '+extrasTxtDia.join(', ');
-        h+='<tr class="dia-summary" style="cursor:pointer" onclick="toggleDia(\''+gid+'\')"><td colspan="12" style="padding:14px 8px;background:#991b1b"><span style="display:flex;align-items:center;gap:10px"><span id="'+gid+'-icon" style="color:#fff;font-size:13px">&#9656;</span><span style="color:#fff;font-weight:700;font-size:15px">'+fmtFecha(fecha)+'</span><span style="background:#fff;color:#991b1b;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;margin-left:auto">'+etiquetaDia+'</span></span></td></tr>';
+        h+='<tr class="dia-summary" style="cursor:pointer" onclick="toggleDia(\''+gid+'\')"><td colspan="13" style="padding:14px 8px;background:#991b1b"><span style="display:flex;align-items:center;gap:10px"><span id="'+gid+'-icon" style="color:#fff;font-size:13px">&#9656;</span><span style="color:#fff;font-weight:700;font-size:15px">'+fmtFecha(fecha)+'</span><span style="background:#fff;color:#991b1b;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;margin-left:auto">'+etiquetaDia+'</span></span></td></tr>';
         lista.forEach(function(s){h+=filaServicio(s,gid);});
       }
     });
     document.getElementById('historialBody').innerHTML=h;
-  }).catch(function(e){document.getElementById('historialBody').innerHTML='<tr><td colspan="12" class="err">Error: '+e.message+'</td></tr>';});
+  }).catch(function(e){document.getElementById('historialBody').innerHTML='<tr><td colspan="13" class="err">Error: '+e.message+'</td></tr>';});
 }
 function mostrarResumen(){
   document.getElementById('p0').classList.add('hidden');
@@ -990,7 +990,8 @@ function filaServicio(s,hiddenClass){
   var col=pagado?'#166534':'#991b1b';
   var label=pagado?'PAGADO':'NO PAGADO';
   var accCell=td+'<div style="display:flex;gap:6px"><button style="width:28px;height:28px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#444;font-size:13px;cursor:pointer" title="Editar" onclick=\'editarServicioClick('+s.fila+')\'>&#9998;</button><button style="width:28px;height:28px;border-radius:7px;border:none;background:#fee2e2;color:#991b1b;font-size:13px;cursor:pointer" title="Eliminar" onclick="eliminarServicioClick('+s.fila+')">&#10005;</button></div></td>';
-  return '<tr'+clsAttr+styleAttr+' data-fila="'+s.fila+'">'+td+fmtFecha(s.fecha)+'</td>'+td+s.vehiculo+'</td>'+td+(s.anio_vehiculo||'')+'</td>'+td+safeVal(s.motor)+'</td>'+td+s.combustible+'</td>'+td+s.modelo_bateria+'</td>'+td+'$'+formatMoney(s.precio)+'</td>'+td+s.forma_pago+'</td>'+td+s.ubicacion+'</td>'+td+s.tecnico+'</td>'+td+'<button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago('+s.fila+',\''+s.estado_pago+'\',this)">'+label+'</button></td>'+accCell+'</tr>';
+  var garantiaCell=esExtra?(td+'<span style="color:#ccc;font-size:12px">&mdash;</span></td>'):(td+'<button style="width:28px;height:28px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#444;font-size:13px;cursor:pointer" title="Descargar garantia" onclick=\'descargarGarantiaClick('+s.fila+')\'>&#128196;</button></td>');
+  return '<tr'+clsAttr+styleAttr+' data-fila="'+s.fila+'">'+td+fmtFecha(s.fecha)+'</td>'+td+s.vehiculo+'</td>'+td+(s.anio_vehiculo||'')+'</td>'+td+safeVal(s.motor)+'</td>'+td+s.combustible+'</td>'+td+s.modelo_bateria+'</td>'+td+'$'+formatMoney(s.precio)+'</td>'+td+s.forma_pago+'</td>'+td+s.ubicacion+'</td>'+td+s.tecnico+'</td>'+td+'<button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago('+s.fila+',\''+s.estado_pago+'\',this)">'+label+'</button></td>'+garantiaCell+accCell+'</tr>';
 }
 var serviciosCache=[];
 function toggleDia(id){
@@ -1275,6 +1276,25 @@ function reiniciarScrap(){
   }).catch(function(e){sync('Error');toast('Error: '+e.message);});
 }
 
+function descargarGarantiaClick(fila){
+  var s=serviciosCache.filter(function(x){return x.fila===fila;})[0];
+  if(!s){toast('No se encontro el servicio');return;}
+  var marca=s.modelo_bateria;
+  var m=datos.filter(function(d){return d.codigo===s.modelo_bateria;})[0];
+  if(m&&m.marca)marca=m.marca;
+  generarGarantiaClick({
+    fecha:s.fecha,
+    vehiculo:s.vehiculo,
+    anio_vehiculo:s.anio_vehiculo,
+    dominio:s.dominio,
+    bateria:marca,
+    modelo_bateria:s.modelo_bateria,
+    vigencia:s.vigencia||'12 meses',
+    combustible:s.combustible,
+    carga_alternador:s.carga_alternador,
+    telefono_cliente:s.telefono_cliente
+  });
+}
 function generarGarantiaClick(datosGarantia){
   toast('Generando garantia PDF...');
   api('generarGarantia',datosGarantia).then(function(r){

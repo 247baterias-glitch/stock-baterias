@@ -891,7 +891,7 @@ function mostrarResumen(){
     h+='<div class="mc" id="mesTotalCard" style="flex:1;text-align:center"><div class="loading" style="padding:0">Cargando...</div></div>';
     h+='</div>';
     h+='<div style="display:flex;gap:12px;margin-bottom:16px">';
-    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">SCRAP 10 DIAS</div><div style="font-size:36px;font-weight:700;color:#7c3aed">'+r.scrap10+'</div><div style="font-size:12px;color:#888">baterias recibidas</div><button style="margin-top:8px;background:transparent;border:1px solid #ddd;border-radius:8px;padding:6px 12px;font-size:12px;color:#7c3aed;font-weight:600;cursor:pointer" onclick="reiniciarScrap()">&#8635; Reiniciar contador</button></div>';
+    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">SCRAP 10 DIAS</div><div style="display:flex;align-items:center;justify-content:center;gap:14px"><button style="width:32px;height:32px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#7c3aed;font-size:18px;font-weight:700;cursor:pointer;line-height:1" onclick="ajustarScrapClick(-1)">&#8722;</button><div id="scrapCount" style="font-size:36px;font-weight:700;color:#7c3aed;min-width:44px">'+r.scrap10+'</div><button style="width:32px;height:32px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#7c3aed;font-size:18px;font-weight:700;cursor:pointer;line-height:1" onclick="ajustarScrapClick(1)">&#43;</button></div><div style="font-size:12px;color:#888;margin-top:4px">baterias recibidas</div><button style="margin-top:8px;background:transparent;border:1px solid #ddd;border-radius:8px;padding:6px 12px;font-size:12px;color:#7c3aed;font-weight:600;cursor:pointer" onclick="reiniciarScrap()">&#8635; Reiniciar contador</button></div>';
     h+='</div>';
     document.getElementById('resumenBody').innerHTML=h;
     renderStatsMes();
@@ -1249,6 +1249,23 @@ function confirmarEditServicio(){
   });
 }
 
+var ajustandoScrap=false;
+function ajustarScrapClick(delta){
+  if(ajustandoScrap)return;
+  var el=document.getElementById('scrapCount');
+  if(!el)return;
+  var actual=parseInt(el.textContent,10)||0;
+  var nuevo=actual+delta;
+  if(nuevo<0)return;
+  ajustandoScrap=true;
+  el.textContent=nuevo;
+  sync('Guardando...');
+  api('ajustarScrap',{delta:delta}).then(function(r){
+    ajustandoScrap=false;
+    if(r.ok){sync('Sincronizado');}
+    else{sync('Error');toast('Error al ajustar');el.textContent=actual;}
+  }).catch(function(e){ajustandoScrap=false;sync('Error');toast('Error: '+e.message);el.textContent=actual;});
+}
 function reiniciarScrap(){
   if(!confirm('Reiniciar el contador de scrap a 0? Se va a volver a contar desde ahora.'))return;
   sync('Guardando...');

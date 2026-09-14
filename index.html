@@ -115,6 +115,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <button class="card" onclick="mostrarBuscador()"><div class="icon orange">&#128269;</div><div class="ci"><h2>Buscador de Baterias</h2><p>Buscar por vehiculo</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarPrecios()"><div class="icon green">&#128200;</div><div class="ci"><h2>Lista de Precios</h2><p>Precios con disponibilidad</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarGarantias()"><div class="icon red">&#128220;</div><div class="ci"><h2>Garantias</h2><p>Registrar y consultar</p></div><span class="arr">&#8250;</span></button>
+<button class="card" onclick="mostrarMoto()"><div class="icon" style="background:#e0f2fe">&#127949;</div><div class="ci"><h2>Baterias Moto</h2><p>Lista de precios moto</p></div><span class="arr">&#8250;</span></button>
 </div>
 </div>
 <div id="p0load"><div class="loading">Cargando...</div></div>
@@ -190,6 +191,18 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <button class="card" onclick="abrirTipoExtra('Carga de bateria')"><div class="icon" style="background:#dcfce7">&#128267;</div><div class="ci"><h2>Carga de bateria</h2><p>Servicio de carga de bateria</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="abrirTipoExtra('Visita tecnica')"><div class="icon" style="background:#ede9fe">&#128295;</div><div class="ci"><h2>Visita tecnica</h2><p>Revision sin cambio de bateria - $28.000</p></div><span class="arr">&#8250;</span></button>
 </div>
+</div>
+<div id="p9" class="hidden">
+<button class="back" onclick="volverInicio()">&#8592; Volver</button>
+<div class="ptabs">
+<button class="ptab active" id="mtab1" onclick="cambiarMotoTab(1)">Bosch</button>
+<button class="ptab" id="mtab2" onclick="cambiarMotoTab(2)">High Power</button>
+<button class="ptab" id="mtab3" onclick="cambiarMotoTab(3)">Yuasa</button>
+</div>
+<div class="sbox"><input type="text" id="busM" placeholder="Buscar modelo..." oninput="filtrarMoto()"/></div>
+<div class="twrap"><table class="ptable">
+<thead><tr><th>Modelo</th><th>Costo</th><th>Venta (envio)</th><th style="color:#0369a1">Retiro</th></tr></thead><tbody id="motoBody"></tbody>
+</table></div>
 </div>
 <div class="toast" id="toast"></div>
 <div id="avisoOverlay" class="hidden col-overlay">
@@ -410,6 +423,128 @@ var PBARI=[
 {m:'Bari 65 12x65',l:'$65.000,00',p:'$120.000,00'},
 {m:'Bari 24kd 12x75 Cajon Largo',l:'$75.000,00',p:'$130.000,00'}
 ];
+var PBOSCH_MOTO=[
+{m:'YB4L-B (BB4L-B)',c:'25.294',v:'73.294',r:'61.294'},
+{m:'YB5L-B (BB5L-B)',c:'20.961',v:'68.961',r:'56.961'},
+{m:'12N7A-3A (BB7LB)',c:'35.900',v:'83.900',r:'71.900'},
+{m:'12N9-4B-1 (BN9-4B-1)',c:'46.045',v:'94.045',r:'82.045'},
+{m:'YB7-A (BB7-A)',c:'44.108',v:'92.108',r:'80.108'},
+{m:'YTX4L-BS (BTX4L)',c:'24.965',v:'72.965',r:'60.965'},
+{m:'YTX5L-BS (BTX5L)',c:'27.030',v:'75.030',r:'63.030'},
+{m:'YTX7A-BS (BTX7A)',c:'37.425',v:'85.425',r:'73.425'},
+{m:'YTX7L-BS (BTX7L)',c:'35.000',v:'83.000',r:'71.000'},
+{m:'YTX9-BS (BTX9)',c:'48.781',v:'96.781',r:'84.781'},
+{m:'YTX12-BS (BTX12)',c:'62.441',v:'110.441',r:'98.441'},
+{m:'YTX14-BS (BTX14)',c:'71.817',v:'119.817',r:'107.817'},
+{m:'BB16CL-B (YB16CL-B)',c:'98.791',v:'146.791',r:'134.791'}
+];
+var PHIGHPOWER_MOTO=[
+{m:'YB5L-B S/ACTXS',c:'18.664',v:'66.664',r:'54.664'},
+{m:'YB7-A S/ACT XSEP',c:'21.835',v:'69.835',r:'57.835'},
+{m:'YB7BL-A S/ACT XSEP',c:'21.835',v:'69.835',r:'57.835'},
+{m:'YB9-B S/ACT XSEP',c:'27.301',v:'75.301',r:'63.301'},
+{m:'YB9L-B S/ACT X SEP',c:'26.772',v:'74.772',r:'62.772'},
+{m:'YB12A-A S/ACT X SEP',c:'37.901',v:'85.901',r:'73.901'},
+{m:'YB12AL-A2 S/ACT X SEP',c:'37.901',v:'85.901',r:'73.901'},
+{m:'YB14L-A2 S/ACT X SEP',c:'43.095',v:'91.095',r:'79.095'},
+{m:'YT5A S/ACT X SP',c:'19.026',v:'67.026',r:'55.026'},
+{m:'YT7A S/ACT X SP',c:'23.178',v:'71.178',r:'59.178'},
+{m:'YTX7A-BS S/ACT X SP',c:'24.311',v:'72.311',r:'60.311'},
+{m:'YT9A S/ACT X SEP',c:'27.542',v:'75.542',r:'63.542'},
+{m:'YTX12-BS S/ACT X SP',c:'37.342',v:'85.342',r:'73.342'},
+{m:'YTX14-BS S/ACT X SP',c:'45.904',v:'93.904',r:'81.904'},
+{m:'YTX16-BS S/ACT X SP',c:'45.768',v:'93.768',r:'81.768'},
+{m:'YTX20L-BS S/ACT X SP',c:'55.523',v:'103.523',r:'91.523'},
+{m:'YT7B-BS S/ACT XSEP',c:'23.103',v:'71.103',r:'59.103'},
+{m:'YT9B-BS S/ACT X SEP',c:'31.740',v:'79.740',r:'67.740'},
+{m:'YT12B-BS S/ACT X SP',c:'40.030',v:'88.030',r:'76.030'},
+{m:'YTZ4V S/ACT X SP',c:'15.432',v:'63.432',r:'51.432'},
+{m:'YTZ6V S/ACT X SP',c:'18.241',v:'66.241',r:'54.241'},
+{m:'YTZ7S S/ACT X SP',c:'24.220',v:'72.220',r:'60.220'},
+{m:'YTZ10S S/ACT X SP',c:'32.465',v:'80.465',r:'68.465'},
+{m:'YTZ12S S/ACT X SEP',c:'37.433',v:'85.433',r:'73.433'},
+{m:'YTZ14S S/ACT X SEP',c:'39.562',v:'87.562',r:'75.562'},
+{m:'12N24-3 AGM LIB DE MAN',c:'77.554',v:'125.554',r:'113.554'},
+{m:'12N24-4 AGM LIB DE MAN',c:'77.554',v:'125.554',r:'113.554'}
+];
+var PYUASA_MOTO=[
+{m:'6N2-2A',c:'40.510',v:'88.510',r:'76.510'},
+{m:'6N2A-2C-3',c:'42.701',v:'90.701',r:'78.701'},
+{m:'6N4-2A',c:'25.470',v:'73.470',r:'61.470'},
+{m:'6N4-2A-4',c:'35.765',v:'83.765',r:'71.765'},
+{m:'6N4B-2A',c:'52.919',v:'100.919',r:'88.919'},
+{m:'6N6-3B',c:'30.355',v:'78.355',r:'66.355'},
+{m:'B49-6',c:'83.571',v:'131.571',r:'119.571'},
+{m:'6N11A-1B',c:'66.639',v:'114.639',r:'102.639'},
+{m:'12N5-3B',c:'34.021',v:'82.021',r:'70.021'},
+{m:'12N5.5-3B',c:'46.230',v:'94.230',r:'82.230'},
+{m:'12N5.5A-3B',c:'74.809',v:'122.809',r:'110.809'},
+{m:'12N7-3B',c:'103.987',v:'151.987',r:'139.987'},
+{m:'12N7B-3A',c:'51.161',v:'99.161',r:'87.161'},
+{m:'12N7A-3A / YB7BL-A',c:'53.484',v:'101.484',r:'89.484'},
+{m:'12N9-3B',c:'69.774',v:'117.774',r:'105.774'},
+{m:'12N9-4B-1',c:'61.228',v:'109.228',r:'97.228'},
+{m:'12N10-3B',c:'81.866',v:'129.866',r:'117.866'},
+{m:'12N12A-4A-1',c:'87.207',v:'135.207',r:'123.207'},
+{m:'12N14-3A',c:'89.984',v:'137.984',r:'125.984'},
+{m:'12N18-3',c:'145.504',v:'193.504',r:'181.504'},
+{m:'12N24-3',c:'86.269',v:'134.269',r:'122.269'},
+{m:'12N24-4',c:'86.269',v:'134.269',r:'122.269'},
+{m:'YB2.5L-C',c:'40.465',v:'88.465',r:'76.465'},
+{m:'YB3L-A',c:'47.717',v:'95.717',r:'83.717'},
+{m:'YB3L-B',c:'49.686',v:'97.686',r:'85.686'},
+{m:'YB4L-B',c:'44.852',v:'92.852',r:'80.852'},
+{m:'YB5L-B (12N5-3B)',c:'29.616',v:'77.616',r:'65.616'},
+{m:'YB7-A',c:'90.912',v:'138.912',r:'126.912'},
+{m:'YB7B-B',c:'67.233',v:'115.233',r:'103.233'},
+{m:'YB7C-A',c:'101.015',v:'149.015',r:'137.015'},
+{m:'YB9L-A2',c:'75.038',v:'123.038',r:'111.038'},
+{m:'YB9-B',c:'79.548',v:'127.548',r:'115.548'},
+{m:'YB9L-B',c:'70.129',v:'118.129',r:'106.129'},
+{m:'YB9A-A',c:'62.427',v:'110.427',r:'98.427'},
+{m:'YB10L-A2',c:'122.246',v:'170.246',r:'158.246'},
+{m:'YB10L-B2',c:'122.246',v:'170.246',r:'158.246'},
+{m:'YB12A-A',c:'98.835',v:'146.835',r:'134.835'},
+{m:'YB12AL-A2',c:'103.938',v:'151.938',r:'139.938'},
+{m:'YB12A-B',c:'98.835',v:'146.835',r:'134.835'},
+{m:'YB12C-A',c:'165.389',v:'213.389',r:'201.389'},
+{m:'YB14-B2',c:'112.667',v:'160.667',r:'148.667'},
+{m:'YB14A-A1',c:'113.338',v:'161.338',r:'149.338'},
+{m:'YB14L-A2',c:'113.338',v:'161.338',r:'149.338'},
+{m:'YB14L-B2',c:'113.338',v:'161.338',r:'149.338'},
+{m:'YB16AL-A2',c:'152.684',v:'200.684',r:'188.684'},
+{m:'YB16B-A1',c:'152.594',v:'200.594',r:'188.594'},
+{m:'YB16-B',c:'118.498',v:'166.498',r:'154.498'},
+{m:'YB16L-B',c:'112.508',v:'160.508',r:'148.508'},
+{m:'YB16CL-B',c:'144.832',v:'192.832',r:'180.832'},
+{m:'Y50-N18L-A',c:'164.635',v:'212.635',r:'200.635'},
+{m:'SY50-N18L-AT',c:'161.263',v:'209.263',r:'197.263'},
+{m:'51913-BMW',c:'173.633',v:'221.633',r:'209.633'},
+{m:'YT7B-BS (YT7B-4)',c:'151.382',v:'199.382',r:'187.382'},
+{m:'YTX7A',c:'39.263',v:'87.263',r:'75.263'},
+{m:'YT9B-BS (YT9B-4)',c:'197.977',v:'245.977',r:'233.977'},
+{m:'YT12B-BS (YT12B-4)',c:'161.826',v:'209.826',r:'197.826'},
+{m:'YT12A-BS',c:'166.345',v:'214.345',r:'202.345'},
+{m:'YTX12',c:'118.050',v:'166.050',r:'154.050'},
+{m:'YTX14',c:'127.817',v:'175.817',r:'163.817'},
+{m:'YT14B-BS (YT14B-4)',c:'229.737',v:'277.737',r:'265.737'},
+{m:'YTX20L-BS',c:'206.886',v:'254.886',r:'242.886'},
+{m:'YTB7 (YB7B-B)',c:'44.330',v:'92.330',r:'80.330'},
+{m:'YTB7L (YB7B-LA)',c:'43.310',v:'91.310',r:'79.310'},
+{m:'YTB9 (12N9-4B--1)',c:'46.638',v:'94.638',r:'82.638'},
+{m:'YT5A (YB5L-B)',c:'22.193',v:'70.193',r:'58.193'},
+{m:'YTZ4V(YTX4L-BS)',c:'27.187',v:'75.187',r:'63.187'},
+{m:'YTZ6V (YTX5L-BS)',c:'28.819',v:'76.819',r:'64.819'},
+{m:'YT7A (YTX7L-BS)',c:'39.948',v:'87.948',r:'75.948'},
+{m:'YT9A (YTX9-BS)',c:'52.807',v:'100.807',r:'88.807'},
+{m:'YTZ7S',c:'115.324',v:'163.324',r:'151.324'},
+{m:'YTZ10S',c:'160.086',v:'208.086',r:'196.086'},
+{m:'YTZ12S',c:'167.980',v:'215.980',r:'203.980'},
+{m:'YTZ14S',c:'182.508',v:'230.508',r:'218.508'},
+{m:'VISION HP12-116W (51913-BMW / YTX20LBS)',c:'46',v:'',r:'',pendiente:true},
+{m:'VISION HF 12-155W (YIX30L)',c:'77',v:'',r:'',pendiente:true},
+{m:'VISION HF 12-165W (6FM33X)',c:'91',v:'',r:'',pendiente:true}
+];
 var CAMS=[{n:'Emi',c:'stock_emi'},{n:'Mario',c:'stock_mario'},{n:'Mateo',c:'stock_mateo'},{n:'Deposito',c:'stock_deposito',dep:true}];
 var datos=[],cam=null,marca='',qty={};
 function sync(t){document.getElementById('sync').textContent=t;}
@@ -423,6 +558,25 @@ function getStockInfo(codigo){
 }
 function mostrarStock(){document.getElementById('p0').classList.add('hidden');document.getElementById('p1').classList.remove('hidden');rCams();}
 function mostrarPrecios(){document.getElementById('p0').classList.add('hidden');document.getElementById('p4').classList.remove('hidden');titulo('Lista de Precios');filtrarPrecios();}
+var motoTabActual=1;
+function mostrarMoto(){document.getElementById('p0').classList.add('hidden');document.getElementById('p9').classList.remove('hidden');titulo('Baterias Moto');document.getElementById('busM').value='';filtrarMoto();}
+function cambiarMotoTab(n){
+  motoTabActual=n;[1,2,3].forEach(function(i){document.getElementById('mtab'+i).classList.toggle('active',i===n);});
+  document.getElementById('busM').value='';filtrarMoto();
+}
+function filtrarMoto(){
+  var b=document.getElementById('busM').value.toLowerCase();
+  var lista=motoTabActual===1?PBOSCH_MOTO:motoTabActual===2?PHIGHPOWER_MOTO:PYUASA_MOTO;
+  var h='';
+  lista.filter(function(x){return x.m.toLowerCase().indexOf(b)!==-1;}).forEach(function(x){
+    if(x.pendiente){
+      h+='<tr><td><b>'+x.m+'</b><div class="stk-info" style="color:#c2410c">A confirmar (precio: '+x.c+')</div></td><td>-</td><td>-</td><td>-</td></tr>';
+    }else{
+      h+='<tr><td><b>'+x.m+'</b></td><td>$'+x.c+'</td><td class="pventa">$'+x.v+'</td><td style="color:#0369a1;font-weight:700">$'+x.r+'</td></tr>';
+    }
+  });
+  document.getElementById('motoBody').innerHTML=h||'<tr><td colspan="4" style="text-align:center;padding:1rem;color:#aaa">Sin resultados</td></tr>';
+}
 function mostrarBuscador(){
   document.getElementById('p0').classList.add('hidden');
   document.getElementById('p5').classList.remove('hidden');
@@ -439,12 +593,12 @@ function mostrarBuscador(){
 }
 function mostrarGarantias(){document.getElementById('p0').classList.add('hidden');document.getElementById('p6').classList.remove('hidden');titulo('Garantias');cambiarGTab(1);}
 function volverInicio(){
-  ['p1','p2','p3','p4','p5','p6','p7','p8'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
+  ['p1','p2','p3','p4','p5','p6','p7','p8','p9'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
   document.getElementById('p0').classList.remove('hidden');titulo('Stock Baterias');
   tipoExtra='';camExtra=null;
 }
 function mostrarTipoServicio(){
-  ['p0','p1','p2','p3','p4','p5','p6','p7'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
+  ['p0','p1','p2','p3','p4','p5','p6','p7','p9'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
   document.getElementById('p8').classList.remove('hidden');
   titulo('Registrar Servicio');
 }

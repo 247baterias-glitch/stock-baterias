@@ -91,6 +91,12 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 .tmini-actions{display:flex;gap:6px;flex-shrink:0}
 .tmini-x{width:26px;height:26px;border-radius:7px;border:1px solid #e5e5e5;background:#fff;color:#888;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .tmini-ok{width:26px;height:26px;border-radius:7px;border:none;background:#111;color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.aviso-box{margin-bottom:12px}
+.aviso{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+.aviso-icon{font-size:18px;flex-shrink:0;line-height:1.3}
+.aviso-txt{flex:1;font-size:14px;font-weight:600;color:#92400e;line-height:1.35}
+.aviso-x{width:24px;height:24px;border-radius:7px;border:none;background:transparent;color:#b45309;font-size:15px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.aviso-add{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:#fff;border:1px dashed #ddd;border-radius:12px;padding:10px;font-size:14px;font-weight:600;color:#555;cursor:pointer;margin-bottom:12px}
 </style>
 </head>
 <body>
@@ -100,6 +106,8 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 <div class="section">
 <div id="p0" class="hidden">
+<div class="aviso-box" id="avisoBox"></div>
+<button class="aviso-add" onclick="abrirNuevoAviso()">&#128276; + Nuevo aviso</button>
 <div class="grid">
 <button class="card" onclick="mostrarResumen()"><div class="icon" style="background:#ede9fe">&#128202;</div><div class="ci"><h2>Resumen</h2><p id="resumenSub">Servicios de hoy y la semana</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarTipoServicio()"><div class="icon" style="background:#fef3c7">&#128295;</div><div class="ci"><h2>Registrar Servicio</h2><p>Cargar un servicio nuevo</p></div><span class="arr">&#8250;</span></button>
@@ -184,6 +192,17 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 </div>
 <div class="toast" id="toast"></div>
+<div id="avisoOverlay" class="hidden col-overlay">
+<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
+<div style="font-size:19px;font-weight:700;margin-bottom:14px">Nuevo aviso</div>
+<div class="gfield"><label>Texto del aviso</label><input type="text" id="avTexto" placeholder="Ej: Nuevo modelo Bosch S4 60Ah ya disponible"/></div>
+<div style="font-size:13px;color:#888;margin:-4px 0 14px">Se muestra en la pantalla principal durante 4 dias y despues desaparece solo.</div>
+<div style="display:flex;gap:8px;margin-top:8px">
+<button class="bp" onclick="confirmarAviso()">Publicar aviso</button>
+<button class="bs" onclick="cerrarAvisoOverlay()">Cancelar</button>
+</div>
+</div>
+</div>
 <div id="turnoOverlay" class="hidden col-overlay">
 <div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px">Nuevo turno</div>
@@ -542,8 +561,47 @@ function cargar(){
       sync('Sincronizado');
       document.getElementById('p0load').classList.add('hidden');
       document.getElementById('p0').classList.remove('hidden');
+      cargarAvisos();
     }else{errLoad('Error al leer.');}
   }).catch(function(e){errLoad(e.message);});
+}
+function cargarAvisos(){
+  api('getAvisos').then(function(r){
+    if(r.ok)renderAvisos(r.data||[]);
+  }).catch(function(){});
+}
+function renderAvisos(lista){
+  var box=document.getElementById('avisoBox');
+  if(!box)return;
+  if(!lista.length){box.innerHTML='';return;}
+  var h='';
+  lista.forEach(function(a){
+    h+='<div class="aviso"><div class="aviso-icon">&#128276;</div><div class="aviso-txt">'+a.texto+'</div><button class="aviso-x" title="Quitar aviso" onclick="eliminarAvisoClick(\''+a.id+'\')">&#10005;</button></div>';
+  });
+  box.innerHTML=h;
+}
+function abrirNuevoAviso(){
+  document.getElementById('avTexto').value='';
+  document.getElementById('avisoOverlay').classList.remove('hidden');
+}
+function cerrarAvisoOverlay(){document.getElementById('avisoOverlay').classList.add('hidden');}
+var confirmandoAviso=false;
+function confirmarAviso(){
+  var texto=document.getElementById('avTexto').value.trim();
+  if(!texto){toast('Escribi el texto del aviso');return;}
+  if(confirmandoAviso)return;
+  confirmandoAviso=true;
+  api('crearAviso',{texto:texto}).then(function(r){
+    confirmandoAviso=false;
+    if(r.ok){cerrarAvisoOverlay();toast('Aviso publicado');cargarAvisos();}
+    else{toast('Error al publicar');}
+  }).catch(function(e){confirmandoAviso=false;toast('Error: '+e.message);});
+}
+function eliminarAvisoClick(id){
+  if(!confirm('Quitar este aviso?'))return;
+  api('eliminarAviso',{id:id}).then(function(r){
+    if(r.ok){toast('Aviso quitado');cargarAvisos();}else{toast('Error al quitar');}
+  }).catch(function(e){toast('Error: '+e.message);});
 }
 function errLoad(msg){document.getElementById('p0load').innerHTML='<div class="err">'+msg+'<button class="bp" style="margin-top:10px" onclick="cargar()">Reintentar</button></div>';sync('Error');}
 function guardar(id,campo,val){sync('Guardando...');api('actualizarStock',{id:id,campo:campo,valor:val}).then(function(){sync('Sincronizado');});}
@@ -1352,6 +1410,8 @@ document.addEventListener('keydown',function(ev){
   if(ev.key!=='Escape')return;
   var garantiaOv=document.getElementById('garantiaResultOverlay');
   if(garantiaOv){garantiaOv.remove();return;}
+  var avisoOv=document.getElementById('avisoOverlay');
+  if(avisoOv&&!avisoOv.classList.contains('hidden')){cerrarAvisoOverlay();return;}
   var colOv=document.getElementById('colOverlay');
   if(colOv&&!colOv.classList.contains('hidden')){cerrarColOverlay();return;}
   var extraOv=document.getElementById('extraOverlay');

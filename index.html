@@ -177,8 +177,10 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <div id="turnosMini"><div class="loading" style="padding:1rem">Cargando...</div></div>
 </div>
 <div id="mesTabs" class="ptabs" style="margin-bottom:12px"></div>
+<div style="text-align:center">
 <button class="bp" style="width:auto;padding:10px 20px;font-size:14px;margin-bottom:12px;text-transform:uppercase" onclick="mostrarTipoServicio()">Registrar servicio</button>
 <div id="gastoHoyBanner"></div>
+</div>
 <div class="twrap" style="margin-bottom:16px"><table class="ptable">
 <thead><tr><th>Fecha</th><th>Vehiculo</th><th>Año vehiculo</th><th>Motor</th><th>Comb.</th><th>Modelo</th><th>Precio</th><th>Pago</th><th>Ubicacion</th><th>Tecnico</th><th>Estado</th><th>Cliente</th><th>Garantia</th><th>Acciones</th></tr></thead><tbody id="historialBody"><tr><td colspan="14" class="loading">Cargando...</td></tr></tbody></table></div>
 <div id="resumenBody"></div>
@@ -1042,7 +1044,7 @@ function renderGastoHoyBanner(){
   if(!el)return;
   var v=GASTO_ADS[hoyStr()];
   if(v===undefined||v===null){el.innerHTML='';return;}
-  el.innerHTML='<div style="text-align:left;color:#1d4ed8;font-weight:700;font-size:14px;margin-bottom:12px">Google Ads HOY lleva gastado: $'+formatMoney(v)+'</div>';
+  el.innerHTML='<div style="text-align:center;color:#1d4ed8;font-weight:700;font-size:14px;margin-bottom:12px">Google Ads HOY lleva gastado: $'+formatMoney(v)+'</div>';
 }
 function cargarHistorialMes(){
   document.getElementById('historialBody').innerHTML='<tr><td colspan="14" class="loading">Cargando...</td></tr>';

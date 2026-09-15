@@ -1040,9 +1040,20 @@ function gastoAdsBadge(fecha){
 function renderGastoHoyBanner(){
   var el=document.getElementById('gastoHoyBanner');
   if(!el)return;
-  var g=GASTO_ADS[hoyStr()];
-  if(g===undefined||g===null||g===''){el.innerHTML='';return;}
-  el.innerHTML='<div style="text-align:left;color:#1d4ed8;font-weight:700;font-size:14px;margin-bottom:12px">Hoy lleva gastado: $'+formatMoney(g)+'</div>';
+  var mes=mesSeleccionado,anio=anioSeleccionado;
+  if(mes===null||mes===undefined){var hoyD=new Date();mes=hoyD.getMonth();anio=hoyD.getFullYear();}
+  var total=0,tieneDatos=false;
+  Object.keys(GASTO_ADS).forEach(function(fecha){
+    var p=fecha.split('-');
+    if(p.length!==3)return;
+    var fAnio=parseInt(p[0],10),fMes=parseInt(p[1],10)-1;
+    if(fAnio===anio&&fMes===mes){
+      var v=parseFloat(GASTO_ADS[fecha])||0;
+      total+=v;tieneDatos=true;
+    }
+  });
+  if(!tieneDatos){el.innerHTML='';return;}
+  el.innerHTML='<div style="text-align:left;color:#1d4ed8;font-weight:700;font-size:14px;margin-bottom:12px">Google Ads HOY lleva gastado: $'+formatMoney(total)+'</div>';
 }
 function cargarHistorialMes(){
   document.getElementById('historialBody').innerHTML='<tr><td colspan="14" class="loading">Cargando...</td></tr>';

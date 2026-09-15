@@ -1025,9 +1025,21 @@ function cambiarMesHistorial(mes,anio){
   renderMesTabs();
   cargarHistorialMes();
 }
+var GASTO_ADS={};
+function cargarGastoAds(){
+  return api('getGastoAds').then(function(r){
+    if(r.ok){GASTO_ADS={};(r.data||[]).forEach(function(x){GASTO_ADS[x.fecha]=x.costo;});}
+  }).catch(function(){});
+}
+function gastoAdsBadge(fecha){
+  var g=GASTO_ADS[fecha];
+  if(g===undefined||g===null||g==='')return '';
+  return '<span style="background:#1d4ed8;color:#fff;font-weight:800;font-size:13px;padding:3px 10px;border-radius:99px;margin-left:8px">$'+formatMoney(g)+' Ads</span>';
+}
 function cargarHistorialMes(){
   document.getElementById('historialBody').innerHTML='<tr><td colspan="14" class="loading">Cargando...</td></tr>';
-  api('getHistorial',{mes:mesSeleccionado,anio:anioSeleccionado}).then(function(r){
+  Promise.all([api('getHistorial',{mes:mesSeleccionado,anio:anioSeleccionado}),cargarGastoAds()]).then(function(res){
+    var r=res[0];
     if(!r.ok){document.getElementById('historialBody').innerHTML='<tr><td colspan="14" class="err">Error al cargar</td></tr>';return;}
     serviciosCache=r.data||[];
     renderStatsMes();
@@ -1055,6 +1067,10 @@ function cargarHistorialMes(){
       var lista=grupos[fecha];
       ordenarPorTecnico(lista);
       if(fecha===hoy){
+        var gastoHoyBadge=gastoAdsBadge(fecha);
+        if(gastoHoyBadge){
+          h+='<tr><td colspan="14" style="padding:10px 8px;background:#eff6ff;text-align:right">'+gastoHoyBadge+'</td></tr>';
+        }
         lista.forEach(function(s){h+=filaServicio(s);});
       }else{
         var gid='sum-'+fecha.replace(/-/g,'');
@@ -1069,7 +1085,7 @@ function cargarHistorialMes(){
         if(cargLista)extrasTxtDia.push(cargLista+' carga'+(cargLista===1?'':'s'));
         if(visLista)extrasTxtDia.push(visLista+' visita tecnica'+(visLista===1?'':'s'));
         if(extrasTxtDia.length)etiquetaDia+=' - '+extrasTxtDia.join(', ');
-        h+='<tr class="dia-summary" style="cursor:pointer" onclick="toggleDia(\''+gid+'\')"><td colspan="14" style="padding:14px 8px;background:#991b1b"><span style="display:flex;align-items:center;gap:10px"><span id="'+gid+'-icon" style="color:#fff;font-size:13px">&#9656;</span><span style="color:#fff;font-weight:700;font-size:15px">'+fmtFecha(fecha)+'</span><span style="background:#fff;color:#991b1b;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;margin-left:auto">'+etiquetaDia+'</span></span></td></tr>';
+        h+='<tr class="dia-summary" style="cursor:pointer" onclick="toggleDia(\''+gid+'\')"><td colspan="14" style="padding:14px 8px;background:#991b1b"><span style="display:flex;align-items:center;gap:10px"><span id="'+gid+'-icon" style="color:#fff;font-size:13px">&#9656;</span><span style="color:#fff;font-weight:700;font-size:15px">'+fmtFecha(fecha)+'</span><span style="background:#fff;color:#991b1b;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;margin-left:auto">'+etiquetaDia+'</span>'+gastoAdsBadge(fecha)+'</span></td></tr>';
         lista.forEach(function(s){h+=filaServicio(s,gid);});
       }
     });
@@ -1088,13 +1104,16 @@ function mostrarResumen(){
   document.getElementById('mesStatsBody').innerHTML='<div class="loading">Cargando...</div>';
   cargarTurnos();
   cargarHistorialMes();
-  api('getResumen').then(function(r){
+  Promise.all([api('getResumen'),cargarGastoAds()]).then(function(res){
+    var r=res[0];
     if(!r.ok){document.getElementById('resumenBody').innerHTML='<div class="err">Error al cargar</div>';return;}
     var extraTxt=[];
     if(r.hoyArranque)extraTxt.push(r.hoyArranque+' arranque'+(r.hoyArranque===1?'':'s'));
     if(r.hoyCarga)extraTxt.push(r.hoyCarga+' carga'+(r.hoyCarga===1?'':'s')+' de bateria');
     if(r.hoyVisita)extraTxt.push(r.hoyVisita+' visita tecnica'+(r.hoyVisita===1?'':'s'));
     var extraHtml=extraTxt.length?'<div style="font-size:12px;color:#c2410c;font-weight:600;margin-top:4px">- '+extraTxt.join(', ')+'</div>':'';
+    var gastoHoyVal=GASTO_ADS[hoyStr()];
+    var gastoHoyHtml=(gastoHoyVal!==undefined&&gastoHoyVal!==null&&gastoHoyVal!=='')?'<div style="font-size:12px;color:#1d4ed8;font-weight:700;margin-top:4px">$'+formatMoney(gastoHoyVal)+' en Ads</div>':'';
     var extraTxt30=[];
     if(r.semanaArranque)extraTxt30.push(r.semanaArranque+' arranque'+(r.semanaArranque===1?'':'s'));
     if(r.semanaCarga)extraTxt30.push(r.semanaCarga+' carga'+(r.semanaCarga===1?'':'s')+' de bateria');
@@ -1102,7 +1121,7 @@ function mostrarResumen(){
     var extraHtml30=extraTxt30.length?'<div style="font-size:12px;color:#c2410c;font-weight:600;margin-top:4px">- '+extraTxt30.join(', ')+'</div>':'';
     var h='';
     h+='<div style="display:flex;gap:12px;margin-bottom:16px">';
-    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">HOY</div><div style="font-size:36px;font-weight:700">'+r.hoy+'</div><div style="font-size:12px;color:#888">servicios</div>'+extraHtml+'</div>';
+    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">HOY</div><div style="font-size:36px;font-weight:700">'+r.hoy+'</div><div style="font-size:12px;color:#888">servicios</div>'+extraHtml+gastoHoyHtml+'</div>';
     h+='<div class="mc" id="mesTotalCard" style="flex:1;text-align:center"><div class="loading" style="padding:0">Cargando...</div></div>';
     h+='</div>';
     h+='<div style="display:flex;gap:12px;margin-bottom:16px">';

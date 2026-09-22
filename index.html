@@ -301,6 +301,21 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 </div>
 </div>
+<div id="editGarantiaOverlay" class="hidden col-overlay">
+<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
+<div style="font-size:19px;font-weight:700;margin-bottom:14px">Editar garantia</div>
+<div class="gfield"><label>Garantia (modelo bateria)</label><input type="text" id="egGarantia"/></div>
+<div class="gfield"><label>Motivo</label><input type="text" id="egMotivo"/></div>
+<div class="gfield"><label>Auto</label><input type="text" id="egAuto"/></div>
+<div class="gfield"><label>Fecha Ingreso</label><input type="date" id="egFechaIngreso"/></div>
+<div class="gfield"><label>Fecha Devolucion</label><input type="date" id="egFechaDevolucion"/></div>
+<div class="gfield"><label>Distribuidor</label><input type="text" id="egDistribuidor"/></div>
+<div style="display:flex;gap:8px;margin-top:8px">
+<button class="bp" onclick="confirmarEditGarantia()">Guardar cambios</button>
+<button class="bs" onclick="cerrarEditGarantiaOverlay()">Cancelar</button>
+</div>
+</div>
+</div>
 <div id="editServOverlay" class="hidden col-overlay">
 <div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px">Editar servicio</div>
@@ -657,6 +672,7 @@ function cargarGarantias(){
   document.getElementById('listaGarantias').innerHTML='<div class="loading">Cargando...</div>';
   api('getGarantias').then(function(r){
     if(!r||!r.ok||!r.data||!r.data.length){document.getElementById('listaGarantias').innerHTML='<div class="no-res">No hay garantias registradas</div>';return;}
+    garantiasCache=r.data;
     var h='';
     var listaOrdenada=r.data.slice().sort(function(a,b){
       var pa=a.resuelto==='RESUELTO'?1:0;
@@ -680,6 +696,10 @@ function cargarGarantias(){
       h+='<option value="RESUELTO"'+(g.resuelto==='RESUELTO'?'selected':'')+'>RESUELTO</option>';
       h+='<option value="NO RESUELTO"'+(g.resuelto==='NO RESUELTO'?'selected':'')+'>NO RESUELTO</option>';
       h+='</select></div>';
+      h+='<div style="display:flex;gap:8px;margin-top:10px">';
+      h+='<button class="bs" style="flex:1;font-size:13px;padding:8px" onclick="editarGarantiaClick(\''+g.id+'\')">&#9998; Editar</button>';
+      h+='<button class="bs" style="flex:1;font-size:13px;padding:8px;color:#991b1b;border-color:#fee2e2" onclick="eliminarGarantiaClick(\''+g.id+'\')">&#10005; Eliminar</button>';
+      h+='</div>';
       h+='</div>';
     });
     document.getElementById('listaGarantias').innerHTML=h;
@@ -689,6 +709,68 @@ function cargarGarantias(){
 }
 function cambiarEstadoGarantia(id, valor){
   api('actualizarGarantia',{id:id,campo:'resuelto',valor:valor}).then(function(){toast('Estado actualizado');});
+}
+var garantiasCache=[];
+var editGarantiaId=null;
+function editarGarantiaClick(id){
+  var g=garantiasCache.filter(function(x){return x.id===id;})[0];
+  if(!g){toast('No se encontro la garantia');return;}
+  editGarantiaId=id;
+  document.getElementById('egGarantia').value=g.garantia||'';
+  document.getElementById('egMotivo').value=g.motivo||'';
+  document.getElementById('egAuto').value=g.auto||'';
+  document.getElementById('egFechaIngreso').value=g.fecha_ingreso||'';
+  document.getElementById('egFechaDevolucion').value=g.fecha_devolucion||'';
+  document.getElementById('egDistribuidor').value=g.distribuidor||'';
+  confirmandoEditGarantia=false;
+  var btnG=document.querySelector('#editGarantiaOverlay .bp');
+  if(btnG){btnG.disabled=false;btnG.textContent='Guardar cambios';}
+  document.getElementById('editGarantiaOverlay').classList.remove('hidden');
+}
+function cerrarEditGarantiaOverlay(){document.getElementById('editGarantiaOverlay').classList.add('hidden');}
+var confirmandoEditGarantia=false;
+function confirmarEditGarantia(){
+  if(confirmandoEditGarantia)return;
+  var nuevos={
+    garantia:document.getElementById('egGarantia').value.trim(),
+    motivo:document.getElementById('egMotivo').value.trim(),
+    auto:document.getElementById('egAuto').value.trim(),
+    fecha_ingreso:document.getElementById('egFechaIngreso').value,
+    fecha_devolucion:document.getElementById('egFechaDevolucion').value,
+    distribuidor:document.getElementById('egDistribuidor').value.trim()
+  };
+  if(!nuevos.garantia||!nuevos.auto){toast('Completa Garantia y Auto');return;}
+  confirmandoEditGarantia=true;
+  var btnG=document.querySelector('#editGarantiaOverlay .bp');
+  if(btnG){btnG.disabled=true;btnG.textContent='Guardando...';}
+  var id=editGarantiaId;
+  var campos=Object.keys(nuevos);
+  function guardarSiguiente(i){
+    if(i>=campos.length){
+      confirmandoEditGarantia=false;
+      if(btnG){btnG.disabled=false;btnG.textContent='Guardar cambios';}
+      cerrarEditGarantiaOverlay();
+      toast('Garantia actualizada');
+      cargarGarantias();
+      return;
+    }
+    var campo=campos[i];
+    api('actualizarGarantia',{id:id,campo:campo,valor:nuevos[campo]}).then(function(){
+      guardarSiguiente(i+1);
+    }).catch(function(e){
+      confirmandoEditGarantia=false;
+      if(btnG){btnG.disabled=false;btnG.textContent='Guardar cambios';}
+      toast('Error: '+e.message);
+    });
+  }
+  guardarSiguiente(0);
+}
+function eliminarGarantiaClick(id){
+  if(!confirm('Seguro que queres eliminar esta garantia? Esta accion no se puede deshacer.'))return;
+  api('eliminarGarantia',{id:id}).then(function(r){
+    if(r&&r.ok){toast('Garantia eliminada');cargarGarantias();}
+    else{toast('Error al eliminar');}
+  }).catch(function(e){toast('Error: '+e.message);});
 }
 function guardarGarantiaForm(){
   var datos={
@@ -1604,6 +1686,8 @@ document.addEventListener('keydown',function(ev){
   if(turnoOv&&!turnoOv.classList.contains('hidden')){cerrarTurnoOverlay();return;}
   var editOv=document.getElementById('editServOverlay');
   if(editOv&&!editOv.classList.contains('hidden')){cerrarEditServOverlay();return;}
+  var editGarOv=document.getElementById('editGarantiaOverlay');
+  if(editGarOv&&!editGarOv.classList.contains('hidden')){cerrarEditGarantiaOverlay();return;}
 });
 </script>
 </body>

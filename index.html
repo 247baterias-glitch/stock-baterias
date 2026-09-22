@@ -137,7 +137,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 <div class="sbox"><input type="text" id="busP" placeholder="Buscar modelo..." oninput="filtrarPrecios()"/></div>
 <div class="twrap"><table class="ptable">
-<thead><tr><th>Modelo</th><th>P. Lista</th><th>P. Venta</th><th style="color:#c4b5fd">P. DEC/NOCHE/FER</th><th>Stock</th></tr></thead><tbody id="preciosBody"></tbody>
+<thead><tr><th>Modelo</th><th>P. Lista</th><th>P. Venta</th><th style="color:#166534">Venta c/IVA</th><th style="color:#c4b5fd">P. DEC/NOCHE/FER</th><th>Stock</th></tr></thead><tbody id="preciosBody"></tbody>
 </table></div>
 </div>
 <div id="p5" class="hidden">
@@ -204,7 +204,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 <div class="sbox"><input type="text" id="busM" placeholder="Buscar modelo..." oninput="filtrarMoto()"/></div>
 <div class="twrap"><table class="ptable">
-<thead><tr><th>Modelo</th><th>Costo</th><th>Venta (envio)</th><th style="color:#0369a1">Retiro</th></tr></thead><tbody id="motoBody"></tbody>
+<thead><tr><th>Modelo</th><th>Costo</th><th>Venta (envio)</th><th style="color:#166534">Venta c/IVA</th><th style="color:#0369a1">Retiro</th></tr></thead><tbody id="motoBody"></tbody>
 </table></div>
 </div>
 <div class="toast" id="toast"></div>
@@ -567,18 +567,21 @@ function cambiarMotoTab(n){
   motoTabActual=n;[1,2,3].forEach(function(i){document.getElementById('mtab'+i).classList.toggle('active',i===n);});
   document.getElementById('busM').value='';filtrarMoto();
 }
+function formatARS(n){return n.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
 function filtrarMoto(){
   var b=document.getElementById('busM').value.toLowerCase();
   var lista=motoTabActual===1?PBOSCH_MOTO:motoTabActual===2?PHIGHPOWER_MOTO:PYUASA_MOTO;
   var h='';
   lista.filter(function(x){return x.m.toLowerCase().indexOf(b)!==-1;}).forEach(function(x){
     if(x.pendiente){
-      h+='<tr><td><b>'+x.m+'</b><div class="stk-info" style="color:#c2410c">A confirmar (precio: '+x.c+')</div></td><td>-</td><td>-</td><td>-</td></tr>';
+      h+='<tr><td><b>'+x.m+'</b><div class="stk-info" style="color:#c2410c">A confirmar (precio: '+x.c+')</div></td><td>-</td><td>-</td><td>-</td><td>-</td></tr>';
     }else{
-      h+='<tr><td><b>'+x.m+'</b></td><td>$'+x.c+'</td><td class="pventa">$'+x.v+'</td><td style="color:#0369a1;font-weight:700">$'+x.r+'</td></tr>';
+      var vNum=parseFloat(String(x.v).replace(/\./g,'').replace(',','.'))||0;
+      var vIva='$'+formatARS(vNum*1.21);
+      h+='<tr><td><b>'+x.m+'</b></td><td>$'+x.c+'</td><td class="pventa">$'+x.v+'</td><td style="font-weight:700;color:#166534">'+vIva+'</td><td style="color:#0369a1;font-weight:700">$'+x.r+'</td></tr>';
     }
   });
-  document.getElementById('motoBody').innerHTML=h||'<tr><td colspan="4" style="text-align:center;padding:1rem;color:#aaa">Sin resultados</td></tr>';
+  document.getElementById('motoBody').innerHTML=h||'<tr><td colspan="5" style="text-align:center;padding:1rem;color:#aaa">Sin resultados</td></tr>';
 }
 function mostrarBuscador(){
   document.getElementById('p0').classList.add('hidden');
@@ -624,14 +627,15 @@ function filtrarPrecios(){
     var stk=si?si.txt:'Sin stock';
     var cls=si&&si.total>0?'stk-ok':'stk-no';
     var pv=parseFloat(x.p.replace(/\./g,'').replace(',','.').replace('$',''))||0;
+    var pIva=x.p==='—'?'—':'$'+formatARS(pv*1.21);
     var pn=x.p==='—'?'—':'$'+(pv+8000).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
     var esEFB=x.m.indexOf('EFB')!==-1;
     var esStartStop=x.m.indexOf('72LD')!==-1;
     var badgeEFB=esEFB?'<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
     var badgeSS=esStartStop?'<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
-    h+='<tr><td><b>'+x.m+'</b>'+badgeEFB+badgeSS+'<div class="stk-info '+cls+'">'+stk+'</div></td><td>'+x.l+'</td><td class="pventa">'+x.p+'</td><td class="pnoche">'+pn+'</td></tr>';
+    h+='<tr><td><b>'+x.m+'</b>'+badgeEFB+badgeSS+'<div class="stk-info '+cls+'">'+stk+'</div></td><td>'+x.l+'</td><td class="pventa">'+x.p+'</td><td style="font-weight:700;color:#166534">'+pIva+'</td><td class="pnoche">'+pn+'</td></tr>';
   });
-  document.getElementById('preciosBody').innerHTML=h||'<tr><td colspan="4" style="text-align:center;padding:1rem;color:#aaa">Sin resultados</td></tr>';
+  document.getElementById('preciosBody').innerHTML=h||'<tr><td colspan="5" style="text-align:center;padding:1rem;color:#aaa">Sin resultados</td></tr>';
 }
 function buscarVehiculo(){
   var b=document.getElementById('busV').value.toLowerCase().trim();

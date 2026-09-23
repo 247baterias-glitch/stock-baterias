@@ -264,6 +264,14 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <button type="button" class="bs" onclick="setColPago('Tarjeta',this)" style="flex:1">Tarjeta</button>
 </div>
 </div>
+<div class="gfield" id="colCuentaField" style="display:none"><label>Cuenta destino</label>
+<div style="display:flex;gap:8px;flex-wrap:wrap" id="colCuentaBtns">
+<button type="button" class="bs" onclick="setColCuenta('Mateo',this)" style="flex:1">Mateo</button>
+<button type="button" class="bs" onclick="setColCuenta('Mario',this)" style="flex:1">Mario</button>
+<button type="button" class="bs" onclick="setColCuenta('Natacha',this)" style="flex:1">Natacha</button>
+<button type="button" class="bs" onclick="setColCuenta('Emiliano',this)" style="flex:1">Emiliano</button>
+</div>
+</div>
 <div class="gfield"><label>Ubicacion</label>
 <div style="display:flex;gap:8px" id="colUbiBtns">
 <button type="button" class="bs" onclick="setColUbi('Domicilio',this)" style="flex:1">Domicilio</button>
@@ -288,6 +296,14 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <button type="button" class="bs" onclick="setExtraPago('Efectivo',this)" style="flex:1">Efectivo</button>
 <button type="button" class="bs" onclick="setExtraPago('Transferencia',this)" style="flex:1">Transferencia</button>
 <button type="button" class="bs" onclick="setExtraPago('Tarjeta',this)" style="flex:1">Tarjeta</button>
+</div>
+</div>
+<div class="gfield" id="extraCuentaField" style="display:none"><label>Cuenta destino</label>
+<div style="display:flex;gap:8px;flex-wrap:wrap" id="extraCuentaBtns">
+<button type="button" class="bs" onclick="setExtraCuenta('Mateo',this)" style="flex:1">Mateo</button>
+<button type="button" class="bs" onclick="setExtraCuenta('Mario',this)" style="flex:1">Mario</button>
+<button type="button" class="bs" onclick="setExtraCuenta('Natacha',this)" style="flex:1">Natacha</button>
+<button type="button" class="bs" onclick="setExtraCuenta('Emiliano',this)" style="flex:1">Emiliano</button>
 </div>
 </div>
 <div class="gfield"><label>Ubicacion</label>
@@ -336,6 +352,14 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <button type="button" class="bs" onclick="setEditPago('Efectivo',this)" style="flex:1">Efectivo</button>
 <button type="button" class="bs" onclick="setEditPago('Transferencia',this)" style="flex:1">Transferencia</button>
 <button type="button" class="bs" onclick="setEditPago('Tarjeta',this)" style="flex:1">Tarjeta</button>
+</div>
+</div>
+<div class="gfield" id="editCuentaField" style="display:none"><label>Cuenta destino</label>
+<div style="display:flex;gap:8px;flex-wrap:wrap" id="editCuentaBtns">
+<button type="button" class="bs" onclick="setEditCuenta('Mateo',this)" style="flex:1">Mateo</button>
+<button type="button" class="bs" onclick="setEditCuenta('Mario',this)" style="flex:1">Mario</button>
+<button type="button" class="bs" onclick="setEditCuenta('Natacha',this)" style="flex:1">Natacha</button>
+<button type="button" class="bs" onclick="setEditCuenta('Emiliano',this)" style="flex:1">Emiliano</button>
 </div>
 </div>
 <div class="gfield"><label>Ubicacion</label>
@@ -924,10 +948,10 @@ function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.c
 function bc(s){return s===0?'out':s<=2?'low':'ok';}
 function bl(s){return s===0?'AGOTADO - COMPRAR STOCK':s<=2?'COMPRAR STOCK':'Disponible';}
 
-var colId=null,colPago='',colUbi='';
-var tipoExtra='',camExtra=null,extraPago='',extraUbi='';
+var colId=null,colPago='',colUbi='',colCuenta='';
+var tipoExtra='',camExtra=null,extraPago='',extraUbi='',extraCuenta='';
 function abrirColocacion(id,codigo){
-  colId=id;colPago='';colUbi='';
+  colId=id;colPago='';colUbi='';colCuenta='';
   confirmandoColocacion=false;
   var btnC=document.querySelector('#colOverlay .bp');
   if(btnC){btnC.disabled=false;btnC.textContent='Confirmar';}
@@ -943,12 +967,22 @@ function abrirColocacion(id,codigo){
   document.getElementById('colPrecio').value='';
   document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
   document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  document.getElementById('colCuentaField').style.display='none';
   document.getElementById('colOverlay').classList.remove('hidden');
 }
 function cerrarColOverlay(){document.getElementById('colOverlay').classList.add('hidden');}
 function setColPago(v,btn){
   colPago=v;
   document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  btn.style.background='#111';btn.style.color='#fff';
+  var cuentaField=document.getElementById('colCuentaField');
+  if(v==='Transferencia'){cuentaField.style.display='block';}
+  else{cuentaField.style.display='none';colCuenta='';document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});}
+}
+function setColCuenta(v,btn){
+  colCuenta=v;
+  document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
   btn.style.background='#111';btn.style.color='#fff';
 }
 function setColUbi(v,btn){
@@ -978,6 +1012,7 @@ function confirmarColocacion(){
   if(!combustible){toast('Completa el combustible');return;}
   if(!precio){toast('Completa el precio');return;}
   if(!colPago){toast('Elegi la forma de pago');return;}
+  if(colPago==='Transferencia'&&!colCuenta){toast('Elegi la cuenta destino');return;}
   if(!colUbi){toast('Elegi la ubicacion');return;}
   var nuevoStock=m[cam.c]-1;
   confirmandoColocacion=true;
@@ -996,6 +1031,7 @@ function confirmarColocacion(){
     modelo_bateria:modeloParaGarantia,
     precio:precio,
     forma_pago:colPago,
+    cuenta_transferencia:colCuenta,
     ubicacion:colUbi,
     tecnico:cam.n,
     dominio:dominio,
@@ -1032,7 +1068,7 @@ function abrirTipoExtra(tipo){
   rCams();
 }
 function abrirExtraOverlay(){
-  extraPago='';extraUbi='';
+  extraPago='';extraUbi='';extraCuenta='';
   document.getElementById('extraTitulo').textContent='Datos del servicio: '+tipoExtra;
   document.getElementById('extraFecha').value=hoyStr();
   document.getElementById('extraVehiculo').value='';
@@ -1040,6 +1076,8 @@ function abrirExtraOverlay(){
   document.getElementById('extraPrecio').value=(tipoExtra==='Visita tecnica')?'28000':'';
   document.querySelectorAll('#extraPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
   document.querySelectorAll('#extraUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  document.getElementById('extraCuentaField').style.display='none';
   confirmandoExtra=false;
   var btnE=document.querySelector('#extraOverlay .bp');
   if(btnE){btnE.disabled=false;btnE.textContent='Confirmar';}
@@ -1049,6 +1087,14 @@ function cerrarExtraOverlay(){document.getElementById('extraOverlay').classList.
 function setExtraPago(v,btn){
   extraPago=v;
   document.querySelectorAll('#extraPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  btn.style.background='#111';btn.style.color='#fff';
+  var cuentaField=document.getElementById('extraCuentaField');
+  if(v==='Transferencia'){cuentaField.style.display='block';}
+  else{cuentaField.style.display='none';extraCuenta='';document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});}
+}
+function setExtraCuenta(v,btn){
+  extraCuenta=v;
+  document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
   btn.style.background='#111';btn.style.color='#fff';
 }
 function setExtraUbi(v,btn){
@@ -1065,6 +1111,7 @@ function confirmarServicioExtra(){
   if(!vehiculo){toast('Completa el vehiculo');return;}
   if(!precio){toast('Completa el precio');return;}
   if(!extraPago){toast('Elegi la forma de pago');return;}
+  if(extraPago==='Transferencia'&&!extraCuenta){toast('Elegi la cuenta destino');return;}
   if(!extraUbi){toast('Elegi la ubicacion');return;}
   confirmandoExtra=true;
   var btnE=document.querySelector('#extraOverlay .bp');
@@ -1076,6 +1123,7 @@ function confirmarServicioExtra(){
     tipo:tipoExtra,
     precio:precio,
     forma_pago:extraPago,
+    cuenta_transferencia:extraCuenta,
     ubicacion:extraUbi,
     tecnico:camExtra.n,
     telefono_cliente:document.getElementById('extraTelefono').value.trim()
@@ -1186,7 +1234,15 @@ function cargarHistorialMes(){
         if(cargLista)extrasTxtDia.push(cargLista+' carga'+(cargLista===1?'':'s'));
         if(visLista)extrasTxtDia.push(visLista+' visita tecnica'+(visLista===1?'':'s'));
         if(extrasTxtDia.length)etiquetaDia+=' - '+extrasTxtDia.join(', ');
-        h+='<tr class="dia-summary" style="cursor:pointer" onclick="toggleDia(\''+gid+'\')"><td colspan="14" style="padding:14px 8px;background:#991b1b"><span style="display:flex;align-items:center;gap:10px"><span id="'+gid+'-icon" style="color:#fff;font-size:13px">&#9656;</span><span style="color:#fff;font-weight:700;font-size:15px">'+fmtFecha(fecha)+'</span><span style="display:flex;align-items:center;gap:8px;margin-left:auto">'+gastoAdsBadge(fecha)+'<span style="background:#fff;color:#991b1b;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;white-space:nowrap">'+etiquetaDia+'</span></span></span></td></tr>';
+        var cuentaCountsDia={};
+        lista.forEach(function(s){
+          if(s.forma_pago==='Transferencia'&&s.cuenta_transferencia){
+            cuentaCountsDia[s.cuenta_transferencia]=(cuentaCountsDia[s.cuenta_transferencia]||0)+1;
+          }
+        });
+        var cuentaTxtDia=Object.keys(cuentaCountsDia).map(function(k){return k+' '+cuentaCountsDia[k];}).join(', ');
+        var cuentaBadgeDia=cuentaTxtDia?'<span style="background:#0f766e;color:#fff;font-weight:800;font-size:13px;padding:3px 10px;border-radius:99px;white-space:nowrap">Transferencias: '+cuentaTxtDia+'</span>':'';
+        h+='<tr class="dia-summary" style="cursor:pointer" onclick="toggleDia(\''+gid+'\')"><td colspan="14" style="padding:14px 8px;background:#991b1b"><span style="display:flex;align-items:center;gap:10px"><span id="'+gid+'-icon" style="color:#fff;font-size:13px">&#9656;</span><span style="color:#fff;font-weight:700;font-size:15px">'+fmtFecha(fecha)+'</span><span style="display:flex;align-items:center;gap:8px;margin-left:auto">'+gastoAdsBadge(fecha)+cuentaBadgeDia+'<span style="background:#fff;color:#991b1b;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;white-space:nowrap">'+etiquetaDia+'</span></span></span></td></tr>';
         lista.forEach(function(s){h+=filaServicio(s,gid);});
       }
     });
@@ -1234,7 +1290,7 @@ function mostrarResumen(){
   }).catch(function(e){document.getElementById('resumenBody').innerHTML='<div class="err">Error: '+e.message+'</div>';});
 }
 function calcularStatsMes(lista){
-  var porTecnico={}, porMarca={}, porModelo={}, modeloMarca={}, porPago={}, porPagoMonto={};
+  var porTecnico={}, porMarca={}, porModelo={}, modeloMarca={}, porPago={}, porPagoMonto={}, porCuentaTransferencia={}, porCuentaTransferenciaMonto={};
   var totalColoc=0, totalArr=0, totalCarga=0, totalVis=0;
   var clientesNuevosSet={}, clientesRepetidosSet={};
   lista.forEach(function(s){
@@ -1261,6 +1317,10 @@ function calcularStatsMes(lista){
     modeloMarca[modelo]=marca;
     porPago[pago]=(porPago[pago]||0)+1;
     porPagoMonto[pago]=(porPagoMonto[pago]||0)+monto;
+    if(pago==='Transferencia'&&s.cuenta_transferencia){
+      porCuentaTransferencia[s.cuenta_transferencia]=(porCuentaTransferencia[s.cuenta_transferencia]||0)+1;
+      porCuentaTransferenciaMonto[s.cuenta_transferencia]=(porCuentaTransferenciaMonto[s.cuenta_transferencia]||0)+monto;
+    }
     if(s.telefono_cliente){
       if(s.cliente_tipo==='Repetido')clientesRepetidosSet[s.telefono_cliente]=true;
       else if(s.cliente_tipo==='Nuevo')clientesNuevosSet[s.telefono_cliente]=true;
@@ -1268,7 +1328,7 @@ function calcularStatsMes(lista){
   });
   var totalClientesRepetidos=Object.keys(clientesRepetidosSet).length;
   var totalClientesNuevos=Object.keys(clientesNuevosSet).length;
-  return {totalColoc:totalColoc,totalArr:totalArr,totalCarga:totalCarga,totalVis:totalVis,totalClientesRepetidos:totalClientesRepetidos,totalClientesNuevos:totalClientesNuevos,porTecnico:porTecnico,porMarca:porMarca,porModelo:porModelo,modeloMarca:modeloMarca,porPago:porPago,porPagoMonto:porPagoMonto};
+  return {totalColoc:totalColoc,totalArr:totalArr,totalCarga:totalCarga,totalVis:totalVis,totalClientesRepetidos:totalClientesRepetidos,totalClientesNuevos:totalClientesNuevos,porTecnico:porTecnico,porMarca:porMarca,porModelo:porModelo,modeloMarca:modeloMarca,porPago:porPago,porPagoMonto:porPagoMonto,porCuentaTransferencia:porCuentaTransferencia,porCuentaTransferenciaMonto:porCuentaTransferenciaMonto};
 }
 function renderStatsMes(){
   var mesLabel=NOMBRES_MES[mesSeleccionado]+(anioSeleccionado!==(new Date()).getFullYear()?' '+anioSeleccionado:'');
@@ -1315,6 +1375,10 @@ function renderStatsMes(){
   h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por forma de pago ('+mesLabel+')</div>';
   Object.keys(st.porPago).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porPago[k]+'</span> — <span>$'+formatMoney(st.porPagoMonto&&st.porPagoMonto[k]||0)+'</span></div>';});
   if(!Object.keys(st.porPago).length)h+='<div class="gcard-row" style="color:#aaa">Sin datos</div>';
+  h+='</div>';
+  h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por cuenta de transferencia ('+mesLabel+')</div>';
+  Object.keys(st.porCuentaTransferencia||{}).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porCuentaTransferencia[k]+'</span> — <span>$'+formatMoney(st.porCuentaTransferenciaMonto&&st.porCuentaTransferenciaMonto[k]||0)+'</span></div>';});
+  if(!Object.keys(st.porCuentaTransferencia||{}).length)h+='<div class="gcard-row" style="color:#aaa">Sin transferencias</div>';
   h+='</div>';
   el.innerHTML=h;
 }
@@ -1591,12 +1655,12 @@ function eliminarServicioClick(fila){
   }).catch(function(e){sync('Error');toast('Error: '+e.message);});
 }
 
-var editFila=null,editPago='',editUbi='',editTecnico='';
+var editFila=null,editPago='',editUbi='',editTecnico='',editCuenta='';
 function editarServicioClick(fila){
   var s=serviciosCache.filter(function(x){return x.fila===fila;})[0];
   if(!s){toast('No se encontro el servicio');return;}
   editFila=fila;
-  editPago=s.forma_pago||'';editUbi=s.ubicacion||'';editTecnico=s.tecnico||'';
+  editPago=s.forma_pago||'';editUbi=s.ubicacion||'';editTecnico=s.tecnico||'';editCuenta=s.cuenta_transferencia||'';
   document.getElementById('editFecha').value=s.fecha||'';
   document.getElementById('editVehiculo').value=s.vehiculo||'';
   document.getElementById('editAnio').value=s.anio_vehiculo||'';
@@ -1611,6 +1675,11 @@ function editarServicioClick(fila){
   document.querySelectorAll('#editPagoBtns .bs').forEach(function(b){
     b.style.background=b.textContent===editPago?'#111':'transparent';
     b.style.color=b.textContent===editPago?'#fff':'#444';
+  });
+  document.getElementById('editCuentaField').style.display=(editPago==='Transferencia')?'block':'none';
+  document.querySelectorAll('#editCuentaBtns .bs').forEach(function(b){
+    b.style.background=b.textContent===editCuenta?'#111':'transparent';
+    b.style.color=b.textContent===editCuenta?'#fff':'#444';
   });
   document.querySelectorAll('#editUbiBtns .bs').forEach(function(b){
     b.style.background=b.textContent===editUbi?'#111':'transparent';
@@ -1627,6 +1696,14 @@ function setEditPago(v,btn){
   editPago=v;
   document.querySelectorAll('#editPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
   btn.style.background='#111';btn.style.color='#fff';
+  var cuentaField=document.getElementById('editCuentaField');
+  if(v==='Transferencia'){cuentaField.style.display='block';}
+  else{cuentaField.style.display='none';editCuenta='';document.querySelectorAll('#editCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});}
+}
+function setEditCuenta(v,btn){
+  editCuenta=v;
+  document.querySelectorAll('#editCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  btn.style.background='#111';btn.style.color='#fff';
 }
 function setEditUbi(v,btn){
   editUbi=v;
@@ -1641,6 +1718,7 @@ function setEditTecnico(v,btn){
 var confirmandoEdit=false;
 function confirmarEditServicio(){
   if(confirmandoEdit)return;
+  if(editPago==='Transferencia'&&!editCuenta){toast('Elegi la cuenta destino');return;}
   confirmandoEdit=true;
   var btnE=document.querySelector('#editServOverlay .bp');
   if(btnE){btnE.disabled=true;btnE.textContent='Guardando...';}
@@ -1659,6 +1737,7 @@ function confirmarEditServicio(){
     telefono_cliente:document.getElementById('editTelefonoCliente').value.trim(),
     precio:document.getElementById('editPrecio').value.trim(),
     forma_pago:editPago,
+    cuenta_transferencia:editCuenta,
     ubicacion:editUbi,
     tecnico:editTecnico
   }).then(function(r){

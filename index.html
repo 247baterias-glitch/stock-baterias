@@ -222,7 +222,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 <div id="turnoOverlay" class="hidden col-overlay">
 <div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
-<div style="font-size:19px;font-weight:700;margin-bottom:14px">Nuevo turno</div>
+<div id="turnoOverlayTitulo" style="font-size:19px;font-weight:700;margin-bottom:14px">Nuevo turno</div>
 <div class="gfield"><label>Fecha</label><input type="date" id="tFecha"/></div>
 <div class="gfield"><label>Hora</label><input type="time" id="tHora"/></div>
 <div class="gfield"><label>Vehiculo</label><input type="text" id="tVehiculo" placeholder="Ej: Corolla 2018"/></div>
@@ -443,8 +443,8 @@ var PBARI=[
 {m:'Bari 24kd 12x75 Cajon Largo',l:'$75.000,00',p:'$130.000,00'}
 ];
 var PVOLTA=[
-{m:'Volta 12x65',l:'$57.519,33',p:'$117.519,33'},
-{m:'Volta 12x75 cajón largo',l:'$69.967,87',p:'$129.967,87'}
+{m:'VOLTA 12X65',l:'$57.519,33',p:'$117.519,33'},
+{m:'VOLTA 12X75 CAJ LARGO',l:'$69.967,87',p:'$129.967,87'}
 ];
 var PBOSCH_MOTO=[
 {m:'YB4L-B (BB4L-B)',c:'25.294',v:'73.294',r:'61.294'},
@@ -1408,12 +1408,15 @@ function renderTurnosMini(){
     var infoParts=[];
     if(t.vehiculo)infoParts.push('<b>'+t.vehiculo+'</b>');
     if(t.cliente)infoParts.push(t.cliente);
+    if(t.telefono)infoParts.push('<span style="color:#0369a1">'+t.telefono+'</span>');
     if(t.direccion)infoParts.push(t.direccion);
     if(t.precio)infoParts.push('<b style="color:#166534">$'+formatMoney(t.precio)+'</b>');
+    if(t.tecnico)infoParts.push('<span style="color:#7c3aed;font-weight:700">'+t.tecnico+'</span>');
+    if(t.notas)infoParts.push('<span style="color:#888">'+t.notas+'</span>');
     var infoTxt=infoParts.join(' · ')||'-';
     h+='<div class="tmini">';
     h+='<div class="tmini-left"><div class="tmini-time">'+(t.hora||'--:--')+'</div><div class="tmini-info">'+infoTxt+'</div></div>';
-    h+='<div class="tmini-actions"><span class="tmini-tag '+cls+'">'+relTxt+'</span><button class="tmini-ok" title="Completado" onclick="completarTurno(\''+t.id+'\')">&#10003;</button><button class="tmini-x" title="Cancelar" onclick="cancelarTurno(\''+t.id+'\')">&#10005;</button></div>';
+    h+='<div class="tmini-actions"><span class="tmini-tag '+cls+'">'+relTxt+'</span><button class="tmini-x" title="Editar" style="color:#444" onclick="editarTurnoClick(\''+t.id+'\')">&#9998;</button><button class="tmini-ok" title="Completado" onclick="completarTurno(\''+t.id+'\')">&#10003;</button><button class="tmini-x" title="Cancelar" onclick="cancelarTurno(\''+t.id+'\')">&#10005;</button></div>';
     h+='</div>';
   });
   el.innerHTML=h;
@@ -1452,7 +1455,10 @@ function cancelarTurno(id){
   }).catch(function(e){toast('Error: '+e.message);});
 }
 
+var editingTurnoId=null;
 function abrirNuevoTurno(){
+  editingTurnoId=null;
+  document.getElementById('turnoOverlayTitulo').textContent='Nuevo turno';
   document.getElementById('tFecha').value=hoyStr();
   document.getElementById('tHora').value='';
   document.getElementById('tVehiculo').value='';
@@ -1468,7 +1474,31 @@ function abrirNuevoTurno(){
   if(btnT){btnT.disabled=false;btnT.textContent='Guardar turno';}
   document.getElementById('turnoOverlay').classList.remove('hidden');
 }
-function cerrarTurnoOverlay(){document.getElementById('turnoOverlay').classList.add('hidden');}
+function editarTurnoClick(id){
+  var t=turnos.filter(function(x){return x.id===id;})[0];
+  if(!t){toast('No se encontro el turno');return;}
+  editingTurnoId=id;
+  document.getElementById('turnoOverlayTitulo').textContent='Editar turno';
+  document.getElementById('tFecha').value=t.fecha||'';
+  document.getElementById('tHora').value=t.hora||'';
+  document.getElementById('tVehiculo').value=t.vehiculo||'';
+  document.getElementById('tCliente').value=t.cliente||'';
+  document.getElementById('tTelefono').value=t.telefono||'';
+  document.getElementById('tDireccion').value=t.direccion||'';
+  document.getElementById('tPrecio').value=t.precio||'';
+  document.getElementById('tNotas').value=t.notas||'';
+  turnoTecnico=t.tecnico||'';
+  document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){
+    var esActivo=b.textContent===turnoTecnico;
+    b.style.background=esActivo?'#111':'transparent';
+    b.style.color=esActivo?'#fff':'#444';
+  });
+  confirmandoTurno=false;
+  var btnT=document.querySelector('#turnoOverlay .bp');
+  if(btnT){btnT.disabled=false;btnT.textContent='Guardar cambios';}
+  document.getElementById('turnoOverlay').classList.remove('hidden');
+}
+function cerrarTurnoOverlay(){editingTurnoId=null;document.getElementById('turnoOverlay').classList.add('hidden');}
 function setTecnico(v,btn){
   turnoTecnico=v;
   document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
@@ -1485,6 +1515,43 @@ function confirmarTurno(){
   if(!vehiculo){toast('Completa el vehiculo');return;}
   confirmandoTurno=true;
   var btnT=document.querySelector('#turnoOverlay .bp');
+  if(editingTurnoId){
+    if(btnT){btnT.disabled=true;btnT.textContent='Guardando...';}
+    var id=editingTurnoId;
+    var campos={
+      fecha:fecha,
+      hora:hora,
+      vehiculo:vehiculo,
+      cliente:document.getElementById('tCliente').value.trim(),
+      telefono:document.getElementById('tTelefono').value.trim(),
+      direccion:document.getElementById('tDireccion').value.trim(),
+      precio:document.getElementById('tPrecio').value.trim(),
+      tecnico:turnoTecnico,
+      notas:document.getElementById('tNotas').value.trim()
+    };
+    var nombresCampos=Object.keys(campos);
+    function guardarSiguienteCampo(i){
+      if(i>=nombresCampos.length){
+        confirmandoTurno=false;
+        if(btnT){btnT.disabled=false;btnT.textContent='Guardar turno';}
+        editingTurnoId=null;
+        cerrarTurnoOverlay();
+        toast('Turno actualizado');
+        cargarTurnos();
+        return;
+      }
+      var campo=nombresCampos[i];
+      api('actualizarTurno',{id:id,campo:campo,valor:campos[campo]}).then(function(){
+        guardarSiguienteCampo(i+1);
+      }).catch(function(e){
+        confirmandoTurno=false;
+        if(btnT){btnT.disabled=false;btnT.textContent='Guardar cambios';}
+        toast('Error: '+e.message);
+      });
+    }
+    guardarSiguienteCampo(0);
+    return;
+  }
   if(btnT){btnT.disabled=true;btnT.textContent='Guardando...';}
   api('guardarTurno',{
     fecha:fecha,

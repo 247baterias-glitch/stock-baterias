@@ -605,7 +605,8 @@ var datos=[],cam=null,marca='',qty={};
 function sync(t){document.getElementById('sync').textContent=t;}
 function titulo(t){document.getElementById('titulo').textContent=t;}
 function getStockInfo(codigo){
-  var m=datos.filter(function(d){return d.codigo===codigo;})[0];
+  var buscado=String(codigo||'').trim().toUpperCase();
+  var m=datos.filter(function(d){return String(d.codigo||'').trim().toUpperCase()===buscado;})[0];
   if(!m)return null;
   var parts=[];
   CAMS.forEach(function(c){var v=m[c.c]||0;if(v>0)parts.push(c.n+': '+v);});

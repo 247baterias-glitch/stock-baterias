@@ -135,6 +135,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <button class="ptab" id="tab4" onclick="cambiarTab(4)">Herbo</button>
 <button class="ptab" id="tab5" onclick="cambiarTab(5)">Bari</button>
 <button class="ptab" id="tab6" onclick="cambiarTab(6)">Volta</button>
+<button class="ptab" id="tab7" onclick="cambiarTab(7)">Bosch</button>
 </div>
 <div class="sbox"><input type="text" id="busP" placeholder="Buscar modelo..." oninput="filtrarPrecios()"/></div>
 <div class="twrap"><table class="ptable">
@@ -474,6 +475,9 @@ var PVOLTA=[
 {m:'VOLTA 12X65',l:'$57.519,33',p:'$117.519,33'},
 {m:'VOLTA 12X75 CAJ LARGO',l:'$69.967,87',p:'$129.967,87'}
 ];
+var PBOSCH=[
+{m:'BOSCH 12X110 BAJA',l:'$165.000,00',p:'$220.000,00'}
+];
 var PBOSCH_MOTO=[
 {m:'YB4L-B (BB4L-B)',c:'25.294',v:'73.294',r:'61.294'},
 {m:'YB5L-B (BB5L-B)',c:'20.961',v:'68.961',r:'56.961'},
@@ -657,7 +661,7 @@ function mostrarTipoServicio(){
   titulo('Registrar Servicio');
 }
 function cambiarTab(n){
-  tabActual=n;[1,2,3,4,5,6].forEach(function(i){document.getElementById('tab'+i).classList.toggle('active',i===n);});
+  tabActual=n;[1,2,3,4,5,6,7].forEach(function(i){document.getElementById('tab'+i).classList.toggle('active',i===n);});
   document.getElementById('busP').value='';filtrarPrecios();
 }
 function cambiarGTab(n){
@@ -668,7 +672,7 @@ function cambiarGTab(n){
 }
 function filtrarPrecios(){
   var b=document.getElementById('busP').value.toLowerCase();
-  var lista=tabActual===1?PMOURA:tabActual===2?PUB:tabActual===3?PSERMAT:tabActual===4?PHERBO:tabActual===5?PBARI:PVOLTA;
+  var lista=tabActual===1?PMOURA:tabActual===2?PUB:tabActual===3?PSERMAT:tabActual===4?PHERBO:tabActual===5?PBARI:tabActual===6?PVOLTA:PBOSCH;
   var h='';
   lista.filter(function(x){return x.m.toLowerCase().indexOf(b)!==-1;}).forEach(function(x){
     var si=getStockInfo(x.m);

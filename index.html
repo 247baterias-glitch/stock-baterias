@@ -5,98 +5,122 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Stock Baterias</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
+:root{
+--ink:#1b2330;--ink-soft:#3a4150;--muted:#70798a;--muted2:#94a0af;
+--border:#e2e6ed;--border2:#eef1f5;--bg:#f1f3f7;--surface:#fff;
+--amber:#f2a93c;--amber-deep:#c2540c;--teal:#0e7490;--violet:#6d4aa8;
+--green:#15803d;--green-bg:#e1f5ea;--warn:#9a6b12;--warn-bg:#fcefc7;
+--red:#b33a3a;--red-bg:#fbe3e3;
+--sans:'Space Grotesk',-apple-system,sans-serif;--mono:'IBM Plex Mono',monospace;
+--r-lg:18px;--r-md:12px;--r-sm:8px;
+--shadow-card:0 1px 2px rgba(27,35,48,.04),0 6px 16px -4px rgba(27,35,48,.10);
+--shadow-pop:0 12px 32px -8px rgba(27,35,48,.28);
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-size:17px}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17px;-webkit-font-smoothing:antialiased}
 .header,.section{max-width:600px;margin:0 auto}
-.logo{width:36px;height:36px;display:flex;align-items:center;justify-content:center}
-.header{display:flex;align-items:center;gap:10px;padding:1rem}
-.h1{font-size:18px;font-weight:600}.h2{font-size:13px;color:#888;margin-top:1px}
-.section{padding:1rem}.grid{display:flex;flex-direction:column;gap:12px}
-.card{background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:1.5rem;display:flex;align-items:center;gap:16px;cursor:pointer;width:100%;text-align:left}
-.icon{width:52px;height:52px;border-radius:10px;background:#e8f0fe;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
-.icon.green{background:#dcfce7}.icon.orange{background:#fff7ed}.icon.red{background:#fee2e2}
-.ci{flex:1}.ci h2{font-size:19px;font-weight:700}.ci p{font-size:14px;color:#888;margin-top:2px}
-.arr{font-size:24px;color:#ccc}
-.mstat{text-align:right;flex-shrink:0;margin-right:8px}.mtot{font-size:28px;font-weight:700}.mlab{font-size:12px;color:#aaa}
-.back{display:flex;align-items:center;gap:8px;background:none;border:none;font-size:16px;color:#555;cursor:pointer;padding:0 0 1rem 0;font-weight:500}
-.sbox{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:10px 12px;margin-bottom:12px}
-.sbox input{background:transparent;border:none;outline:none;font-size:16px;width:100%}
-.mc{background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:1.5rem;margin-bottom:10px}
+.header{display:flex;align-items:center;gap:12px;padding:1.1rem 1.25rem;background:var(--ink);color:#fff;border-radius:0 0 var(--r-lg) var(--r-lg);box-shadow:var(--shadow-pop)}
+.logo{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:rgba(255,255,255,.08);border:1px solid rgba(242,169,60,.45);flex-shrink:0}
+.h1{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.h2{font-size:12.5px;color:rgba(255,255,255,.62);margin-top:2px;display:flex;align-items:center;gap:6px}
+.h2::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0;box-shadow:0 0 0 3px rgba(242,169,60,.2)}
+.section{padding:1.25rem 1rem}
+.grid{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.4rem 1.5rem;display:flex;align-items:center;gap:16px;cursor:pointer;width:100%;text-align:left;box-shadow:var(--shadow-card);transition:transform .15s ease,box-shadow .15s ease}
+.card:active{transform:scale(.985);box-shadow:0 1px 2px rgba(27,35,48,.06)}
+.icon{width:50px;height:50px;border-radius:13px;background:#e3edfb;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.icon.green{background:var(--green-bg)}.icon.orange{background:#fbeee0}.icon.red{background:var(--red-bg)}
+.ci{flex:1;min-width:0}.ci h2{font-size:18px;font-weight:700;letter-spacing:-.01em}.ci p{font-size:13.5px;color:var(--muted);margin-top:2px}
+.arr{font-size:22px;color:var(--muted2);flex-shrink:0}
+.mstat{text-align:right;flex-shrink:0;margin-right:4px}
+.mtot{font-size:26px;font-weight:700;font-family:var(--mono)}
+.mlab{font-size:11.5px;color:var(--muted2)}
+.back{display:flex;align-items:center;gap:8px;background:none;border:none;font-size:15px;color:var(--ink-soft);cursor:pointer;padding:6px 2px 1rem 0;font-weight:600}
+.sbox{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;box-shadow:var(--shadow-card)}
+.sbox input{background:transparent;border:none;outline:none;font-size:16px;width:100%;font-family:var(--sans);color:var(--ink)}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.4rem 1.5rem;margin-bottom:10px;box-shadow:var(--shadow-card)}
 .mh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
-.mn{font-size:18px;font-weight:600;line-height:1.3}
-.badge{padding:6px 12px;border-radius:99px;font-size:13px;font-weight:600;white-space:nowrap;margin-left:8px}
-.ok{background:#dcfce7;color:#166534}.low{background:#fef9c3;color:#854d0e}.out{background:#fee2e2;color:#991b1b}
-.sr{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.sn{font-size:44px;font-weight:700}.sl{font-size:14px;color:#888;line-height:1.4}
+.mn{font-size:17.5px;font-weight:700;line-height:1.35;letter-spacing:-.005em}
+.badge{padding:6px 13px;border-radius:99px;font-size:12.5px;font-weight:700;white-space:nowrap;margin-left:8px}
+.ok{background:var(--green-bg);color:var(--green)}.low{background:var(--warn-bg);color:var(--warn)}.out{background:var(--red-bg);color:var(--red)}
+.sr{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.sn{font-size:42px;font-weight:700;font-family:var(--mono);letter-spacing:-.02em}
+.sl{font-size:13.5px;color:var(--muted);line-height:1.4}
 .acts{display:flex;gap:8px}
-.bp{flex:1;background:#111;color:#fff;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:600;cursor:pointer}
-.bp:disabled{opacity:.3;cursor:not-allowed}
-.bs{background:transparent;border:1px solid #ddd;border-radius:10px;padding:14px 16px;font-size:16px;cursor:pointer;color:#444}
-.rp{display:none;background:#f5f5f5;border-radius:10px;padding:1rem;margin-top:10px}
+.bp{flex:1;background:var(--ink);color:#fff;border:none;border-radius:var(--r-md);padding:14px;font-size:15.5px;font-weight:700;cursor:pointer;transition:transform .12s ease,opacity .12s ease;font-family:var(--sans)}
+.bp:active{transform:scale(.98)}
+.bp:disabled{opacity:.3;cursor:not-allowed;transform:none}
+.bs{background:transparent;border:1.5px solid var(--border);border-radius:var(--r-md);padding:14px 16px;font-size:15.5px;font-weight:600;cursor:pointer;color:var(--ink-soft);font-family:var(--sans);transition:border-color .12s ease,background .12s ease}
+.bs:active{background:var(--border2)}
+.rp{display:none;background:var(--bg);border-radius:var(--r-md);padding:1rem;margin-top:10px}
 .rp.open{display:block}
 .qr{display:flex;align-items:center;gap:12px;margin:8px 0 12px}
-.qb{width:42px;height:42px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:22px;cursor:pointer}
-.qv{font-size:26px;font-weight:700;flex:1;text-align:center}
-.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:99px;font-size:15px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:100}
+.qb{width:42px;height:42px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);font-size:20px;cursor:pointer;font-family:var(--sans);color:var(--ink)}
+.qv{font-size:24px;font-weight:700;flex:1;text-align:center;font-family:var(--mono)}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 22px;border-radius:99px;font-size:14.5px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:100;box-shadow:var(--shadow-pop);border:1px solid rgba(242,169,60,.3)}
 .toast.show{opacity:1}
-.loading{text-align:center;padding:3rem;color:#888;font-size:16px}
-.err{background:#fee2e2;color:#991b1b;border-radius:10px;padding:12px 16px;font-size:15px;margin-bottom:12px}
+.loading{text-align:center;padding:3rem;color:var(--muted);font-size:15.5px}
+.err{background:var(--red-bg);color:var(--red);border-radius:var(--r-md);padding:12px 16px;font-size:14.5px;margin-bottom:12px;font-weight:600}
 .hidden{display:none}
-.ptable{width:100%;border-collapse:collapse;font-size:15px}
-.ptable th{background:#111;color:#fff;padding:10px 8px;text-align:left;position:sticky;top:0}
-.ptable td{padding:10px 8px;border-bottom:1px solid #f0f0f0;background:#fff}
-.ptable tr:nth-child(even) td{background:#f9f9f9}
-.pventa{font-weight:700;color:#166534}
-.pnoche{font-weight:700;color:#7c3aed}
-.stk-info{font-size:12px;margin-top:3px}
-.stk-ok{color:#166534}.stk-no{color:#991b1b}
-.ptabs{display:flex;gap:4px;margin-bottom:12px;background:#e5e5e5;padding:4px;border-radius:10px;overflow-x:auto}
-.ptab{flex:1;text-align:center;padding:9px;font-size:14px;border-radius:7px;cursor:pointer;border:none;background:transparent;color:#666;white-space:nowrap}
-.ptab.active{background:#fff;color:#111;font-weight:600}
-.twrap{border-radius:14px;overflow:hidden;border:1px solid #e5e5e5;overflow-x:auto}
-.bres{background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:1rem;margin-bottom:10px}
+.ptable{width:100%;border-collapse:collapse;font-size:14.5px}
+.ptable th{background:var(--ink);color:#fff;padding:11px 9px;text-align:left;position:sticky;top:0;font-weight:600;font-size:13px;letter-spacing:.01em}
+.ptable td{padding:11px 9px;border-bottom:1px solid var(--border2);background:var(--surface);font-family:var(--mono);font-size:14px}
+.ptable td b{font-family:var(--sans);font-size:14.5px}
+.ptable tr:nth-child(even) td{background:var(--border2)}
+.pventa{font-weight:700;color:var(--green)}
+.pnoche{font-weight:700;color:var(--violet)}
+.stk-info{font-size:11.5px;margin-top:3px;font-family:var(--sans)}
+.stk-ok{color:var(--green)}.stk-no{color:var(--red)}
+.ptabs{display:flex;gap:4px;margin-bottom:12px;background:var(--border2);padding:4px;border-radius:var(--r-md);overflow-x:auto}
+.ptab{flex:1;text-align:center;padding:10px 9px;font-size:13.5px;font-weight:600;border-radius:var(--r-sm);cursor:pointer;border:none;background:transparent;color:var(--muted);white-space:nowrap;transition:background .12s ease,color .12s ease}
+.ptab.active{background:var(--surface);color:var(--ink);box-shadow:0 1px 0 var(--amber) inset,0 2px 6px rgba(27,35,48,.08)}
+.twrap{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);overflow-x:auto;box-shadow:var(--shadow-card)}
+.bres{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem 1.1rem;margin-bottom:10px;box-shadow:var(--shadow-card)}
 .bres-v{font-size:16px;font-weight:700;margin-bottom:4px}
-.bres-b{font-size:14px;color:#444}
-.no-res{text-align:center;padding:2rem;color:#aaa;font-size:15px}
-.gform{background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:1.5rem;margin-bottom:16px}
+.bres-b{font-size:14px;color:var(--ink-soft)}
+.no-res{text-align:center;padding:2rem;color:var(--muted2);font-size:14.5px}
+.gform{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.5rem;margin-bottom:16px;box-shadow:var(--shadow-card)}
 .gfield{margin-bottom:12px}
-.gfield label{display:block;font-size:13px;font-weight:600;color:#888;margin-bottom:4px;text-transform:uppercase}
-.gfield input{width:100%;background:#f5f5f5;border:1px solid #e5e5e5;border-radius:8px;padding:12px;font-size:16px;outline:none}
-.gfield input:focus{border-color:#111;background:#fff}
-.gcard{background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:1.25rem;margin-bottom:10px}
+.gfield label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em}
+.gfield input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:12px;font-size:16px;outline:none;font-family:var(--sans);color:var(--ink);transition:border-color .12s ease}
+.gfield input:focus{border-color:var(--amber);background:var(--surface)}
+.gcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.25rem 1.4rem;margin-bottom:10px;box-shadow:var(--shadow-card)}
 .gcard-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-.gcard-titulo{font-size:17px;font-weight:700}
-.gcard-dias{font-size:13px;font-weight:700;padding:4px 11px;border-radius:99px}
-.dias-ok{background:#dcfce7;color:#166534}
-.dias-warn{background:#fef9c3;color:#854d0e}
-.dias-late{background:#fee2e2;color:#991b1b}
-.gcard-row{font-size:14px;color:#555;margin-top:3px}
-.gcard-row span{font-weight:600;color:#111}
-.gtabs{display:flex;gap:4px;margin-bottom:12px;background:#e5e5e5;padding:4px;border-radius:10px}
-.gtab{flex:1;text-align:center;padding:9px;font-size:14px;border-radius:7px;cursor:pointer;border:none;background:transparent;color:#666}
-.gtab.active{background:#fff;color:#111;font-weight:600}
-.col-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem}
+.gcard-titulo{font-size:16.5px;font-weight:700}
+.gcard-dias{font-size:12.5px;font-weight:700;padding:4px 11px;border-radius:99px;font-family:var(--mono)}
+.dias-ok{background:var(--green-bg);color:var(--green)}
+.dias-warn{background:var(--warn-bg);color:var(--warn)}
+.dias-late{background:var(--red-bg);color:var(--red)}
+.gcard-row{font-size:13.5px;color:var(--ink-soft);margin-top:3px}
+.gcard-row span{font-weight:700;color:var(--ink)}
+.gtabs{display:flex;gap:4px;margin-bottom:12px;background:var(--border2);padding:4px;border-radius:var(--r-md)}
+.gtab{flex:1;text-align:center;padding:10px;font-size:13.5px;font-weight:600;border-radius:var(--r-sm);cursor:pointer;border:none;background:transparent;color:var(--muted);transition:background .12s ease,color .12s ease}
+.gtab.active{background:var(--surface);color:var(--ink);box-shadow:0 1px 0 var(--amber) inset,0 2px 6px rgba(27,35,48,.08)}
+.col-overlay{position:fixed;inset:0;background:rgba(17,21,28,.55);backdrop-filter:blur(2px);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem}
 .col-overlay.hidden{display:none}
-.tmini{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid #f0f0f0}
+.tmini{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid var(--border2)}
 .tmini:last-child{border-bottom:none}
 .tmini-left{display:flex;align-items:center;gap:12px;min-width:0}
-.tmini-time{font-size:17px;font-weight:800;min-width:48px;flex-shrink:0}
-.tmini-info{font-size:14px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tmini-info b{color:#111}
-.tmini-tag{font-size:12px;font-weight:800;white-space:nowrap;flex-shrink:0}
-.tmini-tag.late{color:#991b1b}
-.tmini-tag.urgent{color:#dc2626}
-.tmini-tag.today{color:#c2410c}
-.tmini-tag.future{color:#999;font-weight:600}
-.tmini-actions{display:flex;gap:6px;flex-shrink:0}
-.tmini-x{width:26px;height:26px;border-radius:7px;border:1px solid #e5e5e5;background:#fff;color:#888;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.tmini-ok{width:26px;height:26px;border-radius:7px;border:none;background:#111;color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tmini-time{font-size:16px;font-weight:700;min-width:48px;flex-shrink:0;font-family:var(--mono)}
+.tmini-info{font-size:13.5px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tmini-info b{color:var(--ink)}
+.tmini-tag{font-size:11.5px;font-weight:700;white-space:nowrap;flex-shrink:0;font-family:var(--mono)}
+.tmini-tag.late{color:var(--red)}
+.tmini-tag.urgent{color:#d64545}
+.tmini-tag.today{color:var(--amber-deep)}
+.tmini-tag.future{color:var(--muted2);font-weight:600}
+.tmini-actions{display:flex;gap:6px;flex-shrink:0;align-items:center}
+.tmini-x{width:28px;height:28px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s ease}
+.tmini-ok{width:28px;height:28px;border-radius:var(--r-sm);border:none;background:var(--ink);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .aviso-box{margin-bottom:12px}
-.aviso{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+.aviso{background:#fff6e3;border:1px solid #f2cb85;border-radius:var(--r-md);padding:12px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
 .aviso-icon{font-size:18px;flex-shrink:0;line-height:1.3}
-.aviso-txt{flex:1;font-size:14px;font-weight:600;color:#92400e;line-height:1.35}
-.aviso-x{width:24px;height:24px;border-radius:7px;border:none;background:transparent;color:#b45309;font-size:15px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
-.aviso-add{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:#fff;border:1px dashed #ddd;border-radius:12px;padding:10px;font-size:14px;font-weight:600;color:#555;cursor:pointer;margin-bottom:12px}
+.aviso-txt{flex:1;font-size:13.5px;font-weight:600;color:#8a5a12;line-height:1.35}
+.aviso-x{width:24px;height:24px;border-radius:var(--r-sm);border:none;background:transparent;color:#a5690c;font-size:15px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.aviso-add{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--r-md);padding:11px;font-size:13.5px;font-weight:700;color:var(--ink-soft);cursor:pointer;margin-bottom:12px;transition:border-color .12s ease}
+.lpimg{width:100%;border-radius:var(--r-lg);border:1px solid var(--border);margin-bottom:16px;display:block}
+.lpfile{display:block;width:100%;background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--r-md);padding:14px;font-size:14.5px;color:var(--ink-soft)}
 </style>
 </head>
 <body>
@@ -109,13 +133,13 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <div class="aviso-box" id="avisoBox"></div>
 <button class="aviso-add" onclick="abrirNuevoAviso()">&#128276; + Nuevo aviso</button>
 <div class="grid">
-<button class="card" onclick="mostrarResumen()"><div class="icon" style="background:#ede9fe">&#128202;</div><div class="ci"><h2>Resumen</h2><p id="resumenSub">Servicios de hoy y la semana</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="mostrarTipoServicio()"><div class="icon" style="background:#fef3c7">&#128295;</div><div class="ci"><h2>Registrar Servicio</h2><p>Cargar un servicio nuevo</p></div><span class="arr">&#8250;</span></button>
+<button class="card" onclick="mostrarResumen()"><div class="icon" style="background:#ece7f7">&#128202;</div><div class="ci"><h2>Resumen</h2><p id="resumenSub">Servicios de hoy y la semana</p></div><span class="arr">&#8250;</span></button>
+<button class="card" onclick="mostrarTipoServicio()"><div class="icon" style="background:#fdeed0">&#128295;</div><div class="ci"><h2>Registrar Servicio</h2><p>Cargar un servicio nuevo</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarStock()"><div class="icon">&#128661;</div><div class="ci"><h2>Stock Camionetas</h2><p>Ver y gestionar stock</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarBuscador()"><div class="icon orange">&#128269;</div><div class="ci"><h2>Buscador de Baterias</h2><p>Buscar por vehiculo</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarPrecios()"><div class="icon green">&#128200;</div><div class="ci"><h2>Lista de Precios</h2><p>Precios con disponibilidad</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarGarantias()"><div class="icon red">&#128220;</div><div class="ci"><h2>Garantias</h2><p>Registrar y consultar</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="mostrarMoto()"><div class="icon" style="background:#e0f2fe">&#127949;</div><div class="ci"><h2>Baterias Moto</h2><p>Lista de precios moto</p></div><span class="arr">&#8250;</span></button>
+<button class="card" onclick="mostrarMoto()"><div class="icon" style="background:#dff1f5">&#127949;</div><div class="ci"><h2>Baterias Moto</h2><p>Lista de precios moto</p></div><span class="arr">&#8250;</span></button>
 </div>
 </div>
 <div id="p0load"><div class="loading">Cargando...</div></div>
@@ -139,7 +163,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 <div class="sbox"><input type="text" id="busP" placeholder="Buscar modelo..." oninput="filtrarPrecios()"/></div>
 <div class="twrap"><table class="ptable">
-<thead><tr><th>Modelo</th><th>P. Lista</th><th>P. Venta</th><th style="color:#166534">Venta c/IVA</th><th style="color:#c4b5fd">P. DEC/NOCHE/FER</th><th>Stock</th></tr></thead><tbody id="preciosBody"></tbody>
+<thead><tr><th>Modelo</th><th>P. Lista</th><th>P. Venta</th><th style="color:#15803d">Venta c/IVA</th><th style="color:#b9a4de">P. DEC/NOCHE/FER</th><th>Stock</th></tr></thead><tbody id="preciosBody"></tbody>
 </table></div>
 </div>
 <div id="p5" class="hidden">
@@ -192,9 +216,9 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
 <div class="grid">
 <button class="card" onclick="mostrarStock()"><div class="icon">&#128663;</div><div class="ci"><h2>Colocacion de bateria</h2><p>Elegir camioneta, marca y modelo</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="abrirTipoExtra('Arranque')"><div class="icon" style="background:#fff7ed">&#9889;</div><div class="ci"><h2>Arranque</h2><p>Servicio de arranque con arrancador</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="abrirTipoExtra('Carga de bateria')"><div class="icon" style="background:#dcfce7">&#128267;</div><div class="ci"><h2>Carga de bateria</h2><p>Servicio de carga de bateria</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="abrirTipoExtra('Visita tecnica')"><div class="icon" style="background:#ede9fe">&#128295;</div><div class="ci"><h2>Visita tecnica</h2><p>Revision sin cambio de bateria - $28.000</p></div><span class="arr">&#8250;</span></button>
+<button class="card" onclick="abrirTipoExtra('Arranque')"><div class="icon" style="background:#fbeee0">&#9889;</div><div class="ci"><h2>Arranque</h2><p>Servicio de arranque con arrancador</p></div><span class="arr">&#8250;</span></button>
+<button class="card" onclick="abrirTipoExtra('Carga de bateria')"><div class="icon" style="background:#e1f5ea">&#128267;</div><div class="ci"><h2>Carga de bateria</h2><p>Servicio de carga de bateria</p></div><span class="arr">&#8250;</span></button>
+<button class="card" onclick="abrirTipoExtra('Visita tecnica')"><div class="icon" style="background:#ece7f7">&#128295;</div><div class="ci"><h2>Visita tecnica</h2><p>Revision sin cambio de bateria - $28.000</p></div><span class="arr">&#8250;</span></button>
 </div>
 </div>
 <div id="p9" class="hidden">
@@ -206,7 +230,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 </div>
 <div class="sbox"><input type="text" id="busM" placeholder="Buscar modelo..." oninput="filtrarMoto()"/></div>
 <div class="twrap"><table class="ptable">
-<thead><tr><th>Modelo</th><th>Costo</th><th>Venta (envio)</th><th style="color:#166534">Venta c/IVA</th><th style="color:#0369a1">Retiro</th></tr></thead><tbody id="motoBody"></tbody>
+<thead><tr><th>Modelo</th><th>Costo</th><th>Venta (envio)</th><th style="color:#15803d">Venta c/IVA</th><th style="color:#0e7490">Retiro</th></tr></thead><tbody id="motoBody"></tbody>
 </table></div>
 </div>
 <div class="toast" id="toast"></div>
@@ -214,7 +238,7 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;color:#111;font-siz
 <div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px">Nuevo aviso</div>
 <div class="gfield"><label>Texto del aviso</label><input type="text" id="avTexto" placeholder="Ej: Nuevo modelo Bosch S4 60Ah ya disponible"/></div>
-<div style="font-size:13px;color:#888;margin:-4px 0 14px">Se muestra en la pantalla principal durante 4 dias y despues desaparece solo.</div>
+<div style="font-size:13px;color:#70798a;margin:-4px 0 14px">Se muestra en la pantalla principal durante 4 dias y despues desaparece solo.</div>
 <div style="display:flex;gap:8px;margin-top:8px">
 <button class="bp" onclick="confirmarAviso()">Publicar aviso</button>
 <button class="bs" onclick="cerrarAvisoOverlay()">Cancelar</button>
@@ -629,14 +653,14 @@ function filtrarMoto(){
   var h='';
   lista.filter(function(x){return x.m.toLowerCase().indexOf(b)!==-1;}).forEach(function(x){
     if(x.pendiente){
-      h+='<tr><td><b>'+x.m+'</b><div class="stk-info" style="color:#c2410c">A confirmar (precio: '+x.c+')</div></td><td>-</td><td>-</td><td>-</td><td>-</td></tr>';
+      h+='<tr><td><b>'+x.m+'</b><div class="stk-info" style="color:#c2540c">A confirmar (precio: '+x.c+')</div></td><td>-</td><td>-</td><td>-</td><td>-</td></tr>';
     }else{
       var vNum=parseFloat(String(x.v).replace(/\./g,'').replace(',','.'))||0;
       var vIva='$'+formatARS(vNum*1.21);
-      h+='<tr><td><b>'+x.m+'</b></td><td>$'+x.c+'</td><td class="pventa">$'+x.v+'</td><td style="font-weight:700;color:#166534">'+vIva+'</td><td style="color:#0369a1;font-weight:700">$'+x.r+'</td></tr>';
+      h+='<tr><td><b>'+x.m+'</b></td><td>$'+x.c+'</td><td class="pventa">$'+x.v+'</td><td style="font-weight:700;color:#15803d">'+vIva+'</td><td style="color:#0e7490;font-weight:700">$'+x.r+'</td></tr>';
     }
   });
-  document.getElementById('motoBody').innerHTML=h||'<tr><td colspan="5" style="text-align:center;padding:1rem;color:#aaa">Sin resultados</td></tr>';
+  document.getElementById('motoBody').innerHTML=h||'<tr><td colspan="5" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';
 }
 function mostrarBuscador(){
   document.getElementById('p0').classList.add('hidden');
@@ -686,11 +710,11 @@ function filtrarPrecios(){
     var pn=x.p==='—'?'—':'$'+(pv+8000).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
     var esEFB=x.m.indexOf('EFB')!==-1;
     var esStartStop=x.m.indexOf('72LD')!==-1;
-    var badgeEFB=esEFB?'<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
-    var badgeSS=esStartStop?'<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
-    h+='<tr><td><b>'+x.m+'</b>'+badgeEFB+badgeSS+'<div class="stk-info '+cls+'">'+stk+'</div></td><td>'+x.l+'</td><td class="pventa">'+x.p+'</td><td style="font-weight:700;color:#166534">'+pIva+'</td><td class="pnoche">'+pn+'</td></tr>';
+    var badgeEFB=esEFB?'<span style="background:#e1f5ea;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
+    var badgeSS=esStartStop?'<span style="background:#e1f5ea;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
+    h+='<tr><td><b>'+x.m+'</b>'+badgeEFB+badgeSS+'<div class="stk-info '+cls+'">'+stk+'</div></td><td>'+x.l+'</td><td class="pventa">'+x.p+'</td><td style="font-weight:700;color:#15803d">'+pIva+'</td><td class="pnoche">'+pn+'</td></tr>';
   });
-  document.getElementById('preciosBody').innerHTML=h||'<tr><td colspan="5" style="text-align:center;padding:1rem;color:#aaa">Sin resultados</td></tr>';
+  document.getElementById('preciosBody').innerHTML=h||'<tr><td colspan="5" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';
 }
 function buscarVehiculo(){
   var b=document.getElementById('busV').value.toLowerCase().trim();
@@ -730,15 +754,15 @@ function cargarGarantias(){
       h+='<div class="gcard-row">Ingreso: <span>'+g.fecha_ingreso+'</span></div>';
       if(g.fecha_devolucion)h+='<div class="gcard-row">Devolucion: <span>'+g.fecha_devolucion+'</span></div>';
       if(g.distribuidor)h+='<div class="gcard-row">Distribuidor: <span>'+g.distribuidor+'</span></div>';
-      var resColor=g.resuelto==='RESUELTO'?'#166534':g.resuelto==='NO RESUELTO'?'#991b1b':'#888';
-      h+='<div class="gcard-row" style="margin-top:8px">Estado: <select onchange="cambiarEstadoGarantia(\''+g.id+'\',this.value)" style="margin-left:6px;padding:4px 8px;border-radius:8px;border:1px solid #ddd;font-size:13px;font-weight:600;color:'+resColor+'">';
+      var resColor=g.resuelto==='RESUELTO'?'#15803d':g.resuelto==='NO RESUELTO'?'#b33a3a':'#70798a';
+      h+='<div class="gcard-row" style="margin-top:8px">Estado: <select onchange="cambiarEstadoGarantia(\''+g.id+'\',this.value)" style="margin-left:6px;padding:4px 8px;border-radius:8px;border:1px solid #d7dce3;font-size:13px;font-weight:600;color:'+resColor+'">';
       h+='<option value=""'+((!g.resuelto||g.resuelto=='')?'selected':'')+'>— Sin estado —</option>';
       h+='<option value="RESUELTO"'+(g.resuelto==='RESUELTO'?'selected':'')+'>RESUELTO</option>';
       h+='<option value="NO RESUELTO"'+(g.resuelto==='NO RESUELTO'?'selected':'')+'>NO RESUELTO</option>';
       h+='</select></div>';
       h+='<div style="display:flex;gap:8px;margin-top:10px">';
-      h+='<button class="bs" style="flex:1;font-size:13px;padding:8px" onclick="editarGarantiaClick(\''+g.id+'\')">&#9998; Editar</button>';
-      h+='<button class="bs" style="flex:1;font-size:13px;padding:8px;color:#991b1b;border-color:#fee2e2" onclick="eliminarGarantiaClick(\''+g.id+'\')">&#10005; Eliminar</button>';
+      h+='<button class="bs" style="flex:1;font-size:13px;padding:8px" onclick="editarGarantiaClick(\''+g.id+'\')">&#8a93a38; Editar</button>';
+      h+='<button class="bs" style="flex:1;font-size:13px;padding:8px;color:#b33a3a;border-color:#fbe3e3" onclick="eliminarGarantiaClick(\''+g.id+'\')">&#10005; Eliminar</button>';
       h+='</div>';
       h+='</div>';
     });
@@ -930,12 +954,12 @@ function rMod(){
   ms.forEach(function(m){
     var s=m[c]||0;
     var esSSmod=(m.codigo&&(m.codigo.indexOf('EFB')!==-1||m.codigo.indexOf('72LD')!==-1));
-    var badgeSSmod=esSSmod?'<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
+    var badgeSSmod=esSSmod?'<span style="background:#e1f5ea;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
     h+='<div class="mc"><div class="mh"><div class="mn">'+m.nombre+badgeSSmod+'</div><span class="badge '+bc(s)+'">'+bl(s)+'</span></div>';
     h+='<div class="sr"><span class="sn">'+s+'</span><span class="sl">Baterias<br>Disponibles</span></div>';
     h+='<div class="acts"><button class="bp" onclick="abrirColocacion(\''+m.id+'\',\''+m.codigo+'\')"'+(s===0?' disabled':'')+'>- RESTAR UNA</button><button class="bs" onclick="tRep(\''+m.id+'\')">+ SUMAR UNA</button></div>';
-    h+='<button class="bs" style="margin-top:8px;width:100%;font-size:13px;color:#991b1b;border-color:#fee2e2"'+(s===0?' disabled':'')+' onclick="restarSinRegistrar(\''+m.id+'\')">Restar sin registrar servicio (bateria dañada / error)</button>';
-    h+='<div class="rp" id="r'+m.id+'"><div style="font-size:13px;color:#888;margin-bottom:4px">Cuantas unidades agregas?</div>';
+    h+='<button class="bs" style="margin-top:8px;width:100%;font-size:13px;color:#b33a3a;border-color:#fbe3e3"'+(s===0?' disabled':'')+' onclick="restarSinRegistrar(\''+m.id+'\')">Restar sin registrar servicio (bateria dañada / error)</button>';
+    h+='<div class="rp" id="r'+m.id+'"><div style="font-size:13px;color:#70798a;margin-bottom:4px">Cuantas unidades agregas?</div>';
     h+='<div class="qr"><button class="qb" onclick="chQ(\''+m.id+'\',-1)">-</button><span class="qv" id="q'+m.id+'">1</span><button class="qb" onclick="chQ(\''+m.id+'\',1)">+</button></div>';
     h+='<div style="display:flex;gap:8px"><button class="bp" onclick="sumar(\''+m.id+'\')">Confirmar</button><button class="bs" onclick="tRep(\''+m.id+'\')">Cancelar</button></div></div></div>';
   });
@@ -972,30 +996,30 @@ function abrirColocacion(id,codigo){
   document.getElementById('colVigencia').value='12 meses';
   document.getElementById('colTelefonoCliente').value='';
   document.getElementById('colPrecio').value='';
-  document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
   document.getElementById('colCuentaField').style.display='none';
   document.getElementById('colOverlay').classList.remove('hidden');
 }
 function cerrarColOverlay(){document.getElementById('colOverlay').classList.add('hidden');}
 function setColPago(v,btn){
   colPago=v;
-  document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  btn.style.background='#111';btn.style.color='#fff';
+  document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  btn.style.background='#1b2330';btn.style.color='#fff';
   var cuentaField=document.getElementById('colCuentaField');
   if(v==='Transferencia'){cuentaField.style.display='block';}
-  else{cuentaField.style.display='none';colCuenta='';document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});}
+  else{cuentaField.style.display='none';colCuenta='';document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});}
 }
 function setColCuenta(v,btn){
   colCuenta=v;
-  document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  btn.style.background='#111';btn.style.color='#fff';
+  document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  btn.style.background='#1b2330';btn.style.color='#fff';
 }
 function setColUbi(v,btn){
   colUbi=v;
-  document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  btn.style.background='#111';btn.style.color='#fff';
+  document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  btn.style.background='#1b2330';btn.style.color='#fff';
 }
 var confirmandoColocacion=false;
 function confirmarColocacion(){
@@ -1081,9 +1105,9 @@ function abrirExtraOverlay(){
   document.getElementById('extraVehiculo').value='';
   document.getElementById('extraTelefono').value='';
   document.getElementById('extraPrecio').value=(tipoExtra==='Visita tecnica')?'28000':'';
-  document.querySelectorAll('#extraPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  document.querySelectorAll('#extraUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  document.querySelectorAll('#extraPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  document.querySelectorAll('#extraUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
   document.getElementById('extraCuentaField').style.display='none';
   confirmandoExtra=false;
   var btnE=document.querySelector('#extraOverlay .bp');
@@ -1093,21 +1117,21 @@ function abrirExtraOverlay(){
 function cerrarExtraOverlay(){document.getElementById('extraOverlay').classList.add('hidden');}
 function setExtraPago(v,btn){
   extraPago=v;
-  document.querySelectorAll('#extraPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  btn.style.background='#111';btn.style.color='#fff';
+  document.querySelectorAll('#extraPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  btn.style.background='#1b2330';btn.style.color='#fff';
   var cuentaField=document.getElementById('extraCuentaField');
   if(v==='Transferencia'){cuentaField.style.display='block';}
-  else{cuentaField.style.display='none';extraCuenta='';document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});}
+  else{cuentaField.style.display='none';extraCuenta='';document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});}
 }
 function setExtraCuenta(v,btn){
   extraCuenta=v;
-  document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  btn.style.background='#111';btn.style.color='#fff';
+  document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  btn.style.background='#1b2330';btn.style.color='#fff';
 }
 function setExtraUbi(v,btn){
   extraUbi=v;
-  document.querySelectorAll('#extraUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  btn.style.background='#111';btn.style.color='#fff';
+  document.querySelectorAll('#extraUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  btn.style.background='#1b2330';btn.style.color='#fff';
 }
 var confirmandoExtra=false;
 function confirmarServicioExtra(){
@@ -1187,14 +1211,14 @@ function cargarGastoAds(){
 function gastoAdsBadge(fecha){
   var g=GASTO_ADS[fecha];
   if(g===undefined||g===null||g==='')return '';
-  return '<span style="background:#1d4ed8;color:#fff;font-weight:800;font-size:13px;padding:3px 10px;border-radius:99px;white-space:nowrap">Gasto Google Ads: $'+formatMoney(g)+'</span>';
+  return '<span style="background:#1d5fad;color:#fff;font-weight:800;font-size:13px;padding:3px 10px;border-radius:99px;white-space:nowrap">Gasto Google Ads: $'+formatMoney(g)+'</span>';
 }
 function renderGastoHoyBanner(){
   var el=document.getElementById('gastoHoyBanner');
   if(!el)return;
   var v=GASTO_ADS[hoyStr()];
   if(v===undefined||v===null){el.innerHTML='';return;}
-  el.innerHTML='<div style="text-align:center;color:#1d4ed8;font-weight:700;font-size:14px;margin-bottom:12px">Google Ads HOY lleva gastado: $'+formatMoney(v)+'</div>';
+  el.innerHTML='<div style="text-align:center;color:#1d5fad;font-weight:700;font-size:14px;margin-bottom:12px">Google Ads HOY lleva gastado: $'+formatMoney(v)+'</div>';
 }
 function cargarHistorialMes(){
   document.getElementById('historialBody').innerHTML='<tr><td colspan="14" class="loading">Cargando...</td></tr>';
@@ -1248,8 +1272,8 @@ function cargarHistorialMes(){
           }
         });
         var cuentaTxtDia=Object.keys(cuentaCountsDia).map(function(k){return k+' '+cuentaCountsDia[k];}).join(', ');
-        var cuentaBadgeDia=cuentaTxtDia?'<span style="background:#0f766e;color:#fff;font-weight:800;font-size:13px;padding:3px 10px;border-radius:99px;white-space:nowrap">Transferencias: '+cuentaTxtDia+'</span>':'';
-        h+='<tr class="dia-summary" style="cursor:pointer" onclick="toggleDia(\''+gid+'\')"><td colspan="14" style="padding:14px 8px;background:#991b1b"><span style="display:flex;align-items:center;gap:10px"><span id="'+gid+'-icon" style="color:#fff;font-size:13px">&#9656;</span><span style="color:#fff;font-weight:700;font-size:15px">'+fmtFecha(fecha)+'</span><span style="display:flex;align-items:center;gap:8px;margin-left:auto">'+gastoAdsBadge(fecha)+cuentaBadgeDia+'<span style="background:#fff;color:#991b1b;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;white-space:nowrap">'+etiquetaDia+'</span></span></span></td></tr>';
+        var cuentaBadgeDia=cuentaTxtDia?'<span style="background:#0e7490;color:#fff;font-weight:800;font-size:13px;padding:3px 10px;border-radius:99px;white-space:nowrap">Transferencias: '+cuentaTxtDia+'</span>':'';
+        h+='<tr class="dia-summary" style="cursor:pointer" onclick="toggleDia(\''+gid+'\')"><td colspan="14" style="padding:14px 8px;background:#b33a3a"><span style="display:flex;align-items:center;gap:10px"><span id="'+gid+'-icon" style="color:#fff;font-size:13px">&#9656;</span><span style="color:#fff;font-weight:700;font-size:15px">'+fmtFecha(fecha)+'</span><span style="display:flex;align-items:center;gap:8px;margin-left:auto">'+gastoAdsBadge(fecha)+cuentaBadgeDia+'<span style="background:#fff;color:#b33a3a;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;white-space:nowrap">'+etiquetaDia+'</span></span></span></td></tr>';
         lista.forEach(function(s){h+=filaServicio(s,gid);});
       }
     });
@@ -1276,21 +1300,21 @@ function mostrarResumen(){
     if(r.hoyArranque)extraTxt.push(r.hoyArranque+' arranque'+(r.hoyArranque===1?'':'s'));
     if(r.hoyCarga)extraTxt.push(r.hoyCarga+' carga'+(r.hoyCarga===1?'':'s')+' de bateria');
     if(r.hoyVisita)extraTxt.push(r.hoyVisita+' visita tecnica'+(r.hoyVisita===1?'':'s'));
-    var extraHtml=extraTxt.length?'<div style="font-size:12px;color:#c2410c;font-weight:600;margin-top:4px">- '+extraTxt.join(', ')+'</div>':'';
+    var extraHtml=extraTxt.length?'<div style="font-size:12px;color:#c2540c;font-weight:600;margin-top:4px">- '+extraTxt.join(', ')+'</div>':'';
     var gastoHoyVal=GASTO_ADS[hoyStr()];
-    var gastoHoyHtml=(gastoHoyVal!==undefined&&gastoHoyVal!==null&&gastoHoyVal!=='')?'<div style="font-size:12px;color:#1d4ed8;font-weight:700;margin-top:4px">Gasto Google Ads: $'+formatMoney(gastoHoyVal)+'</div>':'';
+    var gastoHoyHtml=(gastoHoyVal!==undefined&&gastoHoyVal!==null&&gastoHoyVal!=='')?'<div style="font-size:12px;color:#1d5fad;font-weight:700;margin-top:4px">Gasto Google Ads: $'+formatMoney(gastoHoyVal)+'</div>':'';
     var extraTxt30=[];
     if(r.semanaArranque)extraTxt30.push(r.semanaArranque+' arranque'+(r.semanaArranque===1?'':'s'));
     if(r.semanaCarga)extraTxt30.push(r.semanaCarga+' carga'+(r.semanaCarga===1?'':'s')+' de bateria');
     if(r.semanaVisita)extraTxt30.push(r.semanaVisita+' visita tecnica'+(r.semanaVisita===1?'':'s'));
-    var extraHtml30=extraTxt30.length?'<div style="font-size:12px;color:#c2410c;font-weight:600;margin-top:4px">- '+extraTxt30.join(', ')+'</div>':'';
+    var extraHtml30=extraTxt30.length?'<div style="font-size:12px;color:#c2540c;font-weight:600;margin-top:4px">- '+extraTxt30.join(', ')+'</div>':'';
     var h='';
     h+='<div style="display:flex;gap:12px;margin-bottom:16px">';
-    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">HOY</div><div style="font-size:36px;font-weight:700">'+r.hoy+'</div><div style="font-size:12px;color:#888">servicios</div>'+extraHtml+gastoHoyHtml+'</div>';
+    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#70798a;margin-bottom:6px">HOY</div><div style="font-size:36px;font-weight:700">'+r.hoy+'</div><div style="font-size:12px;color:#70798a">servicios</div>'+extraHtml+gastoHoyHtml+'</div>';
     h+='<div class="mc" id="mesTotalCard" style="flex:1;text-align:center"><div class="loading" style="padding:0">Cargando...</div></div>';
     h+='</div>';
     h+='<div style="display:flex;gap:12px;margin-bottom:16px">';
-    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#888;margin-bottom:6px">SCRAP 10 DIAS</div><div style="display:flex;align-items:center;justify-content:center;gap:14px"><button style="width:32px;height:32px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#7c3aed;font-size:18px;font-weight:700;cursor:pointer;line-height:1" onclick="ajustarScrapClick(-1)">&#8722;</button><div id="scrapCount" style="font-size:36px;font-weight:700;color:#7c3aed;min-width:44px">'+r.scrap10+'</div><button style="width:32px;height:32px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#7c3aed;font-size:18px;font-weight:700;cursor:pointer;line-height:1" onclick="ajustarScrapClick(1)">&#43;</button></div><div style="font-size:12px;color:#888;margin-top:4px">baterias recibidas</div><button style="margin-top:8px;background:transparent;border:1px solid #ddd;border-radius:8px;padding:6px 12px;font-size:12px;color:#7c3aed;font-weight:600;cursor:pointer" onclick="reiniciarScrap()">&#8635; Reiniciar contador</button></div>';
+    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#70798a;margin-bottom:6px">SCRAP 10 DIAS</div><div style="display:flex;align-items:center;justify-content:center;gap:14px"><button style="width:32px;height:32px;border-radius:8px;border:1px solid #d7dce3;background:#fff;color:#6d4aa8;font-size:18px;font-weight:700;cursor:pointer;line-height:1" onclick="ajustarScrapClick(-1)">&#8722;</button><div id="scrapCount" style="font-size:36px;font-weight:700;color:#6d4aa8;min-width:44px">'+r.scrap10+'</div><button style="width:32px;height:32px;border-radius:8px;border:1px solid #d7dce3;background:#fff;color:#6d4aa8;font-size:18px;font-weight:700;cursor:pointer;line-height:1" onclick="ajustarScrapClick(1)">&#43;</button></div><div style="font-size:12px;color:#70798a;margin-top:4px">baterias recibidas</div><button style="margin-top:8px;background:transparent;border:1px solid #d7dce3;border-radius:8px;padding:6px 12px;font-size:12px;color:#6d4aa8;font-weight:600;cursor:pointer" onclick="reiniciarScrap()">&#8635; Reiniciar contador</button></div>';
     h+='</div>';
     document.getElementById('resumenBody').innerHTML=h;
     renderStatsMes();
@@ -1344,26 +1368,26 @@ function renderStatsMes(){
   if(st.totalArr)extraTxt.push(st.totalArr+' arranque'+(st.totalArr===1?'':'s'));
   if(st.totalCarga)extraTxt.push(st.totalCarga+' carga'+(st.totalCarga===1?'':'s')+' de bateria');
   if(st.totalVis)extraTxt.push(st.totalVis+' visita tecnica'+(st.totalVis===1?'':'s'));
-  var extraHtml=extraTxt.length?'<div style="font-size:12px;color:#c2410c;font-weight:600;margin-top:4px">- '+extraTxt.join(', ')+'</div>':'';
+  var extraHtml=extraTxt.length?'<div style="font-size:12px;color:#c2540c;font-weight:600;margin-top:4px">- '+extraTxt.join(', ')+'</div>':'';
   var clientesHtml='';
   if(st.totalClientesRepetidos||st.totalClientesNuevos){
-    clientesHtml='<div style="font-size:12px;color:#166534;font-weight:600;margin-top:4px">'+st.totalClientesRepetidos+' cliente'+(st.totalClientesRepetidos===1?'':'s')+' repetido'+(st.totalClientesRepetidos===1?'':'s')+' &middot; '+st.totalClientesNuevos+' nuevo'+(st.totalClientesNuevos===1?'':'s')+'</div>';
+    clientesHtml='<div style="font-size:12px;color:#15803d;font-weight:600;margin-top:4px">'+st.totalClientesRepetidos+' cliente'+(st.totalClientesRepetidos===1?'':'s')+' repetido'+(st.totalClientesRepetidos===1?'':'s')+' &middot; '+st.totalClientesNuevos+' nuevo'+(st.totalClientesNuevos===1?'':'s')+'</div>';
   }
   var totalGeneral=st.totalColoc;
   var cardTotal=document.getElementById('mesTotalCard');
   if(cardTotal){
-    cardTotal.innerHTML='<div style="font-size:13px;color:#888;margin-bottom:6px">TOTAL SERVICIOS '+mesLabel.toUpperCase()+'</div><div style="font-size:36px;font-weight:700">'+totalGeneral+'</div><div style="font-size:12px;color:#888">servicios</div>'+extraHtml+clientesHtml;
+    cardTotal.innerHTML='<div style="font-size:13px;color:#70798a;margin-bottom:6px">TOTAL SERVICIOS '+mesLabel.toUpperCase()+'</div><div style="font-size:36px;font-weight:700">'+totalGeneral+'</div><div style="font-size:12px;color:#70798a">servicios</div>'+extraHtml+clientesHtml;
   }
   var el=document.getElementById('mesStatsBody');
   if(!el)return;
   var h='';
   h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por tecnico ('+mesLabel+')</div>';
   Object.keys(st.porTecnico).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porTecnico[k]+'</span></div>';});
-  if(!Object.keys(st.porTecnico).length)h+='<div class="gcard-row" style="color:#aaa">Sin datos</div>';
+  if(!Object.keys(st.porTecnico).length)h+='<div class="gcard-row" style="color:#94a0af">Sin datos</div>';
   h+='</div>';
   h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por marca ('+mesLabel+')</div>';
   Object.keys(st.porMarca).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porMarca[k]+'</span></div>';});
-  if(!Object.keys(st.porMarca).length)h+='<div class="gcard-row" style="color:#aaa">Sin datos</div>';
+  if(!Object.keys(st.porMarca).length)h+='<div class="gcard-row" style="color:#94a0af">Sin datos</div>';
   h+='</div>';
   h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por modelo ('+mesLabel+')</div>';
   var ordenMarca={'MOURA':0,'WILLARD':1,'SERMAT':2,'HERBO':3,'BARI':4};
@@ -1377,15 +1401,15 @@ function renderStatsMes(){
     return ka<kb?-1:ka>kb?1:0;
   });
   modelosOrdenados.forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porModelo[k]+'</span></div>';});
-  if(!modelosOrdenados.length)h+='<div class="gcard-row" style="color:#aaa">Sin datos</div>';
+  if(!modelosOrdenados.length)h+='<div class="gcard-row" style="color:#94a0af">Sin datos</div>';
   h+='</div>';
   h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por forma de pago ('+mesLabel+')</div>';
   Object.keys(st.porPago).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porPago[k]+'</span> — <span>$'+formatMoney(st.porPagoMonto&&st.porPagoMonto[k]||0)+'</span></div>';});
-  if(!Object.keys(st.porPago).length)h+='<div class="gcard-row" style="color:#aaa">Sin datos</div>';
+  if(!Object.keys(st.porPago).length)h+='<div class="gcard-row" style="color:#94a0af">Sin datos</div>';
   h+='</div>';
   h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por cuenta de transferencia ('+mesLabel+')</div>';
   Object.keys(st.porCuentaTransferencia||{}).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porCuentaTransferencia[k]+'</span> — <span>$'+formatMoney(st.porCuentaTransferenciaMonto&&st.porCuentaTransferenciaMonto[k]||0)+'</span></div>';});
-  if(!Object.keys(st.porCuentaTransferencia||{}).length)h+='<div class="gcard-row" style="color:#aaa">Sin transferencias</div>';
+  if(!Object.keys(st.porCuentaTransferencia||{}).length)h+='<div class="gcard-row" style="color:#94a0af">Sin transferencias</div>';
   h+='</div>';
   el.innerHTML=h;
 }
@@ -1397,21 +1421,21 @@ function filaServicio(s,hiddenClass){
   var pagado=s.estado_pago==='Pagado';
   var esExtra=s.modelo_bateria==='Arranque'||s.modelo_bateria==='Carga de bateria'||s.modelo_bateria==='Visita tecnica';
   var esTarjeta=s.forma_pago==='Tarjeta';
-  var rowBg=esExtra?'#fff7ed':(esTarjeta?'#eff6ff':'');
+  var rowBg=esExtra?'#fbeee0':(esTarjeta?'#eaf2fb':'');
   var styleParts=[];
   if(!pagado)styleParts.push('font-weight:700');
   if(hiddenClass)styleParts.push('display:none');
   var styleAttr=styleParts.length?' style="'+styleParts.join(';')+'"':'';
   var clsAttr=hiddenClass?' class="'+hiddenClass+'"':'';
   var td=rowBg?'<td style="background:'+rowBg+'">':'<td>';
-  var bg=pagado?'#dcfce7':'#fee2e2';
-  var col=pagado?'#166534':'#991b1b';
+  var bg=pagado?'#e1f5ea':'#fbe3e3';
+  var col=pagado?'#15803d':'#b33a3a';
   var label=pagado?'PAGADO':'NO PAGADO';
-  var accCell=td+'<div style="display:flex;gap:6px"><button style="width:28px;height:28px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#444;font-size:13px;cursor:pointer" title="Editar" onclick=\'editarServicioClick('+s.fila+')\'>&#9998;</button><button style="width:28px;height:28px;border-radius:7px;border:none;background:#fee2e2;color:#991b1b;font-size:13px;cursor:pointer" title="Eliminar" onclick="eliminarServicioClick('+s.fila+')">&#10005;</button></div></td>';
-  var garantiaCell=esExtra?(td+'<span style="color:#ccc;font-size:12px">&mdash;</span></td>'):(td+'<button style="width:28px;height:28px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#444;font-size:13px;cursor:pointer" title="Descargar garantia" onclick=\'descargarGarantiaClick('+s.fila+')\'>&#128196;</button></td>');
+  var accCell=td+'<div style="display:flex;gap:6px"><button style="width:28px;height:28px;border-radius:7px;border:1px solid #d7dce3;background:#fff;color:#3a4150;font-size:13px;cursor:pointer" title="Editar" onclick=\'editarServicioClick('+s.fila+')\'>&#8a93a38;</button><button style="width:28px;height:28px;border-radius:7px;border:none;background:#fbe3e3;color:#b33a3a;font-size:13px;cursor:pointer" title="Eliminar" onclick="eliminarServicioClick('+s.fila+')">&#10005;</button></div></td>';
+  var garantiaCell=esExtra?(td+'<span style="color:#c7cdd6;font-size:12px">&mdash;</span></td>'):(td+'<button style="width:28px;height:28px;border-radius:7px;border:1px solid #d7dce3;background:#fff;color:#3a4150;font-size:13px;cursor:pointer" title="Descargar garantia" onclick=\'descargarGarantiaClick('+s.fila+')\'>&#128196;</button></td>');
   var clienteTipo=s.cliente_tipo||'Sin dato';
-  var clienteBg=clienteTipo==='Repetido'?'#dcfce7':(clienteTipo==='Nuevo'?'#dbeafe':'#f3f4f6');
-  var clienteCol=clienteTipo==='Repetido'?'#166534':(clienteTipo==='Nuevo'?'#1e40af':'#9ca3af');
+  var clienteBg=clienteTipo==='Repetido'?'#e1f5ea':(clienteTipo==='Nuevo'?'#dcebfa':'#eef1f5');
+  var clienteCol=clienteTipo==='Repetido'?'#15803d':(clienteTipo==='Nuevo'?'#1d4e8f':'#8a93a3');
   var clienteTxt=clienteTipo==='Sin dato'?'&mdash;':clienteTipo;
   var clienteCell=td+'<span style="background:'+clienteBg+';color:'+clienteCol+';font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px">'+clienteTxt+'</span></td>';
   return '<tr'+clsAttr+styleAttr+' data-fila="'+s.fila+'">'+td+fmtFecha(s.fecha)+'</td>'+td+s.vehiculo+'</td>'+td+(s.anio_vehiculo||'')+'</td>'+td+safeVal(s.motor)+'</td>'+td+s.combustible+'</td>'+td+s.modelo_bateria+'</td>'+td+'$'+formatMoney(s.precio)+'</td>'+td+s.forma_pago+'</td>'+td+s.ubicacion+'</td>'+td+s.tecnico+'</td>'+td+'<button style="background:'+bg+';color:'+col+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer" onclick="togglePago('+s.fila+',\''+s.estado_pago+'\',this)">'+label+'</button></td>'+clienteCell+garantiaCell+accCell+'</tr>';
@@ -1432,8 +1456,8 @@ function togglePago(fila,estadoActual,btn){
     if(r.ok){
       var pagado=nuevo==='Pagado';
       btn.textContent=pagado?'PAGADO':'NO PAGADO';
-      btn.style.background=pagado?'#dcfce7':'#fee2e2';
-      btn.style.color=pagado?'#166534':'#991b1b';
+      btn.style.background=pagado?'#e1f5ea':'#fbe3e3';
+      btn.style.color=pagado?'#15803d':'#b33a3a';
       btn.setAttribute('onclick',"togglePago("+fila+",'"+nuevo+"',this)");
       btn.closest('tr').style.fontWeight=pagado?'':'700';
       toast(pagado?'Marcado como pagado':'Marcado como no pagado');
@@ -1464,7 +1488,7 @@ function renderTurnosMini(){
     var db=b.fecha+' '+(b.hora||'00:00');
     return da<db?-1:da>db?1:0;
   });
-  if(!activos.length){el.innerHTML='<div style="padding:.75rem 2px;color:#aaa;font-size:14px">No hay turnos agendados</div>';return;}
+  if(!activos.length){el.innerHTML='<div style="padding:.75rem 2px;color:#94a0af;font-size:14px">No hay turnos agendados</div>';return;}
   var ahora=new Date();
   var hoyS=hoyStr();
   var mananaD=new Date();mananaD.setDate(mananaD.getDate()+1);
@@ -1483,15 +1507,15 @@ function renderTurnosMini(){
     var infoParts=[];
     if(t.vehiculo)infoParts.push('<b>'+t.vehiculo+'</b>');
     if(t.cliente)infoParts.push(t.cliente);
-    if(t.telefono)infoParts.push('<span style="color:#0369a1">'+t.telefono+'</span>');
+    if(t.telefono)infoParts.push('<span style="color:#0e7490">'+t.telefono+'</span>');
     if(t.direccion)infoParts.push(t.direccion);
-    if(t.precio)infoParts.push('<b style="color:#166534">$'+formatMoney(t.precio)+'</b>');
-    if(t.tecnico)infoParts.push('<span style="color:#7c3aed;font-weight:700">'+t.tecnico+'</span>');
-    if(t.notas)infoParts.push('<span style="color:#888">'+t.notas+'</span>');
+    if(t.precio)infoParts.push('<b style="color:#15803d">$'+formatMoney(t.precio)+'</b>');
+    if(t.tecnico)infoParts.push('<span style="color:#6d4aa8;font-weight:700">'+t.tecnico+'</span>');
+    if(t.notas)infoParts.push('<span style="color:#70798a">'+t.notas+'</span>');
     var infoTxt=infoParts.join(' · ')||'-';
     h+='<div class="tmini">';
     h+='<div class="tmini-left"><div class="tmini-time">'+(t.hora||'--:--')+'</div><div class="tmini-info">'+infoTxt+'</div></div>';
-    h+='<div class="tmini-actions"><span class="tmini-tag '+cls+'">'+relTxt+'</span><button class="tmini-x" title="Editar" style="color:#444" onclick="editarTurnoClick(\''+t.id+'\')">&#9998;</button><button class="tmini-ok" title="Completado" onclick="completarTurno(\''+t.id+'\')">&#10003;</button><button class="tmini-x" title="Cancelar" onclick="cancelarTurno(\''+t.id+'\')">&#10005;</button></div>';
+    h+='<div class="tmini-actions"><span class="tmini-tag '+cls+'">'+relTxt+'</span><button class="tmini-x" title="Editar" style="color:#3a4150" onclick="editarTurnoClick(\''+t.id+'\')">&#8a93a38;</button><button class="tmini-ok" title="Completado" onclick="completarTurno(\''+t.id+'\')">&#10003;</button><button class="tmini-x" title="Cancelar" onclick="cancelarTurno(\''+t.id+'\')">&#10005;</button></div>';
     h+='</div>';
   });
   el.innerHTML=h;
@@ -1504,7 +1528,7 @@ function actualizarAlertaReservados(){
   var hayActivos=turnos.some(function(t){return t.estado!=='Completado'&&t.estado!=='Cancelado';});
   if(hayActivos){
     sub.innerHTML='&#9888; HAY SERVICIOS RESERVADOS';
-    sub.style.color='#c2410c';
+    sub.style.color='#c2540c';
     sub.style.fontWeight='800';
   }else{
     sub.textContent='Servicios de hoy y la semana';
@@ -1543,7 +1567,7 @@ function abrirNuevoTurno(){
   document.getElementById('tPrecio').value='';
   document.getElementById('tNotas').value='';
   turnoTecnico='';
-  document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
+  document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
   confirmandoTurno=false;
   var btnT=document.querySelector('#turnoOverlay .bp');
   if(btnT){btnT.disabled=false;btnT.textContent='Guardar turno';}
@@ -1565,8 +1589,8 @@ function editarTurnoClick(id){
   turnoTecnico=t.tecnico||'';
   document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){
     var esActivo=b.textContent===turnoTecnico;
-    b.style.background=esActivo?'#111':'transparent';
-    b.style.color=esActivo?'#fff':'#444';
+    b.style.background=esActivo?'#1b2330':'transparent';
+    b.style.color=esActivo?'#fff':'#3a4150';
   });
   confirmandoTurno=false;
   var btnT=document.querySelector('#turnoOverlay .bp');
@@ -1576,8 +1600,8 @@ function editarTurnoClick(id){
 function cerrarTurnoOverlay(){editingTurnoId=null;document.getElementById('turnoOverlay').classList.add('hidden');}
 function setTecnico(v,btn){
   turnoTecnico=v;
-  document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  btn.style.background='#111';btn.style.color='#fff';
+  document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  btn.style.background='#1b2330';btn.style.color='#fff';
 }
 var confirmandoTurno=false;
 function confirmarTurno(){
@@ -1680,47 +1704,47 @@ function editarServicioClick(fila){
   document.getElementById('editTelefonoCliente').value=s.telefono_cliente||'';
   document.getElementById('editPrecio').value=s.precio||'';
   document.querySelectorAll('#editPagoBtns .bs').forEach(function(b){
-    b.style.background=b.textContent===editPago?'#111':'transparent';
-    b.style.color=b.textContent===editPago?'#fff':'#444';
+    b.style.background=b.textContent===editPago?'#1b2330':'transparent';
+    b.style.color=b.textContent===editPago?'#fff':'#3a4150';
   });
   document.getElementById('editCuentaField').style.display=(editPago==='Transferencia')?'block':'none';
   document.querySelectorAll('#editCuentaBtns .bs').forEach(function(b){
-    b.style.background=b.textContent===editCuenta?'#111':'transparent';
-    b.style.color=b.textContent===editCuenta?'#fff':'#444';
+    b.style.background=b.textContent===editCuenta?'#1b2330':'transparent';
+    b.style.color=b.textContent===editCuenta?'#fff':'#3a4150';
   });
   document.querySelectorAll('#editUbiBtns .bs').forEach(function(b){
-    b.style.background=b.textContent===editUbi?'#111':'transparent';
-    b.style.color=b.textContent===editUbi?'#fff':'#444';
+    b.style.background=b.textContent===editUbi?'#1b2330':'transparent';
+    b.style.color=b.textContent===editUbi?'#fff':'#3a4150';
   });
   document.querySelectorAll('#editTecnicoBtns .bs').forEach(function(b){
-    b.style.background=b.textContent===editTecnico?'#111':'transparent';
-    b.style.color=b.textContent===editTecnico?'#fff':'#444';
+    b.style.background=b.textContent===editTecnico?'#1b2330':'transparent';
+    b.style.color=b.textContent===editTecnico?'#fff':'#3a4150';
   });
   document.getElementById('editServOverlay').classList.remove('hidden');
 }
 function cerrarEditServOverlay(){document.getElementById('editServOverlay').classList.add('hidden');}
 function setEditPago(v,btn){
   editPago=v;
-  document.querySelectorAll('#editPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  btn.style.background='#111';btn.style.color='#fff';
+  document.querySelectorAll('#editPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  btn.style.background='#1b2330';btn.style.color='#fff';
   var cuentaField=document.getElementById('editCuentaField');
   if(v==='Transferencia'){cuentaField.style.display='block';}
-  else{cuentaField.style.display='none';editCuenta='';document.querySelectorAll('#editCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});}
+  else{cuentaField.style.display='none';editCuenta='';document.querySelectorAll('#editCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});}
 }
 function setEditCuenta(v,btn){
   editCuenta=v;
-  document.querySelectorAll('#editCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  btn.style.background='#111';btn.style.color='#fff';
+  document.querySelectorAll('#editCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  btn.style.background='#1b2330';btn.style.color='#fff';
 }
 function setEditUbi(v,btn){
   editUbi=v;
-  document.querySelectorAll('#editUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  btn.style.background='#111';btn.style.color='#fff';
+  document.querySelectorAll('#editUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  btn.style.background='#1b2330';btn.style.color='#fff';
 }
 function setEditTecnico(v,btn){
   editTecnico=v;
-  document.querySelectorAll('#editTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#444';});
-  btn.style.background='#111';btn.style.color='#fff';
+  document.querySelectorAll('#editTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  btn.style.background='#1b2330';btn.style.color='#fff';
 }
 var confirmandoEdit=false;
 function confirmarEditServicio(){
@@ -1831,7 +1855,7 @@ function mostrarResultadoGarantia(url,telefono){
   h+='<div style="font-size:18px;font-weight:700;margin-bottom:12px">Garantia generada</div>';
   h+='<div style="display:flex;flex-direction:column;gap:8px">';
   h+='<a href="'+url+'" target="_blank" class="bp" style="text-decoration:none;text-align:center;display:block">Ver / Descargar PDF</a>';
-  if(wa)h+='<a href="'+wa+'" target="_blank" class="bp" style="text-decoration:none;text-align:center;display:block;background:#166534">Enviar por WhatsApp</a>';
+  if(wa)h+='<a href="'+wa+'" target="_blank" class="bp" style="text-decoration:none;text-align:center;display:block;background:#15803d">Enviar por WhatsApp</a>';
   h+='<button class="bs" onclick="document.getElementById(\'garantiaResultOverlay\').remove()">Cerrar</button>';
   h+='</div></div>';
   var overlay=document.createElement('div');

@@ -7,20 +7,20 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
 :root{
---ink:#1b2330;--ink-soft:#3a4150;--muted:#70798a;--muted2:#94a0af;
---border:#e2e6ed;--border2:#eef1f5;--bg:#f1f3f7;--surface:#fff;
---amber:#f2a93c;--amber-deep:#c2540c;--teal:#0e7490;--violet:#6d4aa8;
---green:#15803d;--green-bg:#e1f5ea;--warn:#9a6b12;--warn-bg:#fcefc7;
---red:#b33a3a;--red-bg:#fbe3e3;
+--ink:#ffffff;--ink-soft:#c7cde0;--muted:#8a90b3;--muted2:#6b7199;
+--border:#282b5c;--border2:#1a1d47;--bg:#000020;--surface:#0c0e33;
+--amber:#f2a93c;--amber-deep:#fb923c;--teal:#2dd4bf;--violet:#a78bfa;
+--green:#34d399;--green-bg:rgba(52,211,153,.14);--warn:#fbbf24;--warn-bg:rgba(251,191,36,.14);
+--red:#f87171;--red-bg:rgba(248,113,113,.14);--panel:#14183f;
 --sans:'Space Grotesk',-apple-system,sans-serif;--mono:'IBM Plex Mono',monospace;
 --r-lg:18px;--r-md:12px;--r-sm:8px;
---shadow-card:0 1px 2px rgba(27,35,48,.04),0 6px 16px -4px rgba(27,35,48,.10);
---shadow-pop:0 12px 32px -8px rgba(27,35,48,.28);
+--shadow-card:0 1px 2px rgba(0,0,0,.3),0 6px 16px -4px rgba(0,0,0,.5);
+--shadow-pop:0 16px 40px -8px rgba(0,0,0,.7);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17px;-webkit-font-smoothing:antialiased}
 .header,.section{max-width:600px;margin:0 auto}
-.header{display:flex;align-items:center;gap:12px;padding:1.1rem 1.25rem;background:var(--ink);color:#fff;border-radius:0 0 var(--r-lg) var(--r-lg);box-shadow:var(--shadow-pop)}
+.header{display:flex;align-items:center;gap:12px;padding:1.1rem 1.25rem;background:var(--panel);color:#fff;border-radius:0 0 var(--r-lg) var(--r-lg);box-shadow:var(--shadow-pop)}
 .logo{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:rgba(255,255,255,.08);border:1px solid rgba(242,169,60,.45);flex-shrink:0}
 .h1{font-size:18px;font-weight:700;letter-spacing:-.01em}
 .h2{font-size:12.5px;color:rgba(255,255,255,.62);margin-top:2px;display:flex;align-items:center;gap:6px}
@@ -48,7 +48,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17p
 .sn{font-size:42px;font-weight:700;font-family:var(--mono);letter-spacing:-.02em}
 .sl{font-size:13.5px;color:var(--muted);line-height:1.4}
 .acts{display:flex;gap:8px}
-.bp{flex:1;background:var(--ink);color:#fff;border:none;border-radius:var(--r-md);padding:14px;font-size:15.5px;font-weight:700;cursor:pointer;transition:transform .12s ease,opacity .12s ease;font-family:var(--sans)}
+.bp{flex:1;background:var(--amber);color:#1b2330;border:none;border-radius:var(--r-md);padding:14px;font-size:15.5px;font-weight:700;cursor:pointer;transition:transform .12s ease,opacity .12s ease;font-family:var(--sans)}
 .bp:active{transform:scale(.98)}
 .bp:disabled{opacity:.3;cursor:not-allowed;transform:none}
 .bs{background:transparent;border:1.5px solid var(--border);border-radius:var(--r-md);padding:14px 16px;font-size:15.5px;font-weight:600;cursor:pointer;color:var(--ink-soft);font-family:var(--sans);transition:border-color .12s ease,background .12s ease}
@@ -58,13 +58,13 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17p
 .qr{display:flex;align-items:center;gap:12px;margin:8px 0 12px}
 .qb{width:42px;height:42px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);font-size:20px;cursor:pointer;font-family:var(--sans);color:var(--ink)}
 .qv{font-size:24px;font-weight:700;flex:1;text-align:center;font-family:var(--mono)}
-.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 22px;border-radius:99px;font-size:14.5px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:100;box-shadow:var(--shadow-pop);border:1px solid rgba(242,169,60,.3)}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--panel);color:#fff;padding:11px 22px;border-radius:99px;font-size:14.5px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;z-index:100;box-shadow:var(--shadow-pop);border:1px solid rgba(242,169,60,.3)}
 .toast.show{opacity:1}
 .loading{text-align:center;padding:3rem;color:var(--muted);font-size:15.5px}
 .err{background:var(--red-bg);color:var(--red);border-radius:var(--r-md);padding:12px 16px;font-size:14.5px;margin-bottom:12px;font-weight:600}
 .hidden{display:none}
 .ptable{width:100%;border-collapse:collapse;font-size:14.5px}
-.ptable th{background:var(--ink);color:#fff;padding:11px 9px;text-align:left;position:sticky;top:0;font-weight:600;font-size:13px;letter-spacing:.01em}
+.ptable th{background:var(--panel);color:#fff;padding:11px 9px;text-align:left;position:sticky;top:0;font-weight:600;font-size:13px;letter-spacing:.01em}
 .ptable td{padding:11px 9px;border-bottom:1px solid var(--border2);background:var(--surface);font-family:var(--mono);font-size:14px}
 .ptable td b{font-family:var(--sans);font-size:14.5px}
 .ptable tr:nth-child(even) td{background:var(--border2)}
@@ -112,7 +112,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17p
 .tmini-tag.future{color:var(--muted2);font-weight:600}
 .tmini-actions{display:flex;gap:6px;flex-shrink:0;align-items:center}
 .tmini-x{width:28px;height:28px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s ease}
-.tmini-ok{width:28px;height:28px;border-radius:var(--r-sm);border:none;background:var(--ink);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tmini-ok{width:28px;height:28px;border-radius:var(--r-sm);border:none;background:var(--panel);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .aviso-box{margin-bottom:12px}
 .aviso{background:#fff6e3;border:1px solid #f2cb85;border-radius:var(--r-md);padding:12px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
 .aviso-icon{font-size:18px;flex-shrink:0;line-height:1.3}
@@ -235,7 +235,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17p
 </div>
 <div class="toast" id="toast"></div>
 <div id="avisoOverlay" class="hidden col-overlay">
-<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
+<div style="background:#0c0e33;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;border:1px solid #282b5c">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px">Nuevo aviso</div>
 <div class="gfield"><label>Texto del aviso</label><input type="text" id="avTexto" placeholder="Ej: Nuevo modelo Bosch S4 60Ah ya disponible"/></div>
 <div style="font-size:13px;color:#70798a;margin:-4px 0 14px">Se muestra en la pantalla principal durante 4 dias y despues desaparece solo.</div>
@@ -246,7 +246,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17p
 </div>
 </div>
 <div id="turnoOverlay" class="hidden col-overlay">
-<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
+<div style="background:#0c0e33;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;border:1px solid #282b5c">
 <div id="turnoOverlayTitulo" style="font-size:19px;font-weight:700;margin-bottom:14px">Nuevo turno</div>
 <div class="gfield"><label>Fecha</label><input type="date" id="tFecha"/></div>
 <div class="gfield"><label>Hora</label><input type="time" id="tHora"/></div>
@@ -270,7 +270,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17p
 </div>
 </div>
 <div id="colOverlay" class="hidden col-overlay">
-<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
+<div style="background:#0c0e33;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;border:1px solid #282b5c">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px">Datos de la colocación</div>
 <div class="gfield"><label>Fecha</label><input type="date" id="colFecha"/></div>
 <div class="gfield"><label>Vehiculo</label><input type="text" id="colVehiculo" placeholder="Ej: Corolla 2018"/></div>
@@ -310,7 +310,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17p
 </div>
 </div>
 <div id="extraOverlay" class="hidden col-overlay">
-<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
+<div style="background:#0c0e33;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;border:1px solid #282b5c">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px" id="extraTitulo">Datos del servicio</div>
 <div class="gfield"><label>Fecha</label><input type="date" id="extraFecha"/></div>
 <div class="gfield"><label>Vehiculo</label><input type="text" id="extraVehiculo" placeholder="Ej: Corolla 2018"/></div>
@@ -344,7 +344,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17p
 </div>
 </div>
 <div id="editGarantiaOverlay" class="hidden col-overlay">
-<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
+<div style="background:#0c0e33;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;border:1px solid #282b5c">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px">Editar garantia</div>
 <div class="gfield"><label>Garantia (modelo bateria)</label><input type="text" id="egGarantia"/></div>
 <div class="gfield"><label>Motivo</label><input type="text" id="egMotivo"/></div>
@@ -359,7 +359,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17p
 </div>
 </div>
 <div id="editServOverlay" class="hidden col-overlay">
-<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto">
+<div style="background:#0c0e33;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;border:1px solid #282b5c">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px">Editar servicio</div>
 <div class="gfield"><label>Fecha</label><input type="date" id="editFecha"/></div>
 <div class="gfield"><label>Vehiculo</label><input type="text" id="editVehiculo"/></div>
@@ -761,7 +761,7 @@ function cargarGarantias(){
       h+='<option value="NO RESUELTO"'+(g.resuelto==='NO RESUELTO'?'selected':'')+'>NO RESUELTO</option>';
       h+='</select></div>';
       h+='<div style="display:flex;gap:8px;margin-top:10px">';
-      h+='<button class="bs" style="flex:1;font-size:13px;padding:8px" onclick="editarGarantiaClick(\''+g.id+'\')">&#8a93a38; Editar</button>';
+      h+='<button class="bs" style="flex:1;font-size:13px;padding:8px" onclick="editarGarantiaClick(\''+g.id+'\')">&#9998; Editar</button>';
       h+='<button class="bs" style="flex:1;font-size:13px;padding:8px;color:#b33a3a;border-color:#fbe3e3" onclick="eliminarGarantiaClick(\''+g.id+'\')">&#10005; Eliminar</button>';
       h+='</div>';
       h+='</div>';
@@ -996,30 +996,30 @@ function abrirColocacion(id,codigo){
   document.getElementById('colVigencia').value='12 meses';
   document.getElementById('colTelefonoCliente').value='';
   document.getElementById('colPrecio').value='';
-  document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
   document.getElementById('colCuentaField').style.display='none';
   document.getElementById('colOverlay').classList.remove('hidden');
 }
 function cerrarColOverlay(){document.getElementById('colOverlay').classList.add('hidden');}
 function setColPago(v,btn){
   colPago=v;
-  document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  btn.style.background='#1b2330';btn.style.color='#fff';
+  document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  btn.style.background='#f2a93c';btn.style.color='#1b2330';
   var cuentaField=document.getElementById('colCuentaField');
   if(v==='Transferencia'){cuentaField.style.display='block';}
-  else{cuentaField.style.display='none';colCuenta='';document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});}
+  else{cuentaField.style.display='none';colCuenta='';document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});}
 }
 function setColCuenta(v,btn){
   colCuenta=v;
-  document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  btn.style.background='#1b2330';btn.style.color='#fff';
+  document.querySelectorAll('#colCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  btn.style.background='#f2a93c';btn.style.color='#1b2330';
 }
 function setColUbi(v,btn){
   colUbi=v;
-  document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  btn.style.background='#1b2330';btn.style.color='#fff';
+  document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  btn.style.background='#f2a93c';btn.style.color='#1b2330';
 }
 var confirmandoColocacion=false;
 function confirmarColocacion(){
@@ -1105,9 +1105,9 @@ function abrirExtraOverlay(){
   document.getElementById('extraVehiculo').value='';
   document.getElementById('extraTelefono').value='';
   document.getElementById('extraPrecio').value=(tipoExtra==='Visita tecnica')?'28000':'';
-  document.querySelectorAll('#extraPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  document.querySelectorAll('#extraUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  document.querySelectorAll('#extraPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  document.querySelectorAll('#extraUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
   document.getElementById('extraCuentaField').style.display='none';
   confirmandoExtra=false;
   var btnE=document.querySelector('#extraOverlay .bp');
@@ -1117,21 +1117,21 @@ function abrirExtraOverlay(){
 function cerrarExtraOverlay(){document.getElementById('extraOverlay').classList.add('hidden');}
 function setExtraPago(v,btn){
   extraPago=v;
-  document.querySelectorAll('#extraPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  btn.style.background='#1b2330';btn.style.color='#fff';
+  document.querySelectorAll('#extraPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  btn.style.background='#f2a93c';btn.style.color='#1b2330';
   var cuentaField=document.getElementById('extraCuentaField');
   if(v==='Transferencia'){cuentaField.style.display='block';}
-  else{cuentaField.style.display='none';extraCuenta='';document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});}
+  else{cuentaField.style.display='none';extraCuenta='';document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});}
 }
 function setExtraCuenta(v,btn){
   extraCuenta=v;
-  document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  btn.style.background='#1b2330';btn.style.color='#fff';
+  document.querySelectorAll('#extraCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  btn.style.background='#f2a93c';btn.style.color='#1b2330';
 }
 function setExtraUbi(v,btn){
   extraUbi=v;
-  document.querySelectorAll('#extraUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  btn.style.background='#1b2330';btn.style.color='#fff';
+  document.querySelectorAll('#extraUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  btn.style.background='#f2a93c';btn.style.color='#1b2330';
 }
 var confirmandoExtra=false;
 function confirmarServicioExtra(){
@@ -1314,7 +1314,7 @@ function mostrarResumen(){
     h+='<div class="mc" id="mesTotalCard" style="flex:1;text-align:center"><div class="loading" style="padding:0">Cargando...</div></div>';
     h+='</div>';
     h+='<div style="display:flex;gap:12px;margin-bottom:16px">';
-    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#70798a;margin-bottom:6px">SCRAP 10 DIAS</div><div style="display:flex;align-items:center;justify-content:center;gap:14px"><button style="width:32px;height:32px;border-radius:8px;border:1px solid #d7dce3;background:#fff;color:#6d4aa8;font-size:18px;font-weight:700;cursor:pointer;line-height:1" onclick="ajustarScrapClick(-1)">&#8722;</button><div id="scrapCount" style="font-size:36px;font-weight:700;color:#6d4aa8;min-width:44px">'+r.scrap10+'</div><button style="width:32px;height:32px;border-radius:8px;border:1px solid #d7dce3;background:#fff;color:#6d4aa8;font-size:18px;font-weight:700;cursor:pointer;line-height:1" onclick="ajustarScrapClick(1)">&#43;</button></div><div style="font-size:12px;color:#70798a;margin-top:4px">baterias recibidas</div><button style="margin-top:8px;background:transparent;border:1px solid #d7dce3;border-radius:8px;padding:6px 12px;font-size:12px;color:#6d4aa8;font-weight:600;cursor:pointer" onclick="reiniciarScrap()">&#8635; Reiniciar contador</button></div>';
+    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#8a90b3;margin-bottom:6px">SCRAP 10 DIAS</div><div style="display:flex;align-items:center;justify-content:center;gap:14px"><button style="width:32px;height:32px;border-radius:8px;border:1px solid #282b5c;background:#14183f;color:#a78bfa;font-size:18px;font-weight:700;cursor:pointer;line-height:1" onclick="ajustarScrapClick(-1)">&#8722;</button><div id="scrapCount" style="font-size:36px;font-weight:700;color:#a78bfa;min-width:44px">'+r.scrap10+'</div><button style="width:32px;height:32px;border-radius:8px;border:1px solid #282b5c;background:#14183f;color:#a78bfa;font-size:18px;font-weight:700;cursor:pointer;line-height:1" onclick="ajustarScrapClick(1)">&#43;</button></div><div style="font-size:12px;color:#8a90b3;margin-top:4px">baterias recibidas</div><button style="margin-top:8px;background:transparent;border:1px solid #282b5c;border-radius:8px;padding:6px 12px;font-size:12px;color:#a78bfa;font-weight:600;cursor:pointer" onclick="reiniciarScrap()">&#8635; Reiniciar contador</button></div>';
     h+='</div>';
     document.getElementById('resumenBody').innerHTML=h;
     renderStatsMes();
@@ -1421,7 +1421,7 @@ function filaServicio(s,hiddenClass){
   var pagado=s.estado_pago==='Pagado';
   var esExtra=s.modelo_bateria==='Arranque'||s.modelo_bateria==='Carga de bateria'||s.modelo_bateria==='Visita tecnica';
   var esTarjeta=s.forma_pago==='Tarjeta';
-  var rowBg=esExtra?'#fbeee0':(esTarjeta?'#eaf2fb':'');
+  var rowBg=esExtra?'rgba(251,146,60,.10)':(esTarjeta?'rgba(45,212,191,.10)':'');
   var styleParts=[];
   if(!pagado)styleParts.push('font-weight:700');
   if(hiddenClass)styleParts.push('display:none');
@@ -1431,8 +1431,8 @@ function filaServicio(s,hiddenClass){
   var bg=pagado?'#e1f5ea':'#fbe3e3';
   var col=pagado?'#15803d':'#b33a3a';
   var label=pagado?'PAGADO':'NO PAGADO';
-  var accCell=td+'<div style="display:flex;gap:6px"><button style="width:28px;height:28px;border-radius:7px;border:1px solid #d7dce3;background:#fff;color:#3a4150;font-size:13px;cursor:pointer" title="Editar" onclick=\'editarServicioClick('+s.fila+')\'>&#8a93a38;</button><button style="width:28px;height:28px;border-radius:7px;border:none;background:#fbe3e3;color:#b33a3a;font-size:13px;cursor:pointer" title="Eliminar" onclick="eliminarServicioClick('+s.fila+')">&#10005;</button></div></td>';
-  var garantiaCell=esExtra?(td+'<span style="color:#c7cdd6;font-size:12px">&mdash;</span></td>'):(td+'<button style="width:28px;height:28px;border-radius:7px;border:1px solid #d7dce3;background:#fff;color:#3a4150;font-size:13px;cursor:pointer" title="Descargar garantia" onclick=\'descargarGarantiaClick('+s.fila+')\'>&#128196;</button></td>');
+  var accCell=td+'<div style="display:flex;gap:6px"><button style="width:28px;height:28px;border-radius:7px;border:1px solid #282b5c;background:#14183f;color:#c7cde0;font-size:13px;cursor:pointer" title="Editar" onclick=\'editarServicioClick('+s.fila+')\'>&#9998;</button><button style="width:28px;height:28px;border-radius:7px;border:none;background:#fbe3e3;color:#b33a3a;font-size:13px;cursor:pointer" title="Eliminar" onclick="eliminarServicioClick('+s.fila+')">&#10005;</button></div></td>';
+  var garantiaCell=esExtra?(td+'<span style="color:#6b7199;font-size:12px">&mdash;</span></td>'):(td+'<button style="width:28px;height:28px;border-radius:7px;border:1px solid #282b5c;background:#14183f;color:#c7cde0;font-size:13px;cursor:pointer" title="Descargar garantia" onclick=\'descargarGarantiaClick('+s.fila+')\'>&#128196;</button></td>');
   var clienteTipo=s.cliente_tipo||'Sin dato';
   var clienteBg=clienteTipo==='Repetido'?'#e1f5ea':(clienteTipo==='Nuevo'?'#dcebfa':'#eef1f5');
   var clienteCol=clienteTipo==='Repetido'?'#15803d':(clienteTipo==='Nuevo'?'#1d4e8f':'#8a93a3');
@@ -1515,7 +1515,7 @@ function renderTurnosMini(){
     var infoTxt=infoParts.join(' · ')||'-';
     h+='<div class="tmini">';
     h+='<div class="tmini-left"><div class="tmini-time">'+(t.hora||'--:--')+'</div><div class="tmini-info">'+infoTxt+'</div></div>';
-    h+='<div class="tmini-actions"><span class="tmini-tag '+cls+'">'+relTxt+'</span><button class="tmini-x" title="Editar" style="color:#3a4150" onclick="editarTurnoClick(\''+t.id+'\')">&#8a93a38;</button><button class="tmini-ok" title="Completado" onclick="completarTurno(\''+t.id+'\')">&#10003;</button><button class="tmini-x" title="Cancelar" onclick="cancelarTurno(\''+t.id+'\')">&#10005;</button></div>';
+    h+='<div class="tmini-actions"><span class="tmini-tag '+cls+'">'+relTxt+'</span><button class="tmini-x" title="Editar" style="color:#3a4150" onclick="editarTurnoClick(\''+t.id+'\')">&#9998;</button><button class="tmini-ok" title="Completado" onclick="completarTurno(\''+t.id+'\')">&#10003;</button><button class="tmini-x" title="Cancelar" onclick="cancelarTurno(\''+t.id+'\')">&#10005;</button></div>';
     h+='</div>';
   });
   el.innerHTML=h;
@@ -1567,7 +1567,7 @@ function abrirNuevoTurno(){
   document.getElementById('tPrecio').value='';
   document.getElementById('tNotas').value='';
   turnoTecnico='';
-  document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
+  document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
   confirmandoTurno=false;
   var btnT=document.querySelector('#turnoOverlay .bp');
   if(btnT){btnT.disabled=false;btnT.textContent='Guardar turno';}
@@ -1589,8 +1589,8 @@ function editarTurnoClick(id){
   turnoTecnico=t.tecnico||'';
   document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){
     var esActivo=b.textContent===turnoTecnico;
-    b.style.background=esActivo?'#1b2330':'transparent';
-    b.style.color=esActivo?'#fff':'#3a4150';
+    b.style.background=esActivo?'#f2a93c':'transparent';
+    b.style.color=esActivo?'#1b2330':'#c7cde0';
   });
   confirmandoTurno=false;
   var btnT=document.querySelector('#turnoOverlay .bp');
@@ -1600,8 +1600,8 @@ function editarTurnoClick(id){
 function cerrarTurnoOverlay(){editingTurnoId=null;document.getElementById('turnoOverlay').classList.add('hidden');}
 function setTecnico(v,btn){
   turnoTecnico=v;
-  document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  btn.style.background='#1b2330';btn.style.color='#fff';
+  document.querySelectorAll('#tTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  btn.style.background='#f2a93c';btn.style.color='#1b2330';
 }
 var confirmandoTurno=false;
 function confirmarTurno(){
@@ -1704,47 +1704,47 @@ function editarServicioClick(fila){
   document.getElementById('editTelefonoCliente').value=s.telefono_cliente||'';
   document.getElementById('editPrecio').value=s.precio||'';
   document.querySelectorAll('#editPagoBtns .bs').forEach(function(b){
-    b.style.background=b.textContent===editPago?'#1b2330':'transparent';
-    b.style.color=b.textContent===editPago?'#fff':'#3a4150';
+    b.style.background=b.textContent===editPago?'#f2a93c':'transparent';
+    b.style.color=b.textContent===editPago?'#1b2330':'#c7cde0';
   });
   document.getElementById('editCuentaField').style.display=(editPago==='Transferencia')?'block':'none';
   document.querySelectorAll('#editCuentaBtns .bs').forEach(function(b){
-    b.style.background=b.textContent===editCuenta?'#1b2330':'transparent';
-    b.style.color=b.textContent===editCuenta?'#fff':'#3a4150';
+    b.style.background=b.textContent===editCuenta?'#f2a93c':'transparent';
+    b.style.color=b.textContent===editCuenta?'#1b2330':'#c7cde0';
   });
   document.querySelectorAll('#editUbiBtns .bs').forEach(function(b){
-    b.style.background=b.textContent===editUbi?'#1b2330':'transparent';
-    b.style.color=b.textContent===editUbi?'#fff':'#3a4150';
+    b.style.background=b.textContent===editUbi?'#f2a93c':'transparent';
+    b.style.color=b.textContent===editUbi?'#1b2330':'#c7cde0';
   });
   document.querySelectorAll('#editTecnicoBtns .bs').forEach(function(b){
-    b.style.background=b.textContent===editTecnico?'#1b2330':'transparent';
-    b.style.color=b.textContent===editTecnico?'#fff':'#3a4150';
+    b.style.background=b.textContent===editTecnico?'#f2a93c':'transparent';
+    b.style.color=b.textContent===editTecnico?'#1b2330':'#c7cde0';
   });
   document.getElementById('editServOverlay').classList.remove('hidden');
 }
 function cerrarEditServOverlay(){document.getElementById('editServOverlay').classList.add('hidden');}
 function setEditPago(v,btn){
   editPago=v;
-  document.querySelectorAll('#editPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  btn.style.background='#1b2330';btn.style.color='#fff';
+  document.querySelectorAll('#editPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  btn.style.background='#f2a93c';btn.style.color='#1b2330';
   var cuentaField=document.getElementById('editCuentaField');
   if(v==='Transferencia'){cuentaField.style.display='block';}
-  else{cuentaField.style.display='none';editCuenta='';document.querySelectorAll('#editCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});}
+  else{cuentaField.style.display='none';editCuenta='';document.querySelectorAll('#editCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});}
 }
 function setEditCuenta(v,btn){
   editCuenta=v;
-  document.querySelectorAll('#editCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  btn.style.background='#1b2330';btn.style.color='#fff';
+  document.querySelectorAll('#editCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  btn.style.background='#f2a93c';btn.style.color='#1b2330';
 }
 function setEditUbi(v,btn){
   editUbi=v;
-  document.querySelectorAll('#editUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  btn.style.background='#1b2330';btn.style.color='#fff';
+  document.querySelectorAll('#editUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  btn.style.background='#f2a93c';btn.style.color='#1b2330';
 }
 function setEditTecnico(v,btn){
   editTecnico=v;
-  document.querySelectorAll('#editTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#3a4150';});
-  btn.style.background='#1b2330';btn.style.color='#fff';
+  document.querySelectorAll('#editTecnicoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
+  btn.style.background='#f2a93c';btn.style.color='#1b2330';
 }
 var confirmandoEdit=false;
 function confirmarEditServicio(){
@@ -1851,11 +1851,11 @@ function mostrarResultadoGarantia(url,telefono){
     if(limpio.length<=10)limpio='549'+limpio;
     wa='https://wa.me/'+limpio+'?text='+encodeURIComponent('Hola! Te paso el certificado de garantia de tu bateria: '+url);
   }
-  var h='<div style="background:#fff;border-radius:20px;padding:1.5rem;width:100%;max-width:420px">';
+  var h='<div style="background:#0c0e33;border:1px solid #282b5c;border-radius:20px;padding:1.5rem;width:100%;max-width:420px">';
   h+='<div style="font-size:18px;font-weight:700;margin-bottom:12px">Garantia generada</div>';
   h+='<div style="display:flex;flex-direction:column;gap:8px">';
   h+='<a href="'+url+'" target="_blank" class="bp" style="text-decoration:none;text-align:center;display:block">Ver / Descargar PDF</a>';
-  if(wa)h+='<a href="'+wa+'" target="_blank" class="bp" style="text-decoration:none;text-align:center;display:block;background:#15803d">Enviar por WhatsApp</a>';
+  if(wa)h+='<a href="'+wa+'" target="_blank" class="bp" style="text-decoration:none;text-align:center;display:block;background:#15803d;color:#fff">Enviar por WhatsApp</a>';
   h+='<button class="bs" onclick="document.getElementById(\'garantiaResultOverlay\').remove()">Cerrar</button>';
   h+='</div></div>';
   var overlay=document.createElement('div');

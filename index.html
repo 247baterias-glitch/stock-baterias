@@ -73,7 +73,7 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .ptable td b{font-family:var(--sans);font-size:14.5px}
 .ptable tr:nth-child(even) td{background:var(--border2)}
 .pventa{font-weight:700;color:var(--green)}
-.pnoche{font-weight:700;color:var(--violet)}
+.pnoche{font-weight:700;color:#dc2626}
 .stk-info{font-size:11.5px;margin-top:3px;font-family:var(--sans)}
 .stk-ok{color:var(--green)}.stk-no{color:var(--red)}
 .ptabs{display:flex;gap:4px;margin-bottom:12px;background:var(--border2);padding:4px;border-radius:var(--r-md);overflow-x:auto}
@@ -167,8 +167,7 @@ h1,h2,h3,p,button,input,a{color:inherit}
 </div>
 <div class="sbox"><input type="text" id="busP" placeholder="Buscar modelo..." oninput="filtrarPrecios()"/></div>
 <div class="twrap"><table class="ptable">
-<thead><tr><th>Modelo</th><th>P. Lista</th><th>P. Venta</th><th style="color:#15803d">Venta c/IVA</th><th style="color:#b9a4de">P. DEC/NOCHE/FER</th><th>Stock</th></tr></thead><tbody id="preciosBody"></tbody>
-</table></div>
+<thead><tr><th>Modelo</th><th>P. Lista</th><th>P. Venta</th><th style="color:#15803d">Venta c/IVA</th><th style="color:#dc2626">Si llama decidido, cobrar este precio</th><th>Stock</th></tr></thead><tbody id="preciosBody"></tbody></table></div>
 </div>
 <div id="p5" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>

@@ -461,6 +461,7 @@ var PUB=[
 {m:'UB 550',l:'$90.448,88',p:'$145.448,88'},
 {m:'UB 670',l:'$94.895,99',p:'$149.895,99'},
 {m:'UB 620',l:'$90.129,60',p:'$145.129,60'},
+{m:'UB 710',l:'$142.196,83',p:'$200.000,00'},
 {m:'UB 730',l:'$108.374,84',p:'$163.374,84'},
 {m:'UB 730 IZQ +',l:'$108.374,00',p:'$175.000,00'},
 {m:'UB 740',l:'$114.733,58',p:'$169.733,58'},
@@ -471,8 +472,7 @@ var PUB=[
 {m:'UB 1240',l:'$254.462,48',p:'$309.462,48'},
 {m:'UB 1240 HF',l:'$254.462,48',p:'$309.462,48'},
 {m:'UB EFB 730',l:'$144.703,24',p:'$255.000,00'},
-{m:'UB EFB 840',l:'$168.869,23',p:'$275.000,00'},
-{m:'UB 710',l:'$142.196,83',p:'$200.000,00'}
+{m:'UB EFB 840',l:'$168.869,23',p:'$275.000,00'}
 ];
 var PSERMAT=[
 {m:'SERMAT 12X95 BAJA S95QD',l:'$136.048,46',p:'$191.048,46'},
@@ -716,9 +716,9 @@ function filtrarPrecios(){
     var esStartStop=x.m.indexOf('72LD')!==-1;
     var badgeEFB=esEFB?'<span style="background:#e1f5ea;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
     var badgeSS=esStartStop?'<span style="background:#e1f5ea;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
-    h+='<tr><td><b>'+x.m+'</b>'+badgeEFB+badgeSS+'<div class="stk-info '+cls+'">'+stk+'</div></td><td>'+x.l+'</td><td class="pventa">'+x.p+'</td><td style="font-weight:700;color:#15803d">'+pIva+'</td><td class="pnoche">'+pn+'</td></tr>';
+    h+='<tr><td><b>'+x.m+'</b>'+badgeEFB+badgeSS+'</td><td>'+x.l+'</td><td class="pventa">'+x.p+'</td><td style="font-weight:700;color:#15803d">'+pIva+'</td><td class="pnoche">'+pn+'</td><td><div class="stk-info '+cls+'" style="margin-top:0">'+stk+'</div></td></tr>';
   });
-  document.getElementById('preciosBody').innerHTML=h||'<tr><td colspan="5" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';
+  document.getElementById('preciosBody').innerHTML=h||'<tr><td colspan="6" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';
 }
 function buscarVehiculo(){
   var b=document.getElementById('busV').value.toLowerCase().trim();

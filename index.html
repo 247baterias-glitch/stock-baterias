@@ -1277,7 +1277,7 @@ function cargarHistorialMes(){
         });
         var cuentaTxtDia=Object.keys(cuentaCountsDia).map(function(k){return k+' '+cuentaCountsDia[k];}).join(', ');
         var cuentaBadgeDia=cuentaTxtDia?'<span style="background:#0e7490;color:#fff;font-weight:800;font-size:13px;padding:3px 10px;border-radius:99px;white-space:nowrap">Transferencias: '+cuentaTxtDia+'</span>':'';
-        h+='<tr class="dia-summary" style="cursor:pointer" onclick="toggleDia(\''+gid+'\')"><td colspan="14" style="padding:14px 8px;background:#102a3d;border-bottom:1px solid #0e7490"><span style="display:flex;align-items:center;gap:10px"><span id="'+gid+'-icon" style="color:#fff;font-size:13px">&#9656;</span><span style="color:#fff;font-weight:700;font-size:15px">'+fmtFecha(fecha)+'</span><span style="display:flex;align-items:center;gap:8px;margin-left:auto">'+gastoAdsBadge(fecha)+cuentaBadgeDia+'<span style="background:#0e7490;color:#fff;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;white-space:nowrap">'+etiquetaDia+'</span></span></span></td></tr>';
+        h+='<tr class="dia-summary" style="cursor:pointer" onclick="toggleDia(\''+gid+'\')"><td colspan="14" style="padding:14px 8px;background:#102a3d;border-bottom:1px solid #0e7490"><span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span id="'+gid+'-icon" style="color:#fff;font-size:13px">&#9656;</span><span style="color:#fff;font-weight:700;font-size:15px">'+fmtFecha(fecha)+'</span><span style="background:#0e7490;color:#fff;font-weight:800;font-size:14px;padding:3px 12px;border-radius:99px;white-space:nowrap">'+etiquetaDia+'</span>'+gastoAdsBadge(fecha)+cuentaBadgeDia+'</span></td></tr>';
         lista.forEach(function(s){h+=filaServicio(s,gid);});
       }
     });

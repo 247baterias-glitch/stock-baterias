@@ -321,7 +321,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button class="bp" onclick="lpElegirArchivo('agregar')">+ Subir lista</button>
 <button class="bs" onclick="lpElegirArchivo('reemplazar')">&#8635; Reemplazar lista</button>
 </div>
-<div class="lp-margen"><span>Precio venta = costo + $</span><input type="text" inputmode="numeric" id="lpMargen" value="55.000"/><button class="bs" onclick="lpGuardarMargen()">Guardar</button></div>
+<div class="lp-margen"><span id="lpMargenLbl">Venta de esta lista = costo + $</span><input type="text" inputmode="numeric" id="lpMargen" value="55.000" onkeydown="if(event.key==='Enter')lpGuardarMargen()"/><button class="bs" onclick="lpGuardarMargen()">Guardar</button></div>
 <div class="lp-estado" id="lpEstado"></div>
 </div>
 <div class="sbox"><input type="text" id="busLP" placeholder="Buscar marca o modelo..." oninput="lpRenderTabla()"/></div>
@@ -2034,6 +2034,7 @@ function lpCargar(){
     lpMargen=Number(r.margen);
     if(isNaN(lpMargen))lpMargen=55000;
     document.getElementById('lpMargen').value=formatMoney(lpMargen);
+    document.getElementById('lpMargenLbl').textContent='Venta de '+DISTRIBUIDORES[lpActual]+' = costo + $';
     lpRenderArchivos();
     lpRenderTabla();
   }).catch(function(e){if(pedido===lpPedido)lpError(e.message);});
@@ -2305,12 +2306,12 @@ function lpEliminarItem(id){
 function lpGuardarMargen(){
   var n=lpNum(document.getElementById('lpMargen').value);
   if(isNaN(n)||n<0){toast('Monto invalido');return;}
-  apiPost('listasSetMargen',{margen:n}).then(function(r){
+  apiPost('listasSetMargen',{margen:n,distribuidor:DISTRIBUIDORES[lpActual]}).then(function(r){
     if(r.ok){
       lpMargen=Number(r.margen);
       document.getElementById('lpMargen').value=formatMoney(lpMargen);
       lpRenderTabla();
-      toast('Guardado: costo + $'+formatMoney(lpMargen));
+      toast('Guardado para '+DISTRIBUIDORES[lpActual]+': costo + $'+formatMoney(lpMargen));
     }else toast('Error: '+r.error);
   }).catch(function(e){toast('Error: '+e.message);});
 }

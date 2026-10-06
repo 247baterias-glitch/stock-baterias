@@ -150,6 +150,17 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .lp-empty{text-align:center;padding:1.5rem 1rem;color:var(--muted);font-size:14.5px;border:1.5px dashed var(--border);border-radius:var(--r-md);margin-bottom:14px;line-height:1.45}
 .lp-row-act{display:flex;gap:6px}
 .lp-row-act button{width:28px;height:28px;border-radius:7px;border:1px solid #282b5c;background:#14183f;color:#c7cde0;font-size:13px;cursor:pointer}
+.lp-thumb{cursor:zoom-in}
+.lpv{position:fixed;inset:0;background:rgba(0,0,16,.96);z-index:300;display:flex;flex-direction:column}
+.lpv.hidden{display:none}
+.lpv-bar{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--panel);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.lpv-tit{flex:1;min-width:120px;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lpv-b{min-width:40px;height:40px;padding:0 12px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);color:var(--ink);font-size:17px;font-weight:700;cursor:pointer;font-family:var(--sans);text-decoration:none;display:flex;align-items:center;justify-content:center}
+.lpv-pct{min-width:56px;text-align:center;font-size:14px;font-weight:700;color:var(--ink-soft)}
+.lpv-box{flex:1;overflow:auto;touch-action:pan-x pan-y;cursor:grab;-webkit-overflow-scrolling:touch}
+.lpv-box.drag{cursor:grabbing}
+.lpv-box img{display:block;width:100%;max-width:none;height:auto;background:#fff;user-select:none;-webkit-user-drag:none}
+.lpv-hint{font-size:12px;color:var(--muted);padding:6px 12px;text-align:center;background:var(--panel)}
 </style>
 <script>
 function pedirClave(error){
@@ -304,9 +315,22 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div id="lpArchivos"></div>
 <div class="sbox"><input type="text" id="busLP" placeholder="Buscar marca o modelo..." oninput="lpRenderTabla()"/></div>
 <div class="twrap"><table class="ptable">
-<thead><tr><th>Marca</th><th>Modelo</th><th>Precio costo</th><th id="lpThVenta" style="color:#15803d">Precio venta (+$55.000)</th><th></th></tr></thead><tbody id="lpBody"></tbody>
+<thead><tr><th>Marca</th><th>Modelo</th><th>Precio costo</th><th style="color:#0e7490">Costo + IVA (21%)</th><th id="lpThVenta" style="color:#15803d">Precio venta (+$55.000)</th><th></th></tr></thead><tbody id="lpBody"></tbody>
 </table></div>
 <input type="file" id="lpInput" accept="image/*,application/pdf" multiple style="display:none" onchange="lpArchivoElegido(this)"/>
+</div>
+<div id="lpViewer" class="lpv hidden">
+<div class="lpv-bar">
+<div class="lpv-tit" id="lpvTitulo"></div>
+<button class="lpv-b" onclick="lpvZoomBtn(-1)" title="Alejar">&#8722;</button>
+<div class="lpv-pct" id="lpvPct">100%</div>
+<button class="lpv-b" onclick="lpvZoomBtn(1)" title="Acercar">+</button>
+<button class="lpv-b" onclick="lpvAjustar()" title="Ajustar al ancho" style="font-size:13px">Ajustar</button>
+<a class="lpv-b" id="lpvOriginal" href="#" target="_blank" rel="noopener" title="Abrir en Drive" style="font-size:13px">Drive</a>
+<button class="lpv-b" onclick="lpvCerrar()" title="Cerrar">&#10005;</button>
+</div>
+<div class="lpv-box" id="lpvBox"><img id="lpvImg" alt="" draggable="false"></div>
+<div class="lpv-hint">Ruedita o +/− para hacer zoom · arrastrá para moverte · doble clic para acercar · en el celu, pellizcá</div>
 </div>
 <div class="toast" id="toast"></div>
 <div id="avisoOverlay" class="hidden col-overlay">
@@ -2014,13 +2038,13 @@ function lpRenderArchivos(){
     if(a.estado==='error'){meta='No se pudo leer: '+a.detalle;cls=' err';}
     else if(a.estado==='leyendo'){meta='Leyendo con IA...';cls=' leyendo';}
     else{meta=a.fecha+' | '+cant+' modelo'+(cant===1?'':'s')+(a.detalle?' | columna: '+a.detalle:'');}
-    var thumb='<a class="lp-thumb" href="'+a.url+'" target="_blank" rel="noopener">'+(esImg?'&#128444;':'&#128196;');
+    var thumb=esImg?'<a class="lp-thumb" href="#" onclick="lpVerArchivo(\''+a.file_id+'\');return false;">&#128444;':'<a class="lp-thumb" href="'+a.url+'" target="_blank" rel="noopener">&#128196;';
     if(esImg)thumb+='<img src="https://drive.google.com/thumbnail?id='+encodeURIComponent(a.file_id)+'&sz=w200" alt="" onerror="this.remove()">';
     thumb+='</a>';
     h+='<div class="lp-file">'+thumb;
     h+='<div class="lp-finfo"><div class="lp-fname">'+lpEsc(a.nombre)+'</div><div class="lp-fmeta'+cls+'">'+lpEsc(meta)+'</div></div>';
     h+='<div class="lp-fact">';
-    h+='<a class="lp-ib" href="'+a.url+'" target="_blank" rel="noopener" title="Ver archivo">&#128065;</a>';
+    h+=esImg?'<button class="lp-ib" title="Ver con zoom" onclick="lpVerArchivo(\''+a.file_id+'\')">&#128269;</button>':'<a class="lp-ib" href="'+a.url+'" target="_blank" rel="noopener" title="Ver archivo">&#128065;</a>';
     h+='<button class="lp-ib" title="Volver a leer con IA" onclick="lpReleer(\''+a.file_id+'\')">&#8635;</button>';
     h+='<button class="lp-ib del" title="Eliminar archivo" onclick="lpEliminarArchivo(\''+a.file_id+'\')">&#10005;</button>';
     h+='</div></div>';
@@ -2030,14 +2054,14 @@ function lpRenderArchivos(){
 function lpRenderTabla(){
   document.getElementById('lpThVenta').textContent='Precio venta (+$'+formatMoney(lpMargen)+')';
   var body=document.getElementById('lpBody');
-  if(!lpData.items.length){body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:1rem;color:#94a0af">Sin precios cargados</td></tr>';return;}
+  if(!lpData.items.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:1rem;color:#94a0af">Sin precios cargados</td></tr>';return;}
   var b=document.getElementById('busLP').value.toLowerCase().trim();
   var items=lpData.items.filter(function(it){return ((it.marca||'')+' '+it.modelo).toLowerCase().indexOf(b)!==-1;});
-  if(!items.length){body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';return;}
+  if(!items.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';return;}
   var h='';
   items.forEach(function(it){
-    h+='<tr><td>'+lpEsc(it.marca||'-')+'</td><td><b>'+lpEsc(it.modelo)+'</b></td><td>$'+formatARS(it.precio)+'</td><td class="pventa">$'+formatARS(it.precio+lpMargen)+'</td>';
-    h+='<td><div class="lp-row-act"><button title="Corregir costo" onclick="lpEditarItem(\''+it.id+'\')">&#9998;</button><button title="Quitar fila" style="color:#f87171" onclick="lpEliminarItem(\''+it.id+'\')">&#10005;</button></div></td></tr>';
+    h+='<tr><td>'+lpEsc(it.marca||'-')+'</td><td><b>'+lpEsc(it.modelo)+'</b></td><td>$'+formatARS(it.precio)+'</td><td style="font-weight:700;color:#2dd4bf">$'+formatARS(it.precio*1.21)+'</td><td class="pventa">$'+formatARS(it.precio+lpMargen)+'</td>';
+    h+='<td><div class="lp-row-act"><button title="Corregir modelo o costo" onclick="lpEditarItem(\''+it.id+'\')">&#9998;</button><button title="Quitar fila" style="color:#f87171" onclick="lpEliminarItem(\''+it.id+'\')">&#10005;</button></div></td></tr>';
   });
   body.innerHTML=h;
 }
@@ -2126,14 +2150,83 @@ function lpEliminarArchivo(id){
 function lpEditarItem(id){
   var it=lpData.items.filter(function(x){return x.id===id;})[0];
   if(!it)return;
-  var v=prompt('Precio costo de '+it.modelo,formatARS(it.precio));
+  var m=prompt('Modelo',it.modelo);
+  if(m===null)return;
+  m=m.trim();
+  if(!m){toast('El modelo no puede quedar vacio');return;}
+  var v=prompt('Precio costo de '+m,formatARS(it.precio));
   if(v===null)return;
   var n=lpNum(v);
   if(isNaN(n)||n<=0){toast('Precio invalido');return;}
-  apiPost('listasEditarItem',{id:id,precio:n}).then(function(r){
-    if(r.ok){it.precio=n;lpRenderTabla();toast('Precio actualizado');}else toast('Error: '+r.error);
+  apiPost('listasEditarItem',{id:id,modelo:m,precio:n}).then(function(r){
+    if(r.ok){it.modelo=m;it.precio=n;lpRenderTabla();toast('Fila actualizada');}else toast('Error: '+r.error);
   }).catch(function(e){toast('Error: '+e.message);});
 }
+// ---- Visor de imagen con zoom ----
+var lpvScale=1,lpvDrag=null,lpvPinch=null;
+function lpVerArchivo(fileId){
+  var a=lpData.archivos.filter(function(x){return x.file_id===fileId;})[0];
+  if(!a)return;
+  var img=document.getElementById('lpvImg');
+  img.src='https://drive.google.com/thumbnail?id='+encodeURIComponent(fileId)+'&sz=w2400';
+  img.onerror=function(){toast('No se pudo cargar la imagen, abrila en Drive');};
+  document.getElementById('lpvTitulo').textContent=a.nombre;
+  document.getElementById('lpvOriginal').href=a.url;
+  document.getElementById('lpViewer').classList.remove('hidden');
+  lpvAplicar(1,0,0);
+  document.getElementById('lpvBox').scrollTop=0;
+}
+function lpvCerrar(){document.getElementById('lpViewer').classList.add('hidden');document.getElementById('lpvImg').src='';}
+function lpvAplicar(nueva,cx,cy){
+  var box=document.getElementById('lpvBox'),img=document.getElementById('lpvImg');
+  nueva=Math.max(1,Math.min(6,nueva));
+  var px=(box.scrollLeft+cx)/lpvScale,py=(box.scrollTop+cy)/lpvScale;
+  lpvScale=nueva;
+  img.style.width=(nueva*100)+'%';
+  box.scrollLeft=px*nueva-cx;
+  box.scrollTop=py*nueva-cy;
+  document.getElementById('lpvPct').textContent=Math.round(nueva*100)+'%';
+}
+function lpvCentro(){var b=document.getElementById('lpvBox');return {x:b.clientWidth/2,y:b.clientHeight/2};}
+function lpvZoomBtn(dir){var c=lpvCentro();lpvAplicar(lpvScale*(dir>0?1.4:1/1.4),c.x,c.y);}
+function lpvAjustar(){lpvAplicar(1,0,0);}
+(function(){
+  var box=document.getElementById('lpvBox');
+  if(!box)return;
+  box.addEventListener('wheel',function(ev){
+    ev.preventDefault();
+    var r=box.getBoundingClientRect();
+    lpvAplicar(lpvScale*(ev.deltaY<0?1.15:1/1.15),ev.clientX-r.left,ev.clientY-r.top);
+  },{passive:false});
+  box.addEventListener('dblclick',function(ev){
+    var r=box.getBoundingClientRect();
+    lpvAplicar(lpvScale>1.5?1:2.5,ev.clientX-r.left,ev.clientY-r.top);
+  });
+  box.addEventListener('mousedown',function(ev){
+    if(ev.button!==0)return;
+    lpvDrag={x:ev.clientX,y:ev.clientY,l:box.scrollLeft,t:box.scrollTop};
+    box.classList.add('drag');ev.preventDefault();
+  });
+  window.addEventListener('mousemove',function(ev){
+    if(!lpvDrag)return;
+    box.scrollLeft=lpvDrag.l-(ev.clientX-lpvDrag.x);
+    box.scrollTop=lpvDrag.t-(ev.clientY-lpvDrag.y);
+  });
+  window.addEventListener('mouseup',function(){lpvDrag=null;box.classList.remove('drag');});
+  function dist(t){var dx=t[0].clientX-t[1].clientX,dy=t[0].clientY-t[1].clientY;return Math.sqrt(dx*dx+dy*dy);}
+  box.addEventListener('touchstart',function(ev){
+    if(ev.touches.length===2)lpvPinch={d:dist(ev.touches),s:lpvScale};
+  },{passive:true});
+  box.addEventListener('touchmove',function(ev){
+    if(!lpvPinch||ev.touches.length!==2)return;
+    ev.preventDefault();
+    var r=box.getBoundingClientRect();
+    var cx=(ev.touches[0].clientX+ev.touches[1].clientX)/2-r.left;
+    var cy=(ev.touches[0].clientY+ev.touches[1].clientY)/2-r.top;
+    lpvAplicar(lpvPinch.s*dist(ev.touches)/lpvPinch.d,cx,cy);
+  },{passive:false});
+  box.addEventListener('touchend',function(ev){if(ev.touches.length<2)lpvPinch=null;});
+})();
 function lpEliminarItem(id){
   if(!confirm('¿Quitar esta fila de la lista?'))return;
   apiPost('listasEliminarItem',{id:id}).then(function(r){
@@ -2161,6 +2254,8 @@ cargar();
 cargarAlertaReservados();
 document.addEventListener('keydown',function(ev){
   if(ev.key!=='Escape')return;
+  var lpvOv=document.getElementById('lpViewer');
+  if(lpvOv&&!lpvOv.classList.contains('hidden')){lpvCerrar();return;}
   var garantiaOv=document.getElementById('garantiaResultOverlay');
   if(garantiaOv){garantiaOv.remove();return;}
   var avisoOv=document.getElementById('avisoOverlay');

@@ -23,7 +23,8 @@ html{color-scheme:dark}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17px;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
 h1,h2,h3,p,button,input,a{color:inherit}
 .header,.section{max-width:600px;margin:0 auto}
-#p4,#p9{width:100vw;max-width:1040px;position:relative;left:50%;transform:translateX(-50%)}
+#p4,#p9,#p10{width:100vw;max-width:1040px;position:relative;left:50%;transform:translateX(-50%)}
+#p10{padding:1.25rem 1rem}
 .header{display:flex;align-items:center;gap:12px;padding:1.1rem 1.25rem;background:var(--panel);color:#fff;border-radius:0 0 var(--r-lg) var(--r-lg);box-shadow:var(--shadow-pop)}
 .logo{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:rgba(255,255,255,.08);border:1px solid rgba(242,169,60,.45);flex-shrink:0}
 .h1{font-size:18px;font-weight:700;letter-spacing:-.01em}
@@ -125,6 +126,30 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .aviso-add{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--r-md);padding:11px;font-size:13.5px;font-weight:700;color:var(--ink-soft);cursor:pointer;margin-bottom:12px;transition:border-color .12s ease}
 .lpimg{width:100%;border-radius:var(--r-lg);border:1px solid var(--border);margin-bottom:16px;display:block}
 .lpfile{display:block;width:100%;background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--r-md);padding:14px;font-size:14.5px;color:var(--ink-soft)}
+.lp-tools{display:flex;gap:8px;margin-bottom:14px}
+.lp-tools .bp,.lp-tools .bs{flex:1}
+.lp-tools button:disabled{opacity:.35;cursor:not-allowed}
+.lp-margen{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-soft);flex-wrap:wrap}
+.lp-margen input{width:120px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 10px;font-size:15px;color:var(--ink);font-family:var(--sans);outline:none}
+.lp-margen input:focus{border-color:var(--amber)}
+.lp-margen .bs{padding:9px 14px;font-size:14px}
+.lp-estado{margin-top:12px;font-size:14px;font-weight:600;color:var(--amber)}
+.lp-estado:empty{display:none}
+.lp-files{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.lp-file{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 12px;display:flex;gap:12px;align-items:center}
+.lp-thumb{position:relative;width:56px;height:56px;border-radius:var(--r-sm);background:var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;text-decoration:none}
+.lp-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.lp-finfo{flex:1;min-width:0}
+.lp-fname{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lp-fmeta{font-size:12.5px;color:var(--muted);margin-top:2px}
+.lp-fmeta.err{color:var(--red)}
+.lp-fmeta.leyendo{color:var(--amber)}
+.lp-fact{display:flex;gap:6px;flex-shrink:0}
+.lp-ib{width:34px;height:34px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--panel);color:var(--ink-soft);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none}
+.lp-ib.del{color:var(--red);border-color:rgba(248,113,113,.35)}
+.lp-empty{text-align:center;padding:1.5rem 1rem;color:var(--muted);font-size:14.5px;border:1.5px dashed var(--border);border-radius:var(--r-md);margin-bottom:14px;line-height:1.45}
+.lp-row-act{display:flex;gap:6px}
+.lp-row-act button{width:28px;height:28px;border-radius:7px;border:1px solid #282b5c;background:#14183f;color:#c7cde0;font-size:13px;cursor:pointer}
 </style>
 <script>
 function pedirClave(error){
@@ -172,6 +197,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button class="card" onclick="mostrarPrecios()"><div class="icon green">&#128200;</div><div class="ci"><h2>Lista de Precios</h2><p>Precios con disponibilidad</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarGarantias()"><div class="icon red">&#128220;</div><div class="ci"><h2>Garantias</h2><p>Registrar y consultar</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarMoto()"><div class="icon" style="background:#dff1f5">&#127949;</div><div class="ci"><h2>Baterias Moto</h2><p>Lista de precios moto</p></div><span class="arr">&#8250;</span></button>
+<button class="card" onclick="mostrarListasDist()"><div class="icon" style="background:#e6ecff">&#128203;</div><div class="ci"><h2>Listas de Distribuidores</h2><p>Fotos y PDF con precio de venta</p></div><span class="arr">&#8250;</span></button>
 </div>
 </div>
 <div id="p0load"><div class="loading">Cargando...</div></div>
@@ -263,6 +289,24 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="twrap"><table class="ptable">
 <thead><tr><th>Modelo</th><th>Costo</th><th>Venta (envio)</th><th style="color:#15803d">Venta c/IVA</th><th style="color:#0e7490">Retiro</th></tr></thead><tbody id="motoBody"></tbody>
 </table></div>
+</div>
+<div id="p10" class="hidden">
+<button class="back" onclick="volverInicio()">&#8592; Volver</button>
+<div class="ptabs" id="lpTabs"></div>
+<div class="mc" style="margin-bottom:12px">
+<div class="lp-tools">
+<button class="bp" onclick="lpElegirArchivo('agregar')">+ Subir lista</button>
+<button class="bs" onclick="lpElegirArchivo('reemplazar')">&#8635; Reemplazar lista</button>
+</div>
+<div class="lp-margen"><span>Precio venta = costo + $</span><input type="text" inputmode="numeric" id="lpMargen" value="55.000"/><button class="bs" onclick="lpGuardarMargen()">Guardar</button></div>
+<div class="lp-estado" id="lpEstado"></div>
+</div>
+<div id="lpArchivos"></div>
+<div class="sbox"><input type="text" id="busLP" placeholder="Buscar marca o modelo..." oninput="lpRenderTabla()"/></div>
+<div class="twrap"><table class="ptable">
+<thead><tr><th>Marca</th><th>Modelo</th><th>Precio costo</th><th id="lpThVenta" style="color:#15803d">Precio venta (+$55.000)</th><th></th></tr></thead><tbody id="lpBody"></tbody>
+</table></div>
+<input type="file" id="lpInput" accept="image/*,application/pdf" multiple style="display:none" onchange="lpArchivoElegido(this)"/>
 </div>
 <div class="toast" id="toast"></div>
 <div id="avisoOverlay" class="hidden col-overlay">
@@ -710,12 +754,12 @@ function mostrarBuscador(){
 }
 function mostrarGarantias(){document.getElementById('p0').classList.add('hidden');document.getElementById('p6').classList.remove('hidden');titulo('Garantias');cambiarGTab(1);}
 function volverInicio(){
-  ['p1','p2','p3','p4','p5','p6','p7','p8','p9'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
+  ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
   document.getElementById('p0').classList.remove('hidden');titulo('Stock Baterias');
   tipoExtra='';camExtra=null;
 }
 function mostrarTipoServicio(){
-  ['p0','p1','p2','p3','p4','p5','p6','p7','p9'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
+  ['p0','p1','p2','p3','p4','p5','p6','p7','p9','p10'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
   document.getElementById('p8').classList.remove('hidden');
   titulo('Registrar Servicio');
 }
@@ -1896,6 +1940,223 @@ function mostrarResultadoGarantia(url,telefono){
   overlay.innerHTML=h;
   document.body.appendChild(overlay);
 }
+
+// ===================== LISTAS DE DISTRIBUIDORES =====================
+var DISTRIBUIDORES=['Distribuidora 4k','Lista Bari','Lista Dimac','Lista Don Telmo'];
+var lpActual=0,lpData={archivos:[],items:[]},lpMargen=55000,lpModo='agregar',lpOcupado=false,lpPedido=0;
+function apiPost(action,payload){
+  payload=payload||{};
+  payload.action=action;
+  payload.clave=localStorage.getItem('clave')||'';
+  return fetch(API_URL,{method:'POST',body:JSON.stringify(payload)}).then(function(r){
+    if(!r.ok)throw new Error('Error de red ('+r.status+')');
+    return r.json();
+  });
+}
+function lpEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function lpNum(v){
+  var s=String(v==null?'':v).replace(/[^0-9.,-]/g,'');
+  if(s.indexOf(',')!==-1)s=s.replace(/\./g,'').replace(',','.');
+  else if((s.match(/\./g)||[]).length>1||/\.\d{3}$/.test(s))s=s.replace(/\./g,'');
+  return parseFloat(s);
+}
+function mostrarListasDist(){
+  document.getElementById('p0').classList.add('hidden');
+  document.getElementById('p10').classList.remove('hidden');
+  titulo('Listas de Distribuidores');
+  document.getElementById('busLP').value='';
+  lpRenderTabs();
+  lpCargar();
+}
+function lpRenderTabs(){
+  var h='';
+  DISTRIBUIDORES.forEach(function(d,i){h+='<button class="ptab'+(i===lpActual?' active':'')+'" onclick="lpCambiarDist('+i+')">'+lpEsc(d)+'</button>';});
+  document.getElementById('lpTabs').innerHTML=h;
+}
+function lpCambiarDist(i){
+  if(lpOcupado){toast('Espera a que termine la subida');return;}
+  lpActual=i;
+  document.getElementById('busLP').value='';
+  lpRenderTabs();
+  lpCargar();
+}
+function lpCargar(){
+  var pedido=++lpPedido;
+  document.getElementById('lpArchivos').innerHTML='<div class="loading" style="padding:1.25rem">Cargando...</div>';
+  document.getElementById('lpBody').innerHTML='';
+  apiPost('listasGet',{distribuidor:DISTRIBUIDORES[lpActual]}).then(function(r){
+    if(pedido!==lpPedido)return;
+    if(!r.ok){lpError(r.error);return;}
+    lpData={archivos:r.archivos||[],items:r.items||[]};
+    lpMargen=Number(r.margen);
+    if(isNaN(lpMargen))lpMargen=55000;
+    document.getElementById('lpMargen').value=formatMoney(lpMargen);
+    lpRenderArchivos();
+    lpRenderTabla();
+  }).catch(function(e){if(pedido===lpPedido)lpError(e.message);});
+}
+function lpError(msg){
+  var txt=msg==='no autorizado'?'La contraseña no coincide con CLAVE_LISTAS del Apps Script':(msg||'Error desconocido');
+  document.getElementById('lpArchivos').innerHTML='<div class="err">'+lpEsc(txt)+'<button class="bs" style="margin-top:10px;width:100%" onclick="lpCargar()">Reintentar</button></div>';
+}
+function lpRenderArchivos(){
+  var el=document.getElementById('lpArchivos');
+  var arch=lpData.archivos;
+  if(!arch.length){
+    el.innerHTML='<div class="lp-empty">Todavía no hay lista de '+lpEsc(DISTRIBUIDORES[lpActual])+'.<br>Tocá "Subir lista" y elegí la foto o el PDF que mandó el distribuidor.</div>';
+    return;
+  }
+  var h='<div class="lp-files">';
+  arch.forEach(function(a){
+    var esImg=/^image\//.test(a.mime);
+    var cant=lpData.items.filter(function(it){return it.file_id===a.file_id;}).length;
+    var meta,cls='';
+    if(a.estado==='error'){meta='No se pudo leer: '+a.detalle;cls=' err';}
+    else if(a.estado==='leyendo'){meta='Leyendo con IA...';cls=' leyendo';}
+    else{meta=a.fecha+' | '+cant+' modelo'+(cant===1?'':'s')+(a.detalle?' | columna: '+a.detalle:'');}
+    var thumb='<a class="lp-thumb" href="'+a.url+'" target="_blank" rel="noopener">'+(esImg?'&#128444;':'&#128196;');
+    if(esImg)thumb+='<img src="https://drive.google.com/thumbnail?id='+encodeURIComponent(a.file_id)+'&sz=w200" alt="" onerror="this.remove()">';
+    thumb+='</a>';
+    h+='<div class="lp-file">'+thumb;
+    h+='<div class="lp-finfo"><div class="lp-fname">'+lpEsc(a.nombre)+'</div><div class="lp-fmeta'+cls+'">'+lpEsc(meta)+'</div></div>';
+    h+='<div class="lp-fact">';
+    h+='<a class="lp-ib" href="'+a.url+'" target="_blank" rel="noopener" title="Ver archivo">&#128065;</a>';
+    h+='<button class="lp-ib" title="Volver a leer con IA" onclick="lpReleer(\''+a.file_id+'\')">&#8635;</button>';
+    h+='<button class="lp-ib del" title="Eliminar archivo" onclick="lpEliminarArchivo(\''+a.file_id+'\')">&#10005;</button>';
+    h+='</div></div>';
+  });
+  el.innerHTML=h+'</div>';
+}
+function lpRenderTabla(){
+  document.getElementById('lpThVenta').textContent='Precio venta (+$'+formatMoney(lpMargen)+')';
+  var body=document.getElementById('lpBody');
+  if(!lpData.items.length){body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:1rem;color:#94a0af">Sin precios cargados</td></tr>';return;}
+  var b=document.getElementById('busLP').value.toLowerCase().trim();
+  var items=lpData.items.filter(function(it){return ((it.marca||'')+' '+it.modelo).toLowerCase().indexOf(b)!==-1;});
+  if(!items.length){body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';return;}
+  var h='';
+  items.forEach(function(it){
+    h+='<tr><td>'+lpEsc(it.marca||'-')+'</td><td><b>'+lpEsc(it.modelo)+'</b></td><td>$'+formatARS(it.precio)+'</td><td class="pventa">$'+formatARS(it.precio+lpMargen)+'</td>';
+    h+='<td><div class="lp-row-act"><button title="Corregir costo" onclick="lpEditarItem(\''+it.id+'\')">&#9998;</button><button title="Quitar fila" style="color:#f87171" onclick="lpEliminarItem(\''+it.id+'\')">&#10005;</button></div></td></tr>';
+  });
+  body.innerHTML=h;
+}
+function lpEstado(t){document.getElementById('lpEstado').textContent=t||'';}
+function lpBotones(dis){document.querySelectorAll('#p10 .lp-tools button').forEach(function(b){b.disabled=dis;});}
+function lpElegirArchivo(modo){
+  if(lpOcupado)return;
+  if(modo==='reemplazar'&&lpData.archivos.length&&!confirm('Se borran los archivos y precios actuales de '+DISTRIBUIDORES[lpActual]+' y se cargan los nuevos. ¿Seguir?'))return;
+  lpModo=modo;
+  var inp=document.getElementById('lpInput');
+  inp.value='';
+  inp.click();
+}
+function lpPrepararArchivo(file){
+  return new Promise(function(resolve,reject){
+    var esImg=/^image\//.test(file.type);
+    var reader=new FileReader();
+    reader.onerror=function(){reject(new Error('No se pudo leer el archivo'));};
+    reader.onload=function(){
+      var dataUrl=reader.result;
+      if(!esImg){resolve({mime:file.type||'application/pdf',data:dataUrl.split(',')[1],nombre:file.name});return;}
+      var img=new Image();
+      img.onload=function(){
+        var max=2400,w=img.width,h=img.height,k=Math.min(1,max/Math.max(w,h));
+        var c=document.createElement('canvas');
+        c.width=Math.round(w*k);c.height=Math.round(h*k);
+        var ctx=c.getContext('2d');
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+        ctx.drawImage(img,0,0,c.width,c.height);
+        resolve({mime:'image/jpeg',data:c.toDataURL('image/jpeg',0.9).split(',')[1],nombre:file.name.replace(/\.[^.]+$/,'')+'.jpg'});
+      };
+      img.onerror=function(){resolve({mime:file.type,data:dataUrl.split(',')[1],nombre:file.name});};
+      img.src=dataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function lpArchivoElegido(inp){
+  var files=Array.prototype.slice.call(inp.files||[]);
+  if(!files.length)return;
+  if(files.some(function(f){return f.size>18*1024*1024;})){toast('Archivo muy pesado (max 18 MB)');return;}
+  var dist=DISTRIBUIDORES[lpActual];
+  var reemplazar=lpModo==='reemplazar';
+  var total=files.length,leidos=0,errores=0;
+  lpOcupado=true;lpBotones(true);
+  function siguiente(i){
+    if(i>=total){
+      lpOcupado=false;lpBotones(false);lpEstado('');
+      if(errores)toast('Hubo problemas: revisá los archivos marcados en rojo');
+      else toast('Lista cargada: '+leidos+' modelos');
+      lpCargar();
+      return;
+    }
+    var pref=total>1?'Archivo '+(i+1)+' de '+total+': ':'';
+    lpEstado(pref+'preparando...');
+    lpPrepararArchivo(files[i]).then(function(f){
+      lpEstado(pref+'subiendo y leyendo con IA. Puede tardar hasta 1 minuto...');
+      return apiPost('listasSubir',{distribuidor:dist,nombre:f.nombre,mime:f.mime,data:f.data,reemplazar:reemplazar&&i===0});
+    }).then(function(r){
+      if(!r.ok){errores++;toast('Error: '+r.error);}
+      else{leidos+=r.items||0;if(r.error_lectura)errores++;}
+      siguiente(i+1);
+    }).catch(function(e){errores++;toast('Error: '+e.message);siguiente(i+1);});
+  }
+  siguiente(0);
+}
+function lpReleer(id){
+  if(lpOcupado)return;
+  lpOcupado=true;lpBotones(true);
+  lpEstado('Leyendo de nuevo con IA. Puede tardar hasta 1 minuto...');
+  apiPost('listasReleer',{file_id:id}).then(function(r){
+    lpOcupado=false;lpBotones(false);lpEstado('');
+    if(!r.ok)toast('Error: '+r.error);
+    else if(r.error_lectura)toast('No se pudo leer: '+r.error_lectura);
+    else toast('Lectura actualizada: '+r.items+' modelos');
+    lpCargar();
+  }).catch(function(e){lpOcupado=false;lpBotones(false);lpEstado('');toast('Error: '+e.message);});
+}
+function lpEliminarArchivo(id){
+  if(lpOcupado)return;
+  if(!confirm('¿Eliminar este archivo y sus precios?'))return;
+  apiPost('listasEliminarArchivo',{file_id:id}).then(function(r){
+    if(r.ok){toast('Archivo eliminado');lpCargar();}else toast('Error: '+r.error);
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function lpEditarItem(id){
+  var it=lpData.items.filter(function(x){return x.id===id;})[0];
+  if(!it)return;
+  var v=prompt('Precio costo de '+it.modelo,formatARS(it.precio));
+  if(v===null)return;
+  var n=lpNum(v);
+  if(isNaN(n)||n<=0){toast('Precio invalido');return;}
+  apiPost('listasEditarItem',{id:id,precio:n}).then(function(r){
+    if(r.ok){it.precio=n;lpRenderTabla();toast('Precio actualizado');}else toast('Error: '+r.error);
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function lpEliminarItem(id){
+  if(!confirm('¿Quitar esta fila de la lista?'))return;
+  apiPost('listasEliminarItem',{id:id}).then(function(r){
+    if(r.ok){
+      lpData.items=lpData.items.filter(function(x){return x.id!==id;});
+      lpRenderTabla();lpRenderArchivos();toast('Fila quitada');
+    }else toast('Error: '+r.error);
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function lpGuardarMargen(){
+  var n=lpNum(document.getElementById('lpMargen').value);
+  if(isNaN(n)||n<0){toast('Monto invalido');return;}
+  apiPost('listasSetMargen',{margen:n}).then(function(r){
+    if(r.ok){
+      lpMargen=Number(r.margen);
+      document.getElementById('lpMargen').value=formatMoney(lpMargen);
+      lpRenderTabla();
+      toast('Guardado: costo + $'+formatMoney(lpMargen));
+    }else toast('Error: '+r.error);
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+// =================== FIN LISTAS DE DISTRIBUIDORES ===================
+
 cargar();
 cargarAlertaReservados();
 document.addEventListener('keydown',function(ev){

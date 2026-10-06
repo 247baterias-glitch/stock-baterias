@@ -151,6 +151,16 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .lp-row-act{display:flex;gap:6px}
 .lp-row-act button{width:28px;height:28px;border-radius:7px;border:1px solid #282b5c;background:#14183f;color:#c7cde0;font-size:13px;cursor:pointer}
 .lp-thumb{cursor:zoom-in}
+.lp-info{padding:1.1rem 1.25rem}
+.lp-info-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.lp-info-tit{font-size:18px;font-weight:800;letter-spacing:-.01em}
+.lp-mini{padding:8px 12px;font-size:13px}
+.lp-info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.lp-info-grid .k{display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:3px}
+.lp-info-grid .v{font-size:14.5px;font-weight:600;color:var(--ink);word-break:break-word}
+.lp-info-grid .v.vacio{color:var(--muted2);font-weight:500}
+.lp-info-grid a{color:var(--amber);font-size:13px;font-weight:700;margin-left:8px;text-decoration:none;white-space:nowrap}
+.lp-sec{font-size:14px;font-weight:700;color:var(--ink-soft);margin:20px 2px 8px}
 .lpv{position:fixed;inset:0;background:rgba(0,0,16,.96);z-index:300;display:flex;flex-direction:column}
 .lpv.hidden{display:none}
 .lpv-bar{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--panel);border-bottom:1px solid var(--border);flex-wrap:wrap}
@@ -304,6 +314,8 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div id="p10" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
 <div class="ptabs" id="lpTabs"></div>
+<div id="lpErr"></div>
+<div class="mc lp-info" id="lpInfo"></div>
 <div class="mc" style="margin-bottom:12px">
 <div class="lp-tools">
 <button class="bp" onclick="lpElegirArchivo('agregar')">+ Subir lista</button>
@@ -312,11 +324,12 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="lp-margen"><span>Precio venta = costo + $</span><input type="text" inputmode="numeric" id="lpMargen" value="55.000"/><button class="bs" onclick="lpGuardarMargen()">Guardar</button></div>
 <div class="lp-estado" id="lpEstado"></div>
 </div>
-<div id="lpArchivos"></div>
 <div class="sbox"><input type="text" id="busLP" placeholder="Buscar marca o modelo..." oninput="lpRenderTabla()"/></div>
 <div class="twrap"><table class="ptable">
 <thead><tr><th>Marca</th><th>Modelo</th><th>Costo</th><th style="color:#0e7490">Costo c/IVA (21%)</th><th id="lpThVenta" style="color:#15803d">Venta (+$55.000)</th><th style="color:#15803d">Venta c/IVA (21%)</th><th></th></tr></thead><tbody id="lpBody"></tbody>
 </table></div>
+<div class="lp-sec">Archivos cargados (fotos y PDF del distribuidor)</div>
+<div id="lpArchivos"></div>
 <input type="file" id="lpInput" accept="image/*,application/pdf" multiple style="display:none" onchange="lpArchivoElegido(this)"/>
 </div>
 <div id="lpViewer" class="lpv hidden">
@@ -1966,7 +1979,8 @@ function mostrarResultadoGarantia(url,telefono){
 }
 
 // ===================== LISTAS DE DISTRIBUIDORES =====================
-var DISTRIBUIDORES=['Distribuidora 4k','Lista Bari','Lista Dimac','Lista Don Telmo'];
+var DISTRIBUIDORES=['4K distribuidora','Bari','Dimac','Telmo','Ocean Bat','Vzh'];
+var lpInfoData={},lpInfoEditando=false;
 var lpActual=0,lpData={archivos:[],items:[]},lpMargen=55000,lpModo='agregar',lpOcupado=false,lpPedido=0;
 function apiPost(action,payload){
   payload=payload||{};
@@ -2006,12 +2020,17 @@ function lpCambiarDist(i){
 }
 function lpCargar(){
   var pedido=++lpPedido;
-  document.getElementById('lpArchivos').innerHTML='<div class="loading" style="padding:1.25rem">Cargando...</div>';
-  document.getElementById('lpBody').innerHTML='';
+  document.getElementById('lpErr').innerHTML='';
+  document.getElementById('lpInfo').innerHTML='<div class="loading" style="padding:.5rem">Cargando...</div>';
+  document.getElementById('lpArchivos').innerHTML='';
+  document.getElementById('lpBody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem;color:#94a0af">Cargando...</td></tr>';
   apiPost('listasGet',{distribuidor:DISTRIBUIDORES[lpActual]}).then(function(r){
     if(pedido!==lpPedido)return;
     if(!r.ok){lpError(r.error);return;}
     lpData={archivos:r.archivos||[],items:r.items||[]};
+    lpInfoData=r.info||{};
+    lpInfoEditando=false;
+    lpRenderInfo();
     lpMargen=Number(r.margen);
     if(isNaN(lpMargen))lpMargen=55000;
     document.getElementById('lpMargen').value=formatMoney(lpMargen);
@@ -2021,7 +2040,54 @@ function lpCargar(){
 }
 function lpError(msg){
   var txt=msg==='no autorizado'?'La contraseña no coincide con CLAVE_LISTAS del Apps Script':(msg||'Error desconocido');
-  document.getElementById('lpArchivos').innerHTML='<div class="err">'+lpEsc(txt)+'<button class="bs" style="margin-top:10px;width:100%" onclick="lpCargar()">Reintentar</button></div>';
+  document.getElementById('lpErr').innerHTML='<div class="err">'+lpEsc(txt)+'<button class="bs" style="margin-top:10px;width:100%" onclick="lpCargar()">Reintentar</button></div>';
+  document.getElementById('lpInfo').innerHTML='';
+  document.getElementById('lpBody').innerHTML='';
+}
+function lpRenderInfo(){
+  var el=document.getElementById('lpInfo');
+  var d=lpInfoData||{};
+  var nombre=lpEsc(DISTRIBUIDORES[lpActual]);
+  if(lpInfoEditando){
+    var hf='<div class="lp-info-head"><div class="lp-info-tit">'+nombre+'</div></div>';
+    hf+='<div class="gfield"><label>Dirección</label><input type="text" id="lpiDir" placeholder="Ej: Av. Rivadavia 1234, CABA" value="'+lpEsc(d.direccion||'')+'"/></div>';
+    hf+='<div class="gfield"><label>Contacto (teléfono o mail)</label><input type="text" id="lpiCon" placeholder="Ej: 11 2345-6789" value="'+lpEsc(d.contacto||'')+'"/></div>';
+    hf+='<div class="gfield"><label>Vendedor</label><input type="text" id="lpiVen" placeholder="Ej: Juan" value="'+lpEsc(d.vendedor||'')+'"/></div>';
+    hf+='<div style="display:flex;gap:8px"><button class="bp" id="lpiGuardar" onclick="lpGuardarInfo()">Guardar datos</button><button class="bs" onclick="lpInfoEditando=false;lpRenderInfo()">Cancelar</button></div>';
+    el.innerHTML=hf;
+    return;
+  }
+  function campo(k,v,extra){
+    return '<div><span class="k">'+k+'</span><span class="v'+(v?'':' vacio')+'">'+(v?lpEsc(v):'Sin cargar')+'</span>'+(v&&extra?extra:'')+'</div>';
+  }
+  var dirLink=d.direccion?'<a href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(d.direccion)+'" target="_blank" rel="noopener">Mapa</a>':'';
+  var digitos=String(d.contacto||'').replace(/[^0-9]/g,'');
+  var conLink='';
+  if(digitos.length>=8){
+    var wa=digitos.length<=10?'549'+digitos:digitos;
+    conLink='<a href="https://wa.me/'+wa+'" target="_blank" rel="noopener">WhatsApp</a><a href="tel:'+digitos+'">Llamar</a>';
+  }else if(String(d.contacto||'').indexOf('@')!==-1){
+    conLink='<a href="mailto:'+encodeURIComponent(d.contacto)+'">Mail</a>';
+  }
+  var h='<div class="lp-info-head"><div class="lp-info-tit">'+nombre+'</div><button class="bs lp-mini" onclick="lpInfoEditando=true;lpRenderInfo()">&#9998; Editar datos</button></div>';
+  h+='<div class="lp-info-grid">'+campo('Dirección',d.direccion,dirLink)+campo('Contacto',d.contacto,conLink)+campo('Vendedor',d.vendedor,'')+'</div>';
+  el.innerHTML=h;
+}
+function lpGuardarInfo(){
+  var datos={
+    distribuidor:DISTRIBUIDORES[lpActual],
+    direccion:document.getElementById('lpiDir').value.trim(),
+    contacto:document.getElementById('lpiCon').value.trim(),
+    vendedor:document.getElementById('lpiVen').value.trim()
+  };
+  var btn=document.getElementById('lpiGuardar');
+  if(btn){btn.disabled=true;btn.textContent='Guardando...';}
+  apiPost('listasSetInfo',datos).then(function(r){
+    if(r.ok){
+      lpInfoData={direccion:datos.direccion,contacto:datos.contacto,vendedor:datos.vendedor};
+      lpInfoEditando=false;lpRenderInfo();toast('Datos guardados');
+    }else{toast('Error: '+r.error);if(btn){btn.disabled=false;btn.textContent='Guardar datos';}}
+  }).catch(function(e){toast('Error: '+e.message);if(btn){btn.disabled=false;btn.textContent='Guardar datos';}});
 }
 function lpRenderArchivos(){
   var el=document.getElementById('lpArchivos');

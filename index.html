@@ -328,7 +328,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="twrap"><table class="ptable">
 <thead><tr><th>Marca</th><th>Modelo</th><th>Costo</th><th style="color:#0e7490">Costo c/IVA (21%)</th><th id="lpThVenta" style="color:#15803d">Venta (+$55.000)</th><th style="color:#15803d">Venta c/IVA (21%)</th><th></th></tr></thead><tbody id="lpBody"></tbody>
 </table></div>
-<div class="lp-sec">Archivos cargados (fotos y PDF del distribuidor)</div>
+<div class="lp-sec">Listas cargadas</div>
 <div id="lpArchivos"></div>
 <input type="file" id="lpInput" accept="image/*,application/pdf" multiple style="display:none" onchange="lpArchivoElegido(this)"/>
 </div>
@@ -2103,7 +2103,7 @@ function lpRenderArchivos(){
     var meta,cls='';
     if(a.estado==='error'){meta='No se pudo leer: '+a.detalle;cls=' err';}
     else if(a.estado==='leyendo'){meta='Leyendo con IA...';cls=' leyendo';}
-    else{meta=a.fecha+' | '+cant+' modelo'+(cant===1?'':'s')+(a.detalle?' | columna: '+a.detalle:'');}
+    else{meta='Se subió el: '+a.fecha+' | '+cant+' modelo'+(cant===1?'':'s')+(a.detalle?' | columna: '+a.detalle:'');}
     var thumb=esImg?'<a class="lp-thumb" href="#" onclick="lpVerArchivo(\''+a.file_id+'\');return false;">&#128444;':'<a class="lp-thumb" href="'+a.url+'" target="_blank" rel="noopener">&#128196;';
     if(esImg)thumb+='<img src="https://drive.google.com/thumbnail?id='+encodeURIComponent(a.file_id)+'&sz=w200" alt="" onerror="this.remove()">';
     thumb+='</a>';

@@ -176,6 +176,13 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .lp-scrap-txt small{display:block;color:var(--muted);font-weight:600;font-size:12px;margin-top:2px}
 .lp-scrap-val{font-weight:800;font-size:16px;color:var(--violet)}
 .lp-scrap label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink-soft);cursor:pointer}
+.lp-saldo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px;padding:12px 14px;border-radius:var(--r-md);background:rgba(242,169,60,.10);border:1px solid rgba(242,169,60,.40)}
+.lp-saldo-txt{flex:1;min-width:160px;font-size:14px;font-weight:700;color:var(--amber)}
+.lp-saldo-val{font-size:22px;font-weight:800;color:var(--ink)}
+.lp-saldo input{width:150px;background:var(--bg);border:1.5px solid var(--amber);border-radius:var(--r-sm);padding:9px 10px;font-size:16px;color:var(--ink);font-family:var(--sans);outline:none}
+.lp-resto{font-size:13.5px;font-weight:800;margin-top:6px}
+.lp-resto.ok{color:var(--green)}
+.lp-resto.mal{color:var(--red)}
 .lp-subtot{font-size:13px;color:var(--muted);font-weight:700;margin-top:12px;text-align:right}
 .lp-info{padding:1.1rem 1.25rem}
 .lp-info-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
@@ -2029,6 +2036,34 @@ function lpNum(v){
 var lpCarrito=[];
 try{lpCarrito=JSON.parse(localStorage.getItem('lpCarrito')||'[]')||[];}catch(e){lpCarrito=[];}
 var LP_SCRAP_VALOR=10500;
+var lpSaldo=0,lpSaldoEditando=false;
+try{lpSaldo=Number(localStorage.getItem('lpSaldo'))||0;}catch(e){}
+function lpSaldoHtml(){
+  if(lpSaldoEditando){
+    return '<div class="lp-saldo"><div class="lp-saldo-txt">&#128176; Saldo disponible</div><span style="font-weight:800">$</span><input type="text" inputmode="numeric" id="lpSaldoInput" value="'+(lpSaldo?formatMoney(lpSaldo):'')+'" placeholder="0" onkeydown="if(event.key===\'Enter\')lpSaldoGuardar()"/><button class="bp lp-mini" style="flex:0" onclick="lpSaldoGuardar()">Guardar</button><button class="bs lp-mini" onclick="lpSaldoEditando=false;lpRenderCarrito()">Cancelar</button></div>';
+  }
+  return '<div class="lp-saldo"><div class="lp-saldo-txt">&#128176; Saldo disponible</div><div class="lp-saldo-val">$'+formatARS(lpSaldo)+'</div><button class="bs lp-mini" onclick="lpSaldoEditar()">&#9998; Modificar</button>'+(lpSaldo?'<button class="bs lp-mini" onclick="lpSaldoSet(0)">Poner en 0</button>':'')+'</div>';
+}
+function lpSaldoEditar(){
+  lpSaldoEditando=true;lpRenderCarrito();
+  var i=document.getElementById('lpSaldoInput');if(i){i.focus();i.select();}
+}
+function lpSaldoSet(n){
+  lpSaldo=n;lpSaldoEditando=false;
+  try{localStorage.setItem('lpSaldo',String(n));}catch(e){}
+  lpRenderCarrito();
+}
+function lpSaldoGuardar(){
+  var v=document.getElementById('lpSaldoInput').value.trim();
+  var n=v===''?0:lpNum(v);
+  if(isNaN(n)||n<0){toast('Monto invalido');return;}
+  lpSaldoSet(n);toast('Saldo: $'+formatARS(n));
+}
+function lpRestoHtml(total){
+  var r=lpSaldo-total;
+  if(r>=0)return '<div class="lp-resto ok">Te queda: $'+formatARS(r)+'</div>';
+  return '<div class="lp-resto mal">Te faltan: $'+formatARS(-r)+'</div>';
+}
 var lpScrap=null;
 var lpScrapUsar=true;
 try{lpScrapUsar=localStorage.getItem('lpScrapUsar')!=='no';}catch(e){}
@@ -2084,6 +2119,7 @@ function lpRenderCarrito(){
   var h='<div class="lp-cart-head"><div class="lp-cart-tit">&#128722; Carrito de compra'+(t.unidades?' ('+t.unidades+' bater'+(t.unidades===1?'ía':'ías')+')':'')+'</div>';
   if(lpCarrito.length)h+='<div style="display:flex;gap:8px"><button class="bs lp-mini" onclick="lpCartCopiar()">&#128203; Copiar pedido</button><button class="bs lp-mini" style="color:#f87171" onclick="lpCartVaciar()">Vaciar</button></div>';
   h+='</div>';
+  h+=lpSaldoHtml();
   if(!lpCarrito.length){
     el.innerHTML=h+'<div class="lp-cart-vacio">Vacío. Tocá "PEDIR CARRITO" en una batería para sumarla al pedido.</div>';
     return;
@@ -2112,8 +2148,8 @@ function lpRenderCarrito(){
   h+='<label><input type="checkbox" '+(lpScrapUsar?'checked':'')+' onchange="lpScrapToggle(this.checked)"> Descontar</label>';
   h+='</div>';
   h+='<div class="lp-cart-tot">';
-  h+='<div class="lp-tot-box"><div class="k">Total a gastar (sin factura)'+(t.scrap?' − scrap':'')+'</div><div class="v">$'+formatARS(t.totSin)+'</div></div>';
-  h+='<div class="lp-tot-box" style="border-color:rgba(45,212,191,.4)"><div class="k">Total a gastar con factura (c/IVA 21%)'+(t.scrap?' − scrap':'')+'</div><div class="v" style="color:#2dd4bf">$'+formatARS(t.totCon)+'</div></div>';
+  h+='<div class="lp-tot-box"><div class="k">Total a gastar (sin factura)'+(t.scrap?' − scrap':'')+'</div><div class="v">$'+formatARS(t.totSin)+'</div>'+lpRestoHtml(t.totSin)+'</div>';
+  h+='<div class="lp-tot-box" style="border-color:rgba(45,212,191,.4)"><div class="k">Total a gastar con factura (c/IVA 21%)'+(t.scrap?' − scrap':'')+'</div><div class="v" style="color:#2dd4bf">$'+formatARS(t.totCon)+'</div>'+lpRestoHtml(t.totCon)+'</div>';
   h+='</div>';
   el.innerHTML=h;
 }

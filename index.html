@@ -987,8 +987,8 @@ function cargarGarantias(){
       h+='<div class="gcard-top"><div class="gcard-titulo">'+g.garantia+'</div><span class="gcard-dias '+dcls+'">'+dtxt+'</span></div>';
       h+='<div class="gcard-row">Auto: <span>'+g.auto+'</span></div>';
       h+='<div class="gcard-row">Motivo: <span>'+g.motivo+'</span></div>';
-      h+='<div class="gcard-row">Ingreso: <span>'+g.fecha_ingreso+'</span></div>';
-      if(g.fecha_devolucion)h+='<div class="gcard-row">Devolucion: <span>'+g.fecha_devolucion+'</span></div>';
+      h+='<div class="gcard-row">Ingreso: <span>'+fmtFecha(String(g.fecha_ingreso||''))+'</span></div>';
+      if(g.fecha_devolucion)h+='<div class="gcard-row">Devolucion: <span>'+fmtFecha(String(g.fecha_devolucion||''))+'</span></div>';
       if(g.distribuidor)h+='<div class="gcard-row">Distribuidor: <span>'+g.distribuidor+'</span></div>';
       var resColor=g.resuelto==='RESUELTO'?'#15803d':g.resuelto==='NO RESUELTO'?'#b33a3a':'#70798a';
       h+='<div class="gcard-row" style="margin-top:8px">Estado: <select onchange="cambiarEstadoGarantia(\''+g.id+'\',this.value)" style="margin-left:6px;padding:4px 8px;border-radius:8px;border:1px solid #d7dce3;font-size:13px;font-weight:600;color:'+resColor+'">';

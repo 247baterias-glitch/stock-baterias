@@ -315,7 +315,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div id="lpArchivos"></div>
 <div class="sbox"><input type="text" id="busLP" placeholder="Buscar marca o modelo..." oninput="lpRenderTabla()"/></div>
 <div class="twrap"><table class="ptable">
-<thead><tr><th>Marca</th><th>Modelo</th><th>Precio costo</th><th style="color:#0e7490">Costo + IVA (21%)</th><th id="lpThVenta" style="color:#15803d">Precio venta (+$55.000)</th><th></th></tr></thead><tbody id="lpBody"></tbody>
+<thead><tr><th>Marca</th><th>Modelo</th><th>Costo</th><th style="color:#0e7490">Costo c/IVA (21%)</th><th id="lpThVenta" style="color:#15803d">Venta (+$55.000)</th><th style="color:#15803d">Venta c/IVA (21%)</th><th></th></tr></thead><tbody id="lpBody"></tbody>
 </table></div>
 <input type="file" id="lpInput" accept="image/*,application/pdf" multiple style="display:none" onchange="lpArchivoElegido(this)"/>
 </div>
@@ -2052,15 +2052,15 @@ function lpRenderArchivos(){
   el.innerHTML=h+'</div>';
 }
 function lpRenderTabla(){
-  document.getElementById('lpThVenta').textContent='Precio venta (+$'+formatMoney(lpMargen)+')';
+  document.getElementById('lpThVenta').textContent='Venta (+$'+formatMoney(lpMargen)+')';
   var body=document.getElementById('lpBody');
-  if(!lpData.items.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:1rem;color:#94a0af">Sin precios cargados</td></tr>';return;}
+  if(!lpData.items.length){body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem;color:#94a0af">Sin precios cargados</td></tr>';return;}
   var b=document.getElementById('busLP').value.toLowerCase().trim();
   var items=lpData.items.filter(function(it){return ((it.marca||'')+' '+it.modelo).toLowerCase().indexOf(b)!==-1;});
-  if(!items.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';return;}
+  if(!items.length){body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';return;}
   var h='';
   items.forEach(function(it){
-    h+='<tr><td>'+lpEsc(it.marca||'-')+'</td><td><b>'+lpEsc(it.modelo)+'</b></td><td>$'+formatARS(it.precio)+'</td><td style="font-weight:700;color:#2dd4bf">$'+formatARS(it.precio*1.21)+'</td><td class="pventa">$'+formatARS(it.precio+lpMargen)+'</td>';
+    h+='<tr><td>'+lpEsc(it.marca||'-')+'</td><td><b>'+lpEsc(it.modelo)+'</b></td><td>$'+formatARS(it.precio)+'</td><td style="font-weight:700;color:#2dd4bf">$'+formatARS(it.precio*1.21)+'</td><td class="pventa">$'+formatARS(it.precio+lpMargen)+'</td><td style="font-weight:700;color:#15803d">$'+formatARS((it.precio+lpMargen)*1.21)+'</td>';
     h+='<td><div class="lp-row-act"><button title="Corregir modelo o costo" onclick="lpEditarItem(\''+it.id+'\')">&#9998;</button><button title="Quitar fila" style="color:#f87171" onclick="lpEliminarItem(\''+it.id+'\')">&#10005;</button></div></td></tr>';
   });
   body.innerHTML=h;

@@ -1593,9 +1593,19 @@ function renderStatsMes(){
     clientesHtml='<div style="font-size:12px;color:#15803d;font-weight:600;margin-top:4px">'+st.totalClientesRepetidos+' cliente'+(st.totalClientesRepetidos===1?'':'s')+' repetido'+(st.totalClientesRepetidos===1?'':'s')+' &middot; '+st.totalClientesNuevos+' nuevo'+(st.totalClientesNuevos===1?'':'s')+'</div>';
   }
   var totalGeneral=st.totalColoc;
+  var hoyProm=new Date();
+  var diasDelMes=new Date(anioSeleccionado,mesSeleccionado+1,0).getDate();
+  var esMesActual=(mesSeleccionado===hoyProm.getMonth()&&anioSeleccionado===hoyProm.getFullYear());
+  var diasContados=esMesActual?hoyProm.getDate():diasDelMes;
+  var promedio=diasContados?totalGeneral/diasContados:0;
+  var promTxt=promedio.toLocaleString('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1});
+  var promedioHtml='<div style="font-size:12.5px;color:#a78bfa;font-weight:700;margin-top:6px">Promedio: '+promTxt+' servicios por día ('+diasContados+' día'+(diasContados===1?'':'s')+')</div>';
+  if(esMesActual&&diasContados<diasDelMes){
+    promedioHtml+='<div style="font-size:12px;color:#8a90b3;font-weight:600;margin-top:2px">A este ritmo, el mes cerraría con ~'+Math.round(promedio*diasDelMes)+' servicios</div>';
+  }
   var cardTotal=document.getElementById('mesTotalCard');
   if(cardTotal){
-    cardTotal.innerHTML='<div style="font-size:13px;color:#70798a;margin-bottom:6px">TOTAL SERVICIOS '+mesLabel.toUpperCase()+'</div><div style="font-size:36px;font-weight:700">'+totalGeneral+'</div><div style="font-size:12px;color:#70798a">servicios</div>'+extraHtml+clientesHtml;
+    cardTotal.innerHTML='<div style="font-size:13px;color:#70798a;margin-bottom:6px">TOTAL SERVICIOS '+mesLabel.toUpperCase()+'</div><div style="font-size:36px;font-weight:700">'+totalGeneral+'</div><div style="font-size:12px;color:#70798a">servicios</div>'+promedioHtml+extraHtml+clientesHtml;
   }
   var el=document.getElementById('mesStatsBody');
   if(!el)return;

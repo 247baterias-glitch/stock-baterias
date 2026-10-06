@@ -1432,12 +1432,27 @@ function gastoAdsBadge(fecha){
   if(g===undefined||g===null||g==='')return '';
   return '<span style="background:#1d5fad;color:#fff;font-weight:800;font-size:13px;padding:3px 10px;border-radius:99px;white-space:nowrap">Gasto Google Ads: $'+formatMoney(g)+'</span>';
 }
+function gastoAdsMes(mes,anio){
+  var pref=anio+'-'+String(mes+1).padStart(2,'0')+'-';
+  var tot=0;
+  Object.keys(GASTO_ADS).forEach(function(f){
+    if(f.indexOf(pref)===0)tot+=parseFloat(String(GASTO_ADS[f]||'').replace(/[^0-9.-]/g,''))||0;
+  });
+  return tot;
+}
 function renderGastoHoyBanner(){
   var el=document.getElementById('gastoHoyBanner');
   if(!el)return;
+  var h='';
+  var hoyD=new Date();
+  var esMesActual=(mesSeleccionado===hoyD.getMonth()&&anioSeleccionado===hoyD.getFullYear());
   var v=GASTO_ADS[hoyStr()];
-  if(v===undefined||v===null){el.innerHTML='';return;}
-el.innerHTML='<div style="text-align:center;color:#ffffff;font-weight:700;font-size:18px;margin-bottom:12px">Google Ads HOY lleva gastado: $'+formatMoney(v)+'</div>';
+  if(esMesActual&&v!==undefined&&v!==null){
+    h+='<div style="text-align:center;color:#ffffff;font-weight:700;font-size:18px;margin-bottom:4px">Google Ads HOY lleva gastado: $'+formatMoney(v)+'</div>';
+  }
+  var mesTot=gastoAdsMes(mesSeleccionado,anioSeleccionado);
+  h+='<div style="text-align:center;color:#7fb2ff;font-weight:700;font-size:16px;margin-bottom:12px">Google Ads en '+NOMBRES_MES[mesSeleccionado]+' lleva gastado: $'+formatMoney(mesTot)+'</div>';
+  el.innerHTML=h;
 }
 function cargarHistorialMes(){
   document.getElementById('historialBody').innerHTML='<tr><td colspan="14" class="loading">Cargando...</td></tr>';
@@ -1602,6 +1617,10 @@ function renderStatsMes(){
   var promedioHtml='<div style="font-size:12.5px;color:#a78bfa;font-weight:700;margin-top:6px">Promedio: '+promTxt+' servicios por día ('+diasContados+' día'+(diasContados===1?'':'s')+')</div>';
   if(esMesActual&&diasContados<diasDelMes){
     promedioHtml+='<div style="font-size:12px;color:#8a90b3;font-weight:600;margin-top:2px">A este ritmo, el mes cerraría con ~'+Math.round(promedio*diasDelMes)+' servicios</div>';
+  }
+  var gastoMes=gastoAdsMes(mesSeleccionado,anioSeleccionado);
+  if(gastoMes>0){
+    promedioHtml+='<div style="font-size:12.5px;color:#7fb2ff;font-weight:700;margin-top:6px">Gasto Google Ads del mes: $'+formatMoney(gastoMes)+(totalGeneral?' | Costo por servicio: $'+formatMoney(gastoMes/totalGeneral):'')+'</div>';
   }
   var cardTotal=document.getElementById('mesTotalCard');
   if(cardTotal){

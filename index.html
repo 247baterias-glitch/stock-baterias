@@ -171,6 +171,12 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .lp-tot-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:14px 16px}
 .lp-tot-box .k{font-size:12.5px;color:var(--muted);font-weight:700}
 .lp-tot-box .v{font-size:26px;font-weight:800;margin-top:4px;letter-spacing:-.01em}
+.lp-scrap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border-radius:var(--r-md);background:rgba(167,139,250,.10);border:1px solid rgba(167,139,250,.35)}
+.lp-scrap-txt{flex:1;min-width:180px;font-size:14px;font-weight:700;color:var(--violet)}
+.lp-scrap-txt small{display:block;color:var(--muted);font-weight:600;font-size:12px;margin-top:2px}
+.lp-scrap-val{font-weight:800;font-size:16px;color:var(--violet)}
+.lp-scrap label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink-soft);cursor:pointer}
+.lp-subtot{font-size:13px;color:var(--muted);font-weight:700;margin-top:12px;text-align:right}
 .lp-info{padding:1.1rem 1.25rem}
 .lp-info-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
 .lp-info-tit{font-size:18px;font-weight:800;letter-spacing:-.01em}
@@ -2022,6 +2028,20 @@ function lpNum(v){
 // ---- Carrito de compra ----
 var lpCarrito=[];
 try{lpCarrito=JSON.parse(localStorage.getItem('lpCarrito')||'[]')||[];}catch(e){lpCarrito=[];}
+var LP_SCRAP_VALOR=10500;
+var lpScrap=null;
+var lpScrapUsar=true;
+try{lpScrapUsar=localStorage.getItem('lpScrapUsar')!=='no';}catch(e){}
+function lpCargarScrap(){
+  api('getResumen').then(function(r){
+    if(r&&r.ok){lpScrap=parseInt(r.scrap10,10)||0;lpRenderCarrito();}
+  }).catch(function(){});
+}
+function lpScrapToggle(v){
+  lpScrapUsar=v;
+  try{localStorage.setItem('lpScrapUsar',v?'si':'no');}catch(e){}
+  lpRenderCarrito();
+}
 function lpCartGuardar(){try{localStorage.setItem('lpCarrito',JSON.stringify(lpCarrito));}catch(e){}}
 function lpPedir(id){
   var it=lpData.items.filter(function(x){return x.id===id;})[0];
@@ -2051,6 +2071,10 @@ function lpCartVaciar(){
 function lpCartTotales(){
   var t={unidades:0,sin:0,con:0};
   lpCarrito.forEach(function(c){t.unidades+=c.qty;t.sin+=c.precio*c.qty;t.con+=c.precio*1.21*c.qty;});
+  t.scrapCant=(lpScrapUsar&&lpScrap)?lpScrap:0;
+  t.scrap=t.scrapCant*LP_SCRAP_VALOR;
+  t.totSin=t.sin-t.scrap;
+  t.totCon=t.con-t.scrap;
   return t;
 }
 function lpRenderCarrito(){
@@ -2080,9 +2104,16 @@ function lpRenderCarrito(){
     });
     if(dists.length>1)h+='<div style="text-align:right;font-size:13px;color:var(--muted);font-weight:700;padding-top:6px">Subtotal '+lpEsc(d)+': $'+formatARS(sub)+' | c/IVA $'+formatARS(sub*1.21)+'</div>';
   });
+  h+='<div class="lp-subtot">Baterías: $'+formatARS(t.sin)+' | c/IVA $'+formatARS(t.con)+'</div>';
+  var cantTxt=lpScrap===null?'cargando...':(lpScrap+' bater'+(lpScrap===1?'ía':'ías'));
+  h+='<div class="lp-scrap">';
+  h+='<div class="lp-scrap-txt">&#9851; SCRAP BATERÍAS<small>'+cantTxt+' del contador de Resumen × $'+formatARS(LP_SCRAP_VALOR)+' c/u</small></div>';
+  h+='<div class="lp-scrap-val">'+(t.scrap?'− $'+formatARS(t.scrap):'$0,00')+'</div>';
+  h+='<label><input type="checkbox" '+(lpScrapUsar?'checked':'')+' onchange="lpScrapToggle(this.checked)"> Descontar</label>';
+  h+='</div>';
   h+='<div class="lp-cart-tot">';
-  h+='<div class="lp-tot-box"><div class="k">Total a gastar (sin factura)</div><div class="v">$'+formatARS(t.sin)+'</div></div>';
-  h+='<div class="lp-tot-box" style="border-color:rgba(45,212,191,.4)"><div class="k">Total a gastar con factura (c/IVA 21%)</div><div class="v" style="color:#2dd4bf">$'+formatARS(t.con)+'</div></div>';
+  h+='<div class="lp-tot-box"><div class="k">Total a gastar (sin factura)'+(t.scrap?' − scrap':'')+'</div><div class="v">$'+formatARS(t.totSin)+'</div></div>';
+  h+='<div class="lp-tot-box" style="border-color:rgba(45,212,191,.4)"><div class="k">Total a gastar con factura (c/IVA 21%)'+(t.scrap?' − scrap':'')+'</div><div class="v" style="color:#2dd4bf">$'+formatARS(t.totCon)+'</div></div>';
   h+='</div>';
   el.innerHTML=h;
 }
@@ -2097,7 +2128,8 @@ function lpCartCopiar(){
     txt+='\n';
   });
   var t=lpCartTotales();
-  txt+='Total sin factura: $'+formatARS(t.sin)+'\nTotal con IVA: $'+formatARS(t.con);
+  if(t.scrap)txt+='Scrap: '+t.scrapCant+' baterías x $'+formatARS(LP_SCRAP_VALOR)+' = -$'+formatARS(t.scrap)+'\n';
+  txt+='Total sin factura: $'+formatARS(t.totSin)+'\nTotal con IVA: $'+formatARS(t.totCon);
   function ok(){toast('Pedido copiado');}
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok).catch(function(){prompt('Copiá el pedido:',txt);});}
   else prompt('Copiá el pedido:',txt);
@@ -2109,6 +2141,7 @@ function mostrarListasDist(){
   document.getElementById('busLP').value='';
   lpRenderTabs();
   lpRenderCarrito();
+  lpCargarScrap();
   lpCargar();
 }
 function lpRenderTabs(){

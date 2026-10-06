@@ -1577,9 +1577,11 @@ function calcularStatsMes(lista){
     }
     var monto=parseFloat(String(s.precio||'').replace(/[^0-9.-]/g,''))||0;
     porTecnico[tec]=(porTecnico[tec]||0)+1;
-    porMarca[marca]=(porMarca[marca]||0)+1;
-    porModelo[modelo]=(porModelo[modelo]||0)+1;
-    modeloMarca[modelo]=marca;
+    if(!esExtra){
+      porMarca[marca]=(porMarca[marca]||0)+1;
+      porModelo[modelo]=(porModelo[modelo]||0)+1;
+      modeloMarca[modelo]=marca;
+    }
     porPago[pago]=(porPago[pago]||0)+1;
     porPagoMonto[pago]=(porPagoMonto[pago]||0)+monto;
     if(pago==='Transferencia'&&s.cuenta_transferencia){
@@ -1634,7 +1636,11 @@ function renderStatsMes(){
   if(!Object.keys(st.porTecnico).length)h+='<div class="gcard-row" style="color:#94a0af">Sin datos</div>';
   h+='</div>';
   h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por marca ('+mesLabel+')</div>';
-  Object.keys(st.porMarca).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porMarca[k]+'</span></div>';});
+  Object.keys(st.porMarca).sort(function(a,b){return st.porMarca[b]-st.porMarca[a];}).forEach(function(k){
+    var pm=diasContados?st.porMarca[k]/diasContados:0;
+    h+='<div class="gcard-row">'+k+': <span>'+st.porMarca[k]+'</span> <span style="color:#a78bfa;font-weight:600">('+pm.toLocaleString('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1})+' por día)</span></div>';
+  });
+  if(Object.keys(st.porMarca).length)h+='<div class="gcard-row" style="margin-top:8px;color:#a78bfa">Promedio total: <span style="color:#a78bfa">'+promTxt+' servicios por día</span> ('+diasContados+' día'+(diasContados===1?'':'s')+')</div>';
   if(!Object.keys(st.porMarca).length)h+='<div class="gcard-row" style="color:#94a0af">Sin datos</div>';
   h+='</div>';
   h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por modelo ('+mesLabel+')</div>';
@@ -1652,8 +1658,12 @@ function renderStatsMes(){
   if(!modelosOrdenados.length)h+='<div class="gcard-row" style="color:#94a0af">Sin datos</div>';
   h+='</div>';
   h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por forma de pago ('+mesLabel+')</div>';
-  Object.keys(st.porPago).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porPago[k]+'</span> — <span>$'+formatMoney(st.porPagoMonto&&st.porPagoMonto[k]||0)+'</span></div>';});
-  if(!Object.keys(st.porPago).length)h+='<div class="gcard-row" style="color:#94a0af">Sin datos</div>';
+  var pagosOrden=['Efectivo','Transferencia','Tarjeta'];
+  Object.keys(st.porPago).forEach(function(k){if(pagosOrden.indexOf(k)===-1)pagosOrden.push(k);});
+  pagosOrden.forEach(function(k){
+    var etiqueta=k==='Tarjeta'?'Tarjeta de crédito':k;
+    h+='<div class="gcard-row">'+etiqueta+': <span>'+(st.porPago[k]||0)+'</span> — <span>$'+formatMoney(st.porPagoMonto&&st.porPagoMonto[k]||0)+'</span></div>';
+  });
   h+='</div>';
   h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por cuenta de transferencia ('+mesLabel+')</div>';
   Object.keys(st.porCuentaTransferencia||{}).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porCuentaTransferencia[k]+'</span> — <span>$'+formatMoney(st.porCuentaTransferenciaMonto&&st.porCuentaTransferenciaMonto[k]||0)+'</span></div>';});

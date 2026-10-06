@@ -84,6 +84,8 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .bres{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem 1.1rem;margin-bottom:10px;box-shadow:var(--shadow-card)}
 .bres-v{font-size:16px;font-weight:700;margin-bottom:4px}
 .bres-b{font-size:14px;color:var(--ink-soft)}
+.bres-flex{display:flex;align-items:center;gap:12px}
+.bres-flex .lp-row-act button{width:34px;height:34px;font-size:14px}
 .no-res{text-align:center;padding:2rem;color:var(--muted2);font-size:14.5px}
 .gform{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.5rem;margin-bottom:16px;box-shadow:var(--shadow-card)}
 .gfield{margin-bottom:12px}
@@ -280,6 +282,12 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div id="p5" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
 <div class="sbox"><input type="text" id="busV" placeholder="Ej: Sandero, Corolla, Gol..." oninput="buscarVehiculo()"/></div>
+<button class="aviso-add" onclick="bNuevoToggle(true)">+ Agregar vehículo</button>
+<div id="bNuevo" class="bres hidden">
+<div class="gfield"><label>Vehículo</label><input type="text" id="bNuevoV" placeholder="Ej: Camioneta S10 Diesel"/></div>
+<div class="gfield"><label>Baterías que lleva</label><input type="text" id="bNuevoB" placeholder="Ej: Willard 730 / Sermat 75B / Moura 26AD"/></div>
+<div style="display:flex;gap:8px"><button class="bp" id="bNuevoBtn" onclick="bAgregar()">Guardar</button><button class="bs" onclick="bNuevoToggle(false)">Cancelar</button></div>
+</div>
 <div id="resV"><div class="no-res">Escribi el nombre del vehiculo</div></div>
 </div>
 <div id="p6" class="hidden">
@@ -809,19 +817,25 @@ function filtrarMoto(){
   });
   document.getElementById('motoBody').innerHTML=h||'<tr><td colspan="5" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';
 }
+var bEditFila=null;
 function mostrarBuscador(){
   document.getElementById('p0').classList.add('hidden');
   document.getElementById('p5').classList.remove('hidden');
   titulo('Buscador de Baterias');
   document.getElementById('busV').value='';
-  if(BUSCADOR.length===0){
+  bEditFila=null;
+  bNuevoToggle(false);
+  document.getElementById('resV').innerHTML='<div class="no-res">Cargando...</div>';
+  apiPost('buscadorGet').then(function(r){
+    if(r.ok){BUSCADOR=(r.data||[]).map(function(x){return [x.v,x.b,x.fila];});}
+    else toast('Error: '+r.error);
+    buscarVehiculo();
+  }).catch(function(){
     api('getBuscador').then(function(r){
-      if(r.ok){BUSCADOR=r.data;}
-      document.getElementById('resV').innerHTML='<div class="no-res">Escribi el nombre del vehiculo</div>';
+      if(r.ok)BUSCADOR=r.data;
+      buscarVehiculo();
     });
-  } else {
-    document.getElementById('resV').innerHTML='<div class="no-res">Escribi el nombre del vehiculo</div>';
-  }
+  });
 }
 function mostrarGarantias(){document.getElementById('p0').classList.add('hidden');document.getElementById('p6').classList.remove('hidden');titulo('Garantias');cambiarGTab(1);}
 function volverInicio(){
@@ -866,12 +880,69 @@ function filtrarPrecios(){
 function buscarVehiculo(){
   var b=document.getElementById('busV').value.toLowerCase().trim();
   var el=document.getElementById('resV');
-  if(b.length<2){el.innerHTML='<div class="no-res">Escribi al menos 2 letras</div>';return;}
-  var res=BUSCADOR.filter(function(x){return x[0].toLowerCase().indexOf(b)!==-1;});
+  if(b.length<2){el.innerHTML='<div class="no-res">Escribi el nombre del vehiculo</div>';return;}
+  var res=BUSCADOR.filter(function(x){return String(x[0]).toLowerCase().indexOf(b)!==-1;});
   if(!res.length){el.innerHTML='<div class="no-res">No se encontraron resultados</div>';return;}
   var h='';
-  res.forEach(function(x){h+='<div class="bres"><div class="bres-v">'+x[0]+'</div><div class="bres-b">'+x[1]+'</div></div>';});
+  res.forEach(function(x){
+    var editable=x[2]!==undefined;
+    if(editable&&bEditFila===x[2]){
+      h+='<div class="bres">';
+      h+='<div class="gfield"><label>Vehículo</label><input type="text" id="bEdV" value="'+lpEsc(x[0])+'"/></div>';
+      h+='<div class="gfield"><label>Baterías que lleva</label><input type="text" id="bEdB" value="'+lpEsc(x[1])+'"/></div>';
+      h+='<div style="display:flex;gap:8px"><button class="bp" id="bEdBtn" onclick="bGuardar('+x[2]+')">Guardar cambios</button><button class="bs" onclick="bEditFila=null;buscarVehiculo()">Cancelar</button></div>';
+      h+='</div>';
+      return;
+    }
+    h+='<div class="bres bres-flex"><div style="flex:1;min-width:0"><div class="bres-v">'+lpEsc(x[0])+'</div><div class="bres-b">'+lpEsc(x[1])+'</div></div>';
+    if(editable)h+='<div class="lp-row-act"><button title="Editar" onclick="bEditar('+x[2]+')">&#9998;</button><button title="Eliminar" style="color:#f87171" onclick="bEliminar('+x[2]+')">&#10005;</button></div>';
+    h+='</div>';
+  });
   el.innerHTML=h;
+}
+function bBuscarFila(fila){return BUSCADOR.filter(function(x){return x[2]===fila;})[0];}
+function bEditar(fila){bEditFila=fila;buscarVehiculo();var i=document.getElementById('bEdV');if(i)i.focus();}
+function bGuardar(fila){
+  var x=bBuscarFila(fila);if(!x)return;
+  var v=document.getElementById('bEdV').value.trim();
+  var bat=document.getElementById('bEdB').value.trim();
+  if(!v){toast('Completa el vehiculo');return;}
+  var btn=document.getElementById('bEdBtn');if(btn){btn.disabled=true;btn.textContent='Guardando...';}
+  apiPost('buscadorEditar',{fila:fila,v0:x[0],v:v,b:bat}).then(function(r){
+    if(r.ok){x[0]=v;x[1]=bat;bEditFila=null;buscarVehiculo();toast('Vehiculo actualizado');}
+    else{toast('Error: '+r.error);if(btn){btn.disabled=false;btn.textContent='Guardar cambios';}}
+  }).catch(function(e){toast('Error: '+e.message);if(btn){btn.disabled=false;btn.textContent='Guardar cambios';}});
+}
+function bEliminar(fila){
+  var x=bBuscarFila(fila);if(!x)return;
+  if(!confirm('¿Eliminar "'+x[0]+'" del buscador?'))return;
+  apiPost('buscadorEliminar',{fila:fila,v0:x[0]}).then(function(r){
+    if(r.ok){
+      BUSCADOR=BUSCADOR.filter(function(y){return y[2]!==fila;});
+      BUSCADOR.forEach(function(y){if(y[2]>fila)y[2]--;});
+      buscarVehiculo();toast('Vehiculo eliminado');
+    }else toast('Error: '+r.error);
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function bNuevoToggle(mostrar){
+  var el=document.getElementById('bNuevo');if(!el)return;
+  el.classList.toggle('hidden',!mostrar);
+  if(mostrar){document.getElementById('bNuevoV').value=document.getElementById('busV').value;document.getElementById('bNuevoB').value='';document.getElementById('bNuevoV').focus();}
+}
+function bAgregar(){
+  var v=document.getElementById('bNuevoV').value.trim();
+  var bat=document.getElementById('bNuevoB').value.trim();
+  if(!v){toast('Completa el vehiculo');return;}
+  var btn=document.getElementById('bNuevoBtn');btn.disabled=true;btn.textContent='Guardando...';
+  apiPost('buscadorAgregar',{v:v,b:bat}).then(function(r){
+    btn.disabled=false;btn.textContent='Guardar';
+    if(r.ok){
+      BUSCADOR.push([v,bat,r.fila]);
+      bNuevoToggle(false);
+      document.getElementById('busV').value=v;
+      buscarVehiculo();toast('Vehiculo agregado');
+    }else toast('Error: '+r.error);
+  }).catch(function(e){btn.disabled=false;btn.textContent='Guardar';toast('Error: '+e.message);});
 }
 function diasDesde(fecha){
   if(!fecha)return null;

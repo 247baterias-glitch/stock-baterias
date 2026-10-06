@@ -23,8 +23,8 @@ html{color-scheme:dark}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17px;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
 h1,h2,h3,p,button,input,a{color:inherit}
 .header,.section{max-width:600px;margin:0 auto}
-#p4,#p9,#p10{width:100vw;max-width:1040px;position:relative;left:50%;transform:translateX(-50%)}
-#p10{padding:1.25rem 1rem}
+#p4,#p9,#p10,#p11{width:100vw;max-width:1040px;position:relative;left:50%;transform:translateX(-50%)}
+#p10,#p11{padding:1.25rem 1rem}
 .header{display:flex;align-items:center;gap:12px;padding:1.1rem 1.25rem;background:var(--panel);color:#fff;border-radius:0 0 var(--r-lg) var(--r-lg);box-shadow:var(--shadow-pop)}
 .logo{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:rgba(255,255,255,.08);border:1px solid rgba(242,169,60,.45);flex-shrink:0}
 .h1{font-size:18px;font-weight:700;letter-spacing:-.01em}
@@ -153,6 +153,17 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .lp-row-act{display:flex;gap:6px}
 .lp-row-act button{width:28px;height:28px;border-radius:7px;border:1px solid #282b5c;background:#14183f;color:#c7cde0;font-size:13px;cursor:pointer}
 .lp-thumb{cursor:zoom-in}
+.cmp-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:rgba(167,139,250,.12);border:1.5px solid rgba(167,139,250,.45);border-radius:var(--r-md);padding:12px;font-size:14.5px;font-weight:800;color:var(--violet);cursor:pointer;margin-bottom:12px;font-family:var(--sans)}
+.cmp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-bottom:18px}
+.cmp-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;box-shadow:var(--shadow-card)}
+.cmp-marca{font-size:16px;font-weight:800;letter-spacing:.02em;margin-bottom:6px}
+.cmp-gana{font-size:14px;font-weight:700;color:var(--green)}
+.cmp-gana b{color:var(--ink)}
+.cmp-det{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.4}
+.cmp-sec{font-size:15px;font-weight:800;color:var(--amber);margin:22px 2px 8px;letter-spacing:.03em}
+.cmp-min{color:var(--green);font-weight:800}
+.cmp-mas{display:block;font-size:11.5px;color:var(--red);font-weight:700;margin-top:2px}
+.cmp-nada{color:var(--muted2)}
 .ptable tr.lp-grp td{background:#14183f;color:var(--amber);font-weight:800;font-size:13px;letter-spacing:.05em;padding:10px 16px;border-bottom:1px solid var(--border)}
 .lp-pedir{background:var(--amber);color:#1b2330;border:none;border-radius:7px;padding:8px 10px;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:var(--sans)}
 .lp-pedir.en{background:var(--green-bg);color:var(--green);border:1px solid rgba(52,211,153,.35)}
@@ -355,6 +366,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </div>
 <div id="p10" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
+<button class="cmp-btn" onclick="mostrarComparador()">&#9878; Comparar precios entre distribuidores</button>
 <div class="ptabs" id="lpTabs"></div>
 <div id="lpErr"></div>
 <div class="mc lp-info" id="lpInfo"></div>
@@ -374,6 +386,11 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="lp-sec">Listas cargadas</div>
 <div id="lpArchivos"></div>
 <input type="file" id="lpInput" accept="image/*,application/pdf" multiple style="display:none" onchange="lpArchivoElegido(this)"/>
+</div>
+<div id="p11" class="hidden">
+<button class="back" onclick="cmpVolver()">&#8592; Volver a las listas</button>
+<div class="sbox"><input type="text" id="busCmp" placeholder="Buscar marca o modelo..." oninput="cmpRender()"/></div>
+<div id="cmpBody"><div class="loading">Cargando...</div></div>
 </div>
 <div id="lpViewer" class="lpv hidden">
 <div class="lpv-bar">
@@ -840,12 +857,12 @@ function mostrarBuscador(){
 }
 function mostrarGarantias(){document.getElementById('p0').classList.add('hidden');document.getElementById('p6').classList.remove('hidden');titulo('Garantias');cambiarGTab(1);}
 function volverInicio(){
-  ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
+  ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
   document.getElementById('p0').classList.remove('hidden');titulo('Stock Baterias');
   tipoExtra='';camExtra=null;
 }
 function mostrarTipoServicio(){
-  ['p0','p1','p2','p3','p4','p5','p6','p7','p9','p10'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
+  ['p0','p1','p2','p3','p4','p5','p6','p7','p9','p10','p11'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
   document.getElementById('p8').classList.remove('hidden');
   titulo('Registrar Servicio');
 }
@@ -2280,6 +2297,127 @@ function lpCartCopiar(){
   function ok(){toast('Pedido copiado');}
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok).catch(function(){prompt('Copiá el pedido:',txt);});}
   else prompt('Copiá el pedido:',txt);
+}
+// ---- Comparador entre distribuidores ----
+var cmpData=[];
+function mostrarComparador(){
+  document.getElementById('p10').classList.add('hidden');
+  document.getElementById('p11').classList.remove('hidden');
+  titulo('Comparar distribuidores');
+  document.getElementById('busCmp').value='';
+  document.getElementById('cmpBody').innerHTML='<div class="loading">Cargando todas las listas...</div>';
+  apiPost('listasTodos').then(function(r){
+    if(!r.ok){document.getElementById('cmpBody').innerHTML='<div class="err">'+lpEsc(r.error)+'</div>';return;}
+    cmpData=r.items||[];
+    cmpRender();
+  }).catch(function(e){document.getElementById('cmpBody').innerHTML='<div class="err">'+lpEsc(e.message)+'</div>';});
+}
+function cmpVolver(){
+  document.getElementById('p11').classList.add('hidden');
+  document.getElementById('p10').classList.remove('hidden');
+  titulo('Listas de Distribuidores');
+}
+// Clave para reconocer el mismo modelo en listas distintas, dentro de la misma marca.
+// Ignora prefijos de letras: M22GD = S22GD = 22GD, UB 730 = UB730 = 730, ME40FD = 40FD.
+// Las EFB / start-stop (MF72LD, UB EFB 730) quedan aparte de las comunes.
+function cmpKey(marca,modelo){
+  var s=String(modelo||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  if(marca)s=s.split(marca).join(' ');
+  var efb=/EFB|START\s*STOP/.test(s)||/^MF\d/.test(s);
+  s=s.replace(/EFB|START\s*STOP/g,' ').replace(/\s+/g,' ').trim();
+  var m=s.match(/(\d{2,4})([A-Z]{0,3})/);
+  if(!m)return s.replace(/[^A-Z0-9]/g,'');
+  var core=m[1]+m[2];
+  var resto=s.slice(m.index+m[0].length);
+  if(m[2]==='X'&&/^\d/.test(resto))core=m[1]+'X'+resto.match(/^\d+/)[0];
+  return (efb?'EFB':'')+core;
+}
+function cmpAgrupar(){
+  var marcas={};
+  cmpData.forEach(function(it){
+    var precio=Number(it.precio)||0;
+    if(precio<=0)return;
+    var mn=lpMarcaNorm(it.marca,it.modelo)||'SIN MARCA';
+    var k=cmpKey(mn,it.modelo);
+    if(!k)return;
+    var M=marcas[mn]||(marcas[mn]={dists:[],modelos:{}});
+    if(M.dists.indexOf(it.d)===-1)M.dists.push(it.d);
+    var mod=M.modelos[k]||(M.modelos[k]={label:it.modelo,precios:{}});
+    if(String(it.modelo).length<String(mod.label).length)mod.label=it.modelo;
+    if(mod.precios[it.d]===undefined||precio<mod.precios[it.d])mod.precios[it.d]=precio;
+  });
+  Object.keys(marcas).forEach(function(mn){
+    var M=marcas[mn];
+    M.dists.sort(function(a,b){return DISTRIBUIDORES.indexOf(a)-DISTRIBUIDORES.indexOf(b);});
+    M.gana={};M.comparables=0;
+    Object.keys(M.modelos).forEach(function(k){
+      var pr=M.modelos[k].precios,ds=Object.keys(pr);
+      if(ds.length<2)return;
+      M.comparables++;
+      var min=Math.min.apply(null,ds.map(function(d){return pr[d];}));
+      ds.forEach(function(d){if(pr[d]===min)M.gana[d]=(M.gana[d]||0)+1;});
+    });
+  });
+  return marcas;
+}
+function cmpRender(){
+  var el=document.getElementById('cmpBody');
+  if(!cmpData.length){el.innerHTML='<div class="no-res">Todavía no hay listas cargadas para comparar.</div>';return;}
+  var marcas=cmpAgrupar();
+  var b=document.getElementById('busCmp').value.toUpperCase().trim();
+  var nombres=Object.keys(marcas).sort(function(a,c){return a.localeCompare(c,'es');});
+  var h='<div class="cmp-sec" style="margin-top:4px">QUIÉN LA TIENE MÁS BARATA</div><div class="cmp-grid">';
+  nombres.forEach(function(mn){
+    if(b&&mn.indexOf(b)===-1)return;
+    var M=marcas[mn];
+    h+='<div class="cmp-card"><div class="cmp-marca">'+lpEsc(mn)+'</div>';
+    if(M.dists.length===1){
+      h+='<div class="cmp-gana">Solo la tiene <b>'+lpEsc(M.dists[0])+'</b></div>';
+    }else if(!M.comparables){
+      h+='<div class="cmp-gana" style="color:var(--warn)">Sin modelos iguales para comparar</div>';
+    }else{
+      var orden=Object.keys(M.gana).sort(function(x,y){return M.gana[y]-M.gana[x];});
+      var top=orden[0];
+      h+='<div class="cmp-gana">Más barata en <b>'+lpEsc(top)+'</b></div>';
+      h+='<div class="cmp-det">Gana en '+M.gana[top]+' de '+M.comparables+' modelo'+(M.comparables===1?'':'s')+' que tienen varios';
+      if(orden.length>1)h+='<br>'+orden.slice(1).map(function(d){return lpEsc(d)+': '+M.gana[d];}).join(' | ');
+      h+='</div>';
+    }
+    h+='<div class="cmp-det">La tienen: '+M.dists.map(lpEsc).join(', ')+'</div></div>';
+  });
+  h+='</div>';
+  nombres.forEach(function(mn){
+    var M=marcas[mn];
+    var keys=Object.keys(M.modelos).filter(function(k){
+      return !b||mn.indexOf(b)!==-1||k.indexOf(b.replace(/[^A-Z0-9]/g,''))!==-1||String(M.modelos[k].label).toUpperCase().indexOf(b)!==-1;
+    });
+    if(!keys.length)return;
+    keys.sort(function(x,y){
+      var cx=Object.keys(M.modelos[x].precios).length>1?0:1,cy=Object.keys(M.modelos[y].precios).length>1?0:1;
+      if(cx!==cy)return cx-cy;
+      return x.localeCompare(y,'es',{numeric:true});
+    });
+    h+='<div class="cmp-sec">'+lpEsc(mn)+'</div>';
+    h+='<div class="twrap" style="max-height:none"><table class="ptable"><thead><tr><th>Modelo</th>';
+    M.dists.forEach(function(d){h+='<th>'+lpEsc(d)+'</th>';});
+    h+='</tr></thead><tbody>';
+    keys.forEach(function(k){
+      var mod=M.modelos[k],ds=Object.keys(mod.precios);
+      var min=Math.min.apply(null,ds.map(function(d){return mod.precios[d];}));
+      var comp=ds.length>1;
+      h+='<tr><td><b>'+lpEsc(mod.label)+'</b></td>';
+      M.dists.forEach(function(d){
+        var p=mod.precios[d];
+        if(p===undefined){h+='<td class="cmp-nada">—</td>';return;}
+        if(comp&&p===min)h+='<td class="cmp-min">&#127942; $'+formatARS(p)+'</td>';
+        else if(comp)h+='<td>$'+formatARS(p)+'<span class="cmp-mas">+$'+formatARS(p-min)+'</span></td>';
+        else h+='<td>$'+formatARS(p)+'</td>';
+      });
+      h+='</tr>';
+    });
+    h+='</tbody></table></div>';
+  });
+  el.innerHTML=h;
 }
 function mostrarListasDist(){
   document.getElementById('p0').classList.add('hidden');

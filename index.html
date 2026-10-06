@@ -153,6 +153,7 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .lp-row-act{display:flex;gap:6px}
 .lp-row-act button{width:28px;height:28px;border-radius:7px;border:1px solid #282b5c;background:#14183f;color:#c7cde0;font-size:13px;cursor:pointer}
 .lp-thumb{cursor:zoom-in}
+.ptable tr.lp-grp td{background:#14183f;color:var(--amber);font-weight:800;font-size:13px;letter-spacing:.05em;padding:10px 16px;border-bottom:1px solid var(--border)}
 .lp-pedir{background:var(--amber);color:#1b2330;border:none;border-radius:7px;padding:8px 10px;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:var(--sans)}
 .lp-pedir.en{background:var(--green-bg);color:var(--green);border:1px solid rgba(52,211,153,.35)}
 .lp-cart{margin-top:16px}
@@ -2154,7 +2155,7 @@ function lpPedir(id){
   if(!it)return;
   var c=lpCarrito.filter(function(x){return x.id===id;})[0];
   if(c){c.qty++;}
-  else{c={id:it.id,dist:DISTRIBUIDORES[lpActual],marca:it.marca||'',modelo:it.modelo,precio:Number(it.precio)||0,qty:1};lpCarrito.push(c);}
+  else{c={id:it.id,dist:DISTRIBUIDORES[lpActual],marca:lpMarcaNorm(it.marca,it.modelo),modelo:it.modelo,precio:Number(it.precio)||0,qty:1};lpCarrito.push(c);}
   lpCartGuardar();lpRenderTabla();lpRenderCarrito();
   toast(c.modelo+' en el carrito ('+c.qty+')');
 }
@@ -2363,16 +2364,46 @@ function lpRenderArchivos(){
   });
   el.innerHTML=h+'</div>';
 }
+// Unifica nombres de marca entre distribuidores (VOL = VOLTA, UB = WILLARD, etc.)
+var LP_MARCAS_ALIAS={'VOL':'VOLTA','VOLTA':'VOLTA','UB':'WILLARD','WILL':'WILLARD','WILLARD':'WILLARD','MOURA':'MOURA','SERMAT':'SERMAT','HERBO':'HERBO','BARI':'BARI','BOSCH':'BOSCH','VARTA':'VARTA'};
+function lpMarcaNorm(marca,modelo){
+  var s=String(marca||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  if(LP_MARCAS_ALIAS[s])return LP_MARCAS_ALIAS[s];
+  var primera=s.split(/[\s\/\-]+/)[0];
+  if(LP_MARCAS_ALIAS[primera])return LP_MARCAS_ALIAS[primera];
+  if(!s){
+    var m=String(modelo||'').toUpperCase().trim();
+    if(/^UB\s?\d/.test(m))return 'WILLARD';
+    if(/^VOL/.test(m))return 'VOLTA';
+  }
+  return s;
+}
+function lpOrdenar(items){
+  return items.slice().sort(function(a,b){
+    var ma=lpMarcaNorm(a.marca,a.modelo),mb=lpMarcaNorm(b.marca,b.modelo);
+    if(!ma&&mb)return 1;
+    if(ma&&!mb)return -1;
+    if(ma!==mb)return ma.localeCompare(mb,'es');
+    return String(a.modelo).localeCompare(String(b.modelo),'es',{numeric:true,sensitivity:'base'});
+  });
+}
 function lpRenderTabla(){
   document.getElementById('lpThVenta').textContent='Venta (+$'+formatMoney(lpMargen)+')';
   var body=document.getElementById('lpBody');
   if(!lpData.items.length){body.innerHTML='<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin precios cargados</td></tr>';return;}
   var b=document.getElementById('busLP').value.toLowerCase().trim();
-  var items=lpData.items.filter(function(it){return ((it.marca||'')+' '+it.modelo).toLowerCase().indexOf(b)!==-1;});
+  var items=lpData.items.filter(function(it){return (lpMarcaNorm(it.marca,it.modelo)+' '+(it.marca||'')+' '+it.modelo).toLowerCase().indexOf(b)!==-1;});
+  items=lpOrdenar(items);
   if(!items.length){body.innerHTML='<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';return;}
-  var h='';
+  var h='',grupo=null;
   items.forEach(function(it){
-    h+='<tr><td>'+lpEsc(it.marca||'-')+'</td><td><b>'+lpEsc(it.modelo)+'</b></td><td>$'+formatARS(it.precio)+'</td><td style="font-weight:700;color:#2dd4bf">$'+formatARS(it.precio*1.21)+'</td><td class="pventa">$'+formatARS(it.precio+lpMargen)+'</td><td style="font-weight:700;color:#15803d">$'+formatARS((it.precio+lpMargen)*1.21)+'</td>';
+    var mn=lpMarcaNorm(it.marca,it.modelo);
+    if(mn!==grupo){
+      grupo=mn;
+      var cant=items.filter(function(x){return lpMarcaNorm(x.marca,x.modelo)===mn;}).length;
+      h+='<tr class="lp-grp"><td colspan="8">'+lpEsc(mn||'SIN MARCA')+' ('+cant+')</td></tr>';
+    }
+    h+='<tr><td>'+lpEsc(mn||'-')+'</td><td><b>'+lpEsc(it.modelo)+'</b></td><td>$'+formatARS(it.precio)+'</td><td style="font-weight:700;color:#2dd4bf">$'+formatARS(it.precio*1.21)+'</td><td class="pventa">$'+formatARS(it.precio+lpMargen)+'</td><td style="font-weight:700;color:#15803d">$'+formatARS((it.precio+lpMargen)*1.21)+'</td>';
     var enCarro=lpCarrito.filter(function(c){return c.id===it.id;})[0];
     h+='<td><button class="lp-pedir'+(enCarro?' en':'')+'" onclick="lpPedir(\''+it.id+'\')">'+(enCarro?'&#10003; En carrito ('+enCarro.qty+') +1':'&#128722; PEDIR CARRITO')+'</button></td>';
     h+='<td><div class="lp-row-act"><button title="Corregir modelo o costo" onclick="lpEditarItem(\''+it.id+'\')">&#9998;</button><button title="Quitar fila" style="color:#f87171" onclick="lpEliminarItem(\''+it.id+'\')">&#10005;</button></div></td></tr>';

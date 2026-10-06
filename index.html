@@ -990,11 +990,10 @@ function cargarGarantias(){
       h+='<div class="gcard-row">Ingreso: <span>'+fmtFecha(String(g.fecha_ingreso||''))+'</span></div>';
       if(g.fecha_devolucion)h+='<div class="gcard-row">Devolucion: <span>'+fmtFecha(String(g.fecha_devolucion||''))+'</span></div>';
       if(g.distribuidor)h+='<div class="gcard-row">Distribuidor: <span>'+g.distribuidor+'</span></div>';
-      var resColor=g.resuelto==='RESUELTO'?'#15803d':g.resuelto==='NO RESUELTO'?'#b33a3a':'#70798a';
-      h+='<div class="gcard-row" style="margin-top:8px">Estado: <select onchange="cambiarEstadoGarantia(\''+g.id+'\',this.value)" style="margin-left:6px;padding:4px 8px;border-radius:8px;border:1px solid #d7dce3;font-size:13px;font-weight:600;color:'+resColor+'">';
-      h+='<option value=""'+((!g.resuelto||g.resuelto=='')?'selected':'')+'>— Sin estado —</option>';
-      h+='<option value="RESUELTO"'+(g.resuelto==='RESUELTO'?'selected':'')+'>RESUELTO</option>';
-      h+='<option value="NO RESUELTO"'+(g.resuelto==='NO RESUELTO'?'selected':'')+'>NO RESUELTO</option>';
+      var resColor=colorEstadoGarantia(g.resuelto);
+      h+='<div class="gcard-row" style="margin-top:8px">Estado: <select onchange="cambiarEstadoGarantia(\''+g.id+'\',this.value,this)" style="margin-left:6px;padding:6px 10px;border-radius:8px;border:1.5px solid '+resColor+';background:#14183f;font-size:13px;font-weight:700;color:'+resColor+';cursor:pointer">';
+      if(!g.resuelto)h+='<option value="" selected style="background:#14183f;color:#8a90b3">— Elegir estado —</option>';
+      ESTADOS_GARANTIA.forEach(function(e){h+='<option value="'+e.v+'"'+(g.resuelto===e.v?' selected':'')+' style="background:#14183f;color:'+e.c+'">'+e.t+'</option>';});
       h+='</select></div>';
       h+='<div style="display:flex;gap:8px;margin-top:10px">';
       h+='<button class="bs" style="flex:1;font-size:13px;padding:8px" onclick="editarGarantiaClick(\''+g.id+'\')">&#9998; Editar</button>';
@@ -1007,7 +1006,20 @@ function cargarGarantias(){
     document.getElementById('listaGarantias').innerHTML='<div class="err">Error al cargar: '+e.message+'</div>';
   });
 }
-function cambiarEstadoGarantia(id, valor){
+var ESTADOS_GARANTIA=[
+  {v:'RESUELTO',t:'RESUELTO',c:'#34d399'},
+  {v:'NO RESUELTO',t:'NO RESUELTO',c:'#f87171'},
+  {v:'EN DEPOSITO',t:'EN DEPÓSITO',c:'#f2a93c'},
+  {v:'EN FABRICANTE',t:'EN FABRICANTE',c:'#a78bfa'}
+];
+function colorEstadoGarantia(v){
+  var e=ESTADOS_GARANTIA.filter(function(x){return x.v===v;})[0];
+  return e?e.c:'#8a90b3';
+}
+function cambiarEstadoGarantia(id, valor, sel){
+  if(sel){var c=colorEstadoGarantia(valor);sel.style.color=c;sel.style.borderColor=c;}
+  var g=garantiasCache.filter(function(x){return x.id===id;})[0];
+  if(g)g.resuelto=valor;
   api('actualizarGarantia',{id:id,campo:'resuelto',valor:valor}).then(function(){toast('Estado actualizado');});
 }
 var garantiasCache=[];

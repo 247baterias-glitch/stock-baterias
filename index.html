@@ -44,6 +44,14 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .iva-leido:empty{display:none}
 .iva-leido b{color:var(--ink)}
 .iva-leido .warn{color:var(--warn);font-weight:700}
+.iva-pagos{background:var(--surface);border:1.5px solid rgba(248,113,113,.40);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow-card)}
+.iva-pagos-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.iva-pagos-tit{font-size:16px;font-weight:800}
+.iva-pagos select{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:7px 10px;font-size:13px;color:var(--ink);font-family:var(--sans)}
+.iva-pago-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border2);font-size:14px;flex-wrap:wrap}
+.iva-pago-row:last-child{border-bottom:none}
+.iva-pago-row b{font-size:17px}
+.iva-pago-row.ahora{font-weight:800}
 .iva-badge.venta{background:rgba(242,169,60,.14);color:var(--amber)}
 .header{display:flex;align-items:center;gap:12px;padding:1.1rem 1.25rem;background:var(--panel);color:#fff;border-radius:0 0 var(--r-lg) var(--r-lg);box-shadow:var(--shadow-pop)}
 .logo{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:rgba(255,255,255,.08);border:1px solid rgba(242,169,60,.45);flex-shrink:0}
@@ -415,6 +423,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </div>
 <div id="p12" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
+<div class="iva-pagos" id="ivaPagos"></div>
 <div class="ptabs" id="ivaMeses"></div>
 <div class="iva-res" id="ivaRes"></div>
 <div class="mc">
@@ -2471,6 +2480,39 @@ function ivaEliminar(id){
   }).catch(function(e){toast('Error: '+e.message);});
 }
 function ivaCambiarMes(m,a){ivaMes=m;ivaAnio=a;ivaRender();}
+var ivaDesfase=3;
+try{var _d=parseInt(localStorage.getItem('ivaDesfase'),10);if(_d>=0&&_d<=12)ivaDesfase=_d;}catch(e){}
+function ivaSetDesfase(v){ivaDesfase=parseInt(v,10)||0;try{localStorage.setItem('ivaDesfase',String(ivaDesfase));}catch(e){}ivaRender();}
+// Saldo de IVA (ventas - compras) de un mes
+function ivaSaldoMes(mes,anio){
+  var pref=anio+'-'+String(mes+1).padStart(2,'0')+'-';
+  var s=0,n=0;
+  ivaData.forEach(function(x){
+    if(String(x.fecha).indexOf(pref)!==0)return;
+    n++;s+=x.tipo==='venta'?x.iva:-x.iva;
+  });
+  return {saldo:s,cant:n};
+}
+function ivaRenderPagos(){
+  var hoy=new Date();
+  var h='<div class="iva-pagos-head"><div class="iva-pagos-tit">&#128197; Calendario de pagos de IVA</div>';
+  h+='<label style="font-size:13px;color:var(--ink-soft);font-weight:700">Se paga con <select onchange="ivaSetDesfase(this.value)">';
+  [1,2,3,4].forEach(function(n){h+='<option value="'+n+'"'+(n===ivaDesfase?' selected':'')+'>'+n+' mes'+(n===1?'':'es')+'</option>';});
+  h+='</select> de atraso</label></div>';
+  for(var i=0;i<4;i++){
+    var pago=new Date(hoy.getFullYear(),hoy.getMonth()+i,1);
+    var corr=new Date(pago.getFullYear(),pago.getMonth()-ivaDesfase,1);
+    var s=ivaSaldoMes(corr.getMonth(),corr.getFullYear());
+    var nomPago=NOMBRES_MES[pago.getMonth()]+(pago.getFullYear()!==hoy.getFullYear()?' '+pago.getFullYear():'');
+    var nomCorr=NOMBRES_MES[corr.getMonth()]+(corr.getFullYear()!==pago.getFullYear()?' '+corr.getFullYear():'');
+    var monto;
+    if(!s.cant)monto='<span style="color:var(--muted2);font-weight:600">sin facturas cargadas</span>';
+    else if(s.saldo>=0)monto='<b style="color:var(--red)">$'+formatARS(s.saldo)+'</b>';
+    else monto='<b style="color:var(--green)">a favor $'+formatARS(-s.saldo)+'</b>';
+    h+='<div class="iva-pago-row'+(i===0?' ahora':'')+'"><span>'+(i===0?'&#128073; Este mes ('+nomPago+')':'En '+nomPago)+' pagás el IVA de <b style="font-size:14px">'+nomCorr+'</b></span>'+monto+'</div>';
+  }
+  document.getElementById('ivaPagos').innerHTML=h;
+}
 function ivaRender(){
   var hoy=new Date(),h='';
   for(var i=0;i<6;i++){
@@ -2492,9 +2534,12 @@ function ivaRender(){
   var r='';
   r+='<div class="iva-box"><div class="k">IVA COMPRAS (crédito fiscal)</div><div class="v" style="color:#2dd4bf">$'+formatARS(t.compraIva)+'</div><div class="s">'+t.nc+' factura'+(t.nc===1?'':'s')+' | total $'+formatARS(t.compraTot)+'</div></div>';
   r+='<div class="iva-box"><div class="k">IVA VENTAS (débito fiscal)</div><div class="v" style="color:var(--amber)">$'+formatARS(t.ventaIva)+'</div><div class="s">'+t.nv+' factura'+(t.nv===1?'':'s')+' | total $'+formatARS(t.ventaTot)+'</div></div>';
-  if(saldo>=0)r+='<div class="iva-box" style="border-color:rgba(248,113,113,.45)"><div class="k">A PAGAR EN LA DDJJ DE '+mesTxt.toUpperCase()+'</div><div class="v" style="color:var(--red)">$'+formatARS(saldo)+'</div><div class="s">IVA ventas − IVA compras</div></div>';
+  var pagoD=new Date(ivaAnio,ivaMes+ivaDesfase,1);
+  var pagoTxt=NOMBRES_MES[pagoD.getMonth()]+' '+pagoD.getFullYear();
+  if(saldo>=0)r+='<div class="iva-box" style="border-color:rgba(248,113,113,.45)"><div class="k">IVA DE '+mesTxt.toUpperCase()+' A PAGAR</div><div class="v" style="color:var(--red)">$'+formatARS(saldo)+'</div><div class="s">Se paga en '+pagoTxt+' | IVA ventas − IVA compras</div></div>';
   else r+='<div class="iva-box" style="border-color:rgba(52,211,153,.45)"><div class="k">SALDO A FAVOR EN '+mesTxt.toUpperCase()+'</div><div class="v" style="color:var(--green)">$'+formatARS(-saldo)+'</div><div class="s">Tenés más IVA compras que ventas</div></div>';
   document.getElementById('ivaRes').innerHTML=r;
+  ivaRenderPagos();
   var b='';
   lista.forEach(function(x){
     b+='<tr><td>'+fmtFecha(x.fecha)+'</td><td><span class="iva-badge '+x.tipo+'">'+(x.tipo==='venta'?'VENTA':'COMPRA')+'</span></td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td>$'+formatARS(x.neto)+'</td><td style="font-weight:700">$'+formatARS(x.iva)+'</td><td>$'+formatARS(x.total)+'</td><td>'+(x.foto_id?'<a href="https://drive.google.com/file/d/'+x.foto_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">&#128247; Ver</a>':'<span style="color:var(--muted2)">—</span>')+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ivaEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';

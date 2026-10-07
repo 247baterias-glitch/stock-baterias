@@ -38,6 +38,12 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .iva-calc{font-size:13px;color:var(--ink-soft);margin-top:10px;font-weight:600}
 .iva-badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px;white-space:nowrap}
 .iva-badge.compra{background:rgba(45,212,191,.14);color:#2dd4bf}
+.iva-foto{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:rgba(45,212,191,.10);border:1.5px dashed rgba(45,212,191,.55);border-radius:var(--r-md);padding:16px;font-size:15px;font-weight:800;color:#2dd4bf;cursor:pointer;margin-bottom:12px;font-family:var(--sans)}
+.iva-foto:disabled{opacity:.5;cursor:wait}
+.iva-leido{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 12px;margin-bottom:12px;font-size:13px;color:var(--ink-soft);line-height:1.5}
+.iva-leido:empty{display:none}
+.iva-leido b{color:var(--ink)}
+.iva-leido .warn{color:var(--warn);font-weight:700}
 .iva-badge.venta{background:rgba(242,169,60,.14);color:var(--amber)}
 .header{display:flex;align-items:center;gap:12px;padding:1.1rem 1.25rem;background:var(--panel);color:#fff;border-radius:0 0 var(--r-lg) var(--r-lg);box-shadow:var(--shadow-pop)}
 .logo{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:rgba(255,255,255,.08);border:1px solid rgba(242,169,60,.45);flex-shrink:0}
@@ -413,19 +419,22 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="iva-res" id="ivaRes"></div>
 <div class="mc">
 <div style="font-weight:800;font-size:16px;margin-bottom:12px">Cargar factura</div>
+<button type="button" class="iva-foto" id="ivaFotoBtn" onclick="document.getElementById('ivaFotoInput').click()">&#128247; Sacar foto o adjuntar factura</button>
+<input type="file" id="ivaFotoInput" accept="image/*,application/pdf" style="display:none" onchange="ivaFotoElegida(this)"/>
+<div class="iva-leido" id="ivaLeido"></div>
 <div class="iva-form">
 <div class="gfield"><label>Tipo</label><div class="iva-tipo" id="ivaTipoBtns"><button type="button" class="bs" onclick="ivaSetTipo('compra')">Compra</button><button type="button" class="bs" onclick="ivaSetTipo('venta')">Venta</button></div></div>
 <div class="gfield"><label>Fecha</label><input type="date" id="ivaFecha"/></div>
 <div class="gfield"><label>Proveedor / cliente</label><input type="text" id="ivaDetalle" placeholder="Ej: Bari, factura A 0001-123"/></div>
-<div class="gfield"><label>Importe</label><input type="text" inputmode="decimal" id="ivaImporte" placeholder="Ej: 150.000" oninput="ivaCalcPreview()"/></div>
-<div class="gfield"><label>El importe es</label><select id="ivaModo" onchange="ivaCalcPreview()"><option value="total">Total con IVA</option><option value="neto">Neto sin IVA</option></select></div>
-<div class="gfield"><label>Alícuota</label><select id="ivaAli" onchange="ivaCalcPreview()"><option value="21">21%</option><option value="10.5">10,5%</option><option value="27">27%</option></select></div>
+<div class="gfield"><label>Importe</label><input type="text" inputmode="decimal" id="ivaImporte" placeholder="Ej: 150.000" oninput="ivaManual()"/></div>
+<div class="gfield"><label>El importe es</label><select id="ivaModo" onchange="ivaManual()"><option value="total">Total con IVA</option><option value="neto">Neto sin IVA</option></select></div>
+<div class="gfield"><label>Alícuota</label><select id="ivaAli" onchange="ivaManual()"><option value="21">21%</option><option value="10.5">10,5%</option><option value="27">27%</option></select></div>
 </div>
 <div class="iva-calc" id="ivaPreview"></div>
 <button class="bp" id="ivaGuardarBtn" style="width:100%;margin-top:12px" onclick="ivaGuardar()">Guardar factura</button>
 </div>
 <div class="twrap" style="margin-top:12px;max-height:none"><table class="ptable">
-<thead><tr><th>Fecha</th><th>Tipo</th><th>Proveedor / cliente</th><th>Neto</th><th>IVA</th><th>Total</th><th></th></tr></thead><tbody id="ivaBody"></tbody>
+<thead><tr><th>Fecha</th><th>Tipo</th><th>Proveedor / cliente</th><th>Neto</th><th>IVA</th><th>Total</th><th>Foto</th><th></th></tr></thead><tbody id="ivaBody"></tbody>
 </table></div>
 </div>
 <div id="lpViewer" class="lpv hidden">
@@ -2347,7 +2356,62 @@ function lpCartCopiar(){
   else prompt('Copiá el pedido:',txt);
 }
 // ---- IVA compras / ventas ----
-var ivaData=[],ivaTipo='compra',ivaMes=null,ivaAnio=null;
+var ivaData=[],ivaTipo='compra',ivaMes=null,ivaAnio=null,ivaLeidoDatos=null,ivaFotoId='';
+function ivaManual(){ivaLeidoDatos=null;ivaCalcPreview();}
+function ivaFotoElegida(inp){
+  var f=inp.files&&inp.files[0];
+  inp.value='';
+  if(!f)return;
+  if(f.size>18*1024*1024){toast('Archivo muy pesado (max 18 MB)');return;}
+  var btn=document.getElementById('ivaFotoBtn');
+  var info=document.getElementById('ivaLeido');
+  btn.disabled=true;btn.textContent='Leyendo la factura con IA... (hasta 1 minuto)';
+  info.innerHTML='';
+  lpPrepararArchivo(f).then(function(a){
+    return apiPost('ivaLeerFactura',{nombre:a.nombre,mime:a.mime,data:a.data});
+  }).then(function(r){
+    btn.disabled=false;btn.innerHTML='&#128247; Sacar foto o adjuntar factura';
+    if(!r.ok){toast('Error: '+r.error);return;}
+    ivaFotoId=r.foto_id||'';
+    var link=ivaFotoId?' <a href="https://drive.google.com/file/d/'+ivaFotoId+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700">Ver foto</a>':'';
+    if(r.error_lectura||!r.datos){
+      info.innerHTML='<span class="warn">La foto quedó guardada pero no se pudo leer ('+lpEsc(r.error_lectura||'sin datos')+'). Completá los datos a mano.</span>'+link;
+      return;
+    }
+    ivaAplicarLectura(r.datos,link);
+  }).catch(function(e){
+    btn.disabled=false;btn.innerHTML='&#128247; Sacar foto o adjuntar factura';
+    toast('Error: '+e.message);
+  });
+}
+function ivaAplicarLectura(d,link){
+  var info=document.getElementById('ivaLeido');
+  var tc=String(d.tipo_comprobante||'').toUpperCase();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(d.fecha||''))document.getElementById('ivaFecha').value=d.fecha;
+  var quien=ivaTipo==='venta'?(d.receptor||d.emisor):(d.emisor||d.receptor);
+  var det=[quien,(tc&&tc!=='OTRO'?(tc==='TICKET'?'Ticket':'Factura '+tc):''),d.numero].filter(function(x){return x;}).join(' - ');
+  document.getElementById('ivaDetalle').value=det;
+  var ali=[21,10.5,27].indexOf(Number(d.alicuota))!==-1?Number(d.alicuota):21;
+  document.getElementById('ivaAli').value=String(ali);
+  document.getElementById('ivaModo').value='total';
+  var total=Number(d.total)||0,iva=Number(d.iva)||0,neto=Number(d.neto)||0;
+  if(!neto&&total)neto=Math.max(0,total-iva-(Number(d.otros)||0));
+  document.getElementById('ivaImporte').value=total?formatARS(total):'';
+  var avisos=[];
+  if(ivaTipo==='compra'&&(tc==='B'||tc==='C')){
+    avisos.push('Es factura '+tc+': no discrimina IVA, así que no suma crédito fiscal. Se carga con IVA $0.');
+    iva=0;neto=total;
+  }
+  if(total&&neto)ivaLeidoDatos={neto:Math.round(neto*100)/100,iva:Math.round(iva*100)/100,total:Math.round(total*100)/100,alicuota:ali};
+  else ivaLeidoDatos=null;
+  var h='&#10004; Leído: <b>'+lpEsc(d.emisor||'-')+'</b>'+(d.emisor_cuit?' (CUIT '+lpEsc(d.emisor_cuit)+')':'')+' → <b>'+lpEsc(d.receptor||'-')+'</b>';
+  h+='<br>'+lpEsc(tc||'Comprobante')+' '+lpEsc(d.numero||'')+' del '+lpEsc(d.fecha?fmtFecha(d.fecha):'-');
+  if(Number(d.otros))h+='<br>Percepciones / otros: $'+formatARS(Number(d.otros))+' (no se suman al IVA)';
+  avisos.forEach(function(a){h+='<br><span class="warn">'+lpEsc(a)+'</span>';});
+  h+='<br><span style="color:var(--muted)">Revisá que esté bien, elegí Compra o Venta y tocá Guardar.</span>'+(link||'');
+  info.innerHTML=h;
+  ivaCalcPreview();
+}
 function mostrarIva(){
   document.getElementById('p0').classList.add('hidden');
   document.getElementById('p12').classList.remove('hidden');
@@ -2355,7 +2419,7 @@ function mostrarIva(){
   var d=new Date();ivaMes=d.getMonth();ivaAnio=d.getFullYear();
   document.getElementById('ivaFecha').value=hoyStr();
   ivaSetTipo(ivaTipo);ivaCalcPreview();
-  document.getElementById('ivaBody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem;color:#94a0af">Cargando...</td></tr>';
+  document.getElementById('ivaBody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Cargando...</td></tr>';
   apiPost('ivaGet').then(function(r){
     if(!r.ok){toast('Error: '+r.error);return;}
     ivaData=r.data||[];ivaRender();
@@ -2369,6 +2433,7 @@ function ivaSetTipo(t){
   });
 }
 function ivaCalcular(){
+  if(ivaLeidoDatos)return ivaLeidoDatos;
   var imp=lpNum(document.getElementById('ivaImporte').value);
   var ali=parseFloat(document.getElementById('ivaAli').value);
   if(isNaN(imp)||imp<=0)return null;
@@ -2387,14 +2452,14 @@ function ivaGuardar(){
   if(!c){toast('Completa el importe');return;}
   var fecha=document.getElementById('ivaFecha').value;
   if(!fecha){toast('Completa la fecha');return;}
-  var datos={tipo:ivaTipo,fecha:fecha,detalle:document.getElementById('ivaDetalle').value.trim(),neto:c.neto,iva:c.iva,total:c.total,alicuota:c.alicuota};
+  var datos={tipo:ivaTipo,fecha:fecha,detalle:document.getElementById('ivaDetalle').value.trim(),neto:c.neto,iva:c.iva,total:c.total,alicuota:c.alicuota,foto_id:ivaFotoId};
   var btn=document.getElementById('ivaGuardarBtn');btn.disabled=true;btn.textContent='Guardando...';
   apiPost('ivaAgregar',datos).then(function(r){
     btn.disabled=false;btn.textContent='Guardar factura';
     if(!r.ok){toast('Error: '+r.error);return;}
     datos.id=r.id;ivaData.push(datos);
     var p=fecha.split('-');ivaAnio=parseInt(p[0],10);ivaMes=parseInt(p[1],10)-1;
-    document.getElementById('ivaImporte').value='';document.getElementById('ivaDetalle').value='';ivaCalcPreview();
+    document.getElementById('ivaImporte').value='';document.getElementById('ivaDetalle').value='';ivaLeidoDatos=null;ivaFotoId='';document.getElementById('ivaLeido').innerHTML='';ivaCalcPreview();
     ivaRender();toast('Factura de '+datos.tipo+' guardada');
   }).catch(function(e){btn.disabled=false;btn.textContent='Guardar factura';toast('Error: '+e.message);});
 }
@@ -2432,9 +2497,9 @@ function ivaRender(){
   document.getElementById('ivaRes').innerHTML=r;
   var b='';
   lista.forEach(function(x){
-    b+='<tr><td>'+fmtFecha(x.fecha)+'</td><td><span class="iva-badge '+x.tipo+'">'+(x.tipo==='venta'?'VENTA':'COMPRA')+'</span></td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td>$'+formatARS(x.neto)+'</td><td style="font-weight:700">$'+formatARS(x.iva)+'</td><td>$'+formatARS(x.total)+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ivaEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';
+    b+='<tr><td>'+fmtFecha(x.fecha)+'</td><td><span class="iva-badge '+x.tipo+'">'+(x.tipo==='venta'?'VENTA':'COMPRA')+'</span></td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td>$'+formatARS(x.neto)+'</td><td style="font-weight:700">$'+formatARS(x.iva)+'</td><td>$'+formatARS(x.total)+'</td><td>'+(x.foto_id?'<a href="https://drive.google.com/file/d/'+x.foto_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">&#128247; Ver</a>':'<span style="color:var(--muted2)">—</span>')+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ivaEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';
   });
-  document.getElementById('ivaBody').innerHTML=b||'<tr><td colspan="7" style="text-align:center;padding:1rem;color:#94a0af">Sin facturas en '+mesTxt+'</td></tr>';
+  document.getElementById('ivaBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin facturas en '+mesTxt+'</td></tr>';
 }
 // ---- Comparador entre distribuidores ----
 var cmpData=[];

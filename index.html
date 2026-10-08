@@ -2736,9 +2736,19 @@ function ivaFotoElegida(inp){
     toast('Error: '+e.message);
   });
 }
+// Facturas emitidas por Mateo (CUIT 20-41474529-7) = Venta; recibidas por él = Compra
+var IVA_MI_CUIT='20414745297';
+function ivaEsMio(cuit,nombre){
+  if(String(cuit||'').replace(/\D/g,'')===IVA_MI_CUIT)return true;
+  var n=String(nombre||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return /GARCIA\s*GARRI[SZ]/.test(n);
+}
 function ivaAplicarLectura(d,link){
   var info=document.getElementById('ivaLeido');
   var tc=String(d.tipo_comprobante||'').toUpperCase();
+  var autoTipo='';
+  if(ivaEsMio(d.emisor_cuit,d.emisor)){ivaSetTipo('venta');autoTipo='venta';}
+  else if(ivaEsMio(d.receptor_cuit,d.receptor)){ivaSetTipo('compra');autoTipo='compra';}
   if(/^\d{4}-\d{2}-\d{2}$/.test(d.fecha||''))document.getElementById('ivaFecha').value=d.fecha;
   var quien=ivaTipo==='venta'?(d.receptor||d.emisor):(d.emisor||d.receptor);
   var det=[quien,(tc&&tc!=='OTRO'?(tc==='TICKET'?'Ticket':'Factura '+tc):''),d.numero].filter(function(x){return x;}).join(' - ');
@@ -2760,7 +2770,9 @@ function ivaAplicarLectura(d,link){
   h+='<br>'+lpEsc(tc||'Comprobante')+' '+lpEsc(d.numero||'')+' del '+lpEsc(d.fecha?fmtFecha(d.fecha):'-');
   if(Number(d.otros))h+='<br>Percepciones / otros: $'+formatARS(Number(d.otros))+' (no se suman al IVA)';
   avisos.forEach(function(a){h+='<br><span class="warn">'+lpEsc(a)+'</span>';});
-  h+='<br><span style="color:var(--muted)">Revisá que esté bien, elegí Compra o Venta y tocá Guardar.</span>'+(link||'');
+  if(autoTipo==='venta')h+='<br><span style="color:#34d399;font-weight:800">&#10004; La emitiste vos (CUIT 20-41474529-7): se marcó como VENTA.</span>';
+  else if(autoTipo==='compra')h+='<br><span style="color:#34d399;font-weight:800">&#10004; Está a tu nombre como cliente: se marcó como COMPRA.</span>';
+  h+='<br><span style="color:var(--muted)">Revisá que esté bien'+(autoTipo?'':', elegí Compra o Venta')+' y tocá Guardar.</span>'+(link||'');
   info.innerHTML=h;
   ivaCalcPreview();
 }

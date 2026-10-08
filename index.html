@@ -2880,19 +2880,24 @@ function ivaRender(){
   document.getElementById('ivaBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin facturas en '+mesTxt+'</td></tr>';
 }
 // ---- Pedidos ----
-var pedData=[],pedMes=null,pedAnio=null,pedFac=50,pedArchivo={id:'',mime:''};
+var pedData=[],pedMes=null,pedAnio=null,pedFac=0,pedArchivo={id:'',mime:''};
 var PED_OPC=[0,30,50,70,100];
 function mostrarPedidos(){
   document.getElementById('p0').classList.add('hidden');
   document.getElementById('p13').classList.remove('hidden');
   titulo('Pedidos');
   var d=new Date();pedMes=d.getMonth();pedAnio=d.getFullYear();
+  pedFac=0;
   document.getElementById('pedFecha').value=hoyStr();
   pedRenderChips();pedPreview();
   document.getElementById('pedBody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Cargando...</td></tr>';
   apiPost('pedGet').then(function(r){
     if(!r.ok){toast('Error: '+r.error);return;}
-    pedData=r.data||[];pedRender();
+    pedData=r.data||[];
+    // Abre en el mes del pedido más reciente
+    var ult=pedData.map(function(x){return String(x.fecha);}).sort().pop();
+    if(ult&&/^\d{4}-\d{2}/.test(ult)){pedAnio=parseInt(ult.slice(0,4),10);pedMes=parseInt(ult.slice(5,7),10)-1;}
+    pedRender();
   }).catch(function(e){toast('Error: '+e.message);});
 }
 function pedRenderChips(){
@@ -2944,6 +2949,7 @@ function pedGuardar(){
     var p=fecha.split('-');pedAnio=parseInt(p[0],10);pedMes=parseInt(p[1],10)-1;
     document.getElementById('pedMonto').value='';document.getElementById('pedDetalle').value='';
     document.getElementById('pedLeido').innerHTML='';pedArchivo={id:'',mime:''};
+    pedFac=0;pedRenderChips();
     pedPreview();pedRender();toast('Pedido guardado');
   }).catch(function(e){btn.disabled=false;btn.textContent='Guardar pedido';toast('Error: '+e.message);});
 }
@@ -2971,7 +2977,10 @@ function pedRender(){
   document.getElementById('pedMeses').innerHTML=h;
   var pref=pedAnio+'-'+String(pedMes+1).padStart(2,'0')+'-';
   var lista=pedData.filter(function(x){return String(x.fecha).indexOf(pref)===0;});
-  lista.sort(function(a,b){return a.fecha<b.fecha?1:a.fecha>b.fecha?-1:0;});
+  lista.sort(function(a,b){
+    if(a.fecha!==b.fecha)return a.fecha<b.fecha?1:-1;
+    return String(a.id)<String(b.id)?1:-1;
+  });
   var tot=0,fac=0;
   lista.forEach(function(x){tot+=x.monto;fac+=x.monto*x.facturado/100;});
   var r='<div class="iva-box"><div class="k">PEDIDOS DE '+NOMBRES_MES[pedMes].toUpperCase()+'</div><div class="v">$'+formatARS(tot)+'</div><div class="s">'+lista.length+' pedido'+(lista.length===1?'':'s')+'</div></div>';

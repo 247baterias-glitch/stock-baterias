@@ -2441,6 +2441,22 @@ function ctSaldoAFavorPrevio(mes,anio){
   });
   return S;
 }
+// Servicios del Resumen que van a cuenta Mateo (transferencia a Mateo o tarjeta): se facturan A
+var ctServ={},ctServUsar=true;
+try{ctServUsar=localStorage.getItem('ctServUsar')!=='no';}catch(e){}
+function ctServToggle(v){ctServUsar=v;try{localStorage.setItem('ctServUsar',v?'si':'no');}catch(e){}ctCalc();}
+function ctEsCuentaMateo(s){
+  return (s.forma_pago==='Transferencia'&&String(s.cuenta_transferencia||'').trim()==='Mateo')||s.forma_pago==='Tarjeta';
+}
+function ctCargarServ(mes,anio){
+  var k=anio+'-'+mes;
+  if(ctServ[k]&&ctServ[k].estado!=='error')return;
+  ctServ[k]={estado:'cargando',lista:[]};
+  api('getHistorial',{mes:mes,anio:anio}).then(function(r){
+    ctServ[k]={estado:r&&r.ok?'ok':'error',lista:(r&&r.ok?r.data:[]).filter(ctEsCuentaMateo)};
+    if(ivaMes===mes&&ivaAnio===anio)ctCalc();
+  }).catch(function(){ctServ[k]={estado:'error',lista:[]};ctCalc();});
+}
 function ctRender(){
   var hoy=new Date(),h='';
   if(ivaMes===null){ivaMes=hoy.getMonth();ivaAnio=hoy.getFullYear();}
@@ -2455,6 +2471,7 @@ function ctRender(){
   document.getElementById('ctObj').value=c.obj||'';
   var prom='';try{prom=localStorage.getItem('ctProm')||'';}catch(e){}
   document.getElementById('ctProm').value=prom;
+  ctCargarServ(ivaMes,ivaAnio);
   ctCalc();
 }
 function ctCalc(){
@@ -2467,7 +2484,14 @@ function ctCalc(){
     if(x.tipo==='venta'){deb+=x.iva;ventasNeto+=x.neto;nv++;}else{cre+=x.iva;comprasNeto+=x.neto;nc++;}
   });
   var prevTot=ctNum('ctPrev'),debPrev=prevTot-prevTot/1.21;
-  var debTot=deb+debPrev;
+  var sv=ctServ[ivaAnio+'-'+ivaMes]||{estado:'cargando',lista:[]};
+  var svTot=0,svTr=0,svTj=0,svN=0;
+  sv.lista.forEach(function(s){
+    var m=lpNum(s.precio);if(isNaN(m)||m<=0)return;
+    svN++;svTot+=m;if(s.forma_pago==='Tarjeta')svTj+=m;else svTr+=m;
+  });
+  var debServ=ctServUsar?svTot-svTot/1.21:0;
+  var debTot=deb+debPrev+debServ;
   var aFavor=ctSaldoAFavorPrevio(ivaMes,ivaAnio);
   var obj=ctNum('ctObj');
   var saldoHoy=debTot-cre-aFavor;
@@ -2475,10 +2499,22 @@ function ctCalc(){
   var mesTxt=NOMBRES_MES[ivaMes]+' '+ivaAnio;
   var pagoD=new Date(ivaAnio,ivaMes+ivaDesfase,1);
   var r='<div class="iva-res">';
-  r+='<div class="iva-box"><div class="k">IVA VENTAS (débito)</div><div class="v" style="color:var(--amber)">$'+formatARS(debTot)+'</div><div class="s">'+nv+' factura'+(nv===1?'':'s')+' cargada'+(nv===1?'':'s')+(debPrev?' + $'+formatARS(debPrev)+' previsto':'')+'</div></div>';
+  r+='<div class="iva-box"><div class="k">IVA VENTAS (débito)</div><div class="v" style="color:var(--amber)">$'+formatARS(debTot)+'</div><div class="s">'+nv+' factura'+(nv===1?'':'s')+' cargada'+(nv===1?'':'s')+(debServ?' + $'+formatARS(debServ)+' de servicios':'')+(debPrev?' + $'+formatARS(debPrev)+' previsto':'')+'</div></div>';
   r+='<div class="iva-box"><div class="k">IVA COMPRAS (crédito)</div><div class="v" style="color:#2dd4bf">$'+formatARS(cre)+'</div><div class="s">'+nc+' factura'+(nc===1?'':'s')+(aFavor?' | + $'+formatARS(aFavor)+' a favor de meses anteriores':'')+'</div></div>';
   if(saldoHoy>=0)r+='<div class="iva-box" style="border-color:rgba(248,113,113,.45)"><div class="k">HOY PAGARÍAS</div><div class="v" style="color:var(--red)">$'+formatARS(saldoHoy)+'</div><div class="s">IVA de '+mesTxt+', se paga en '+NOMBRES_MES[pagoD.getMonth()]+'</div></div>';
   else r+='<div class="iva-box" style="border-color:rgba(52,211,153,.45)"><div class="k">QUEDÁS A FAVOR</div><div class="v" style="color:var(--green)">$'+formatARS(-saldoHoy)+'</div><div class="s">Pasa al mes siguiente</div></div>';
+  r+='</div>';
+  r+='<div class="mc">';
+  r+='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div style="font-weight:800">&#128179; Servicios cobrados en cuenta Mateo ('+NOMBRES_MES[ivaMes]+')</div>';
+  r+='<label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink-soft);cursor:pointer"><input type="checkbox" '+(ctServUsar?'checked':'')+' onchange="ctServToggle(this.checked)"> Sumar al débito</label></div>';
+  if(sv.estado==='cargando')r+='<div style="font-size:13.5px;color:var(--muted);margin-top:6px">Cargando servicios del Resumen...</div>';
+  else if(sv.estado==='error')r+='<div style="font-size:13.5px;color:var(--red);margin-top:6px">No se pudieron leer los servicios. Volvé a entrar.</div>';
+  else if(!svN)r+='<div style="font-size:13.5px;color:var(--muted);margin-top:6px">No hay servicios con transferencia a Mateo ni con tarjeta este mes.</div>';
+  else{
+    r+='<div style="font-size:14px;color:var(--ink-soft);margin-top:6px;line-height:1.6">'+svN+' servicio'+(svN===1?'':'s')+' por $'+formatARS(svTot)+' (transferencia a Mateo $'+formatARS(svTr)+' | tarjeta $'+formatARS(svTj)+')';
+    r+='<br>Factura A: neto $'+formatARS(svTot/1.21)+' + <b style="color:var(--amber)">IVA débito $'+formatARS(svTot-svTot/1.21)+'</b></div>';
+    r+='<div style="font-size:12px;color:var(--muted);margin-top:4px">Toma el precio cargado como total con IVA. Estas ventas no las cargues también en Facturas IVA, porque se contarían dos veces.</div>';
+  }
   r+='</div>';
   r+='<div class="mc" style="border:1.5px solid rgba(242,169,60,.5)">';
   if(falta>0){

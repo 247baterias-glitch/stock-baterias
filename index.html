@@ -53,6 +53,16 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .iva-calc{font-size:13px;color:var(--ink-soft);margin-top:10px;font-weight:600}
 .iva-badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px;white-space:nowrap}
 .iva-badge.compra{background:rgba(45,212,191,.14);color:#2dd4bf}
+.dj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:10px}
+.dj-col{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:12px}
+.dj-col h4{margin:0 0 8px;font-size:14px;font-weight:800;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.dj-item{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border);font-size:13.5px}
+.dj-item:first-of-type{border-top:0}
+.dj-item .nm{flex:1;min-width:120px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dj-item .mt{font-weight:800;cursor:pointer;border-bottom:1px dashed var(--muted2)}
+.dj-pag{border:1.5px solid var(--border);background:transparent;color:var(--ink-soft);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800;cursor:pointer;font-family:var(--sans)}
+.dj-pag.on{background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.6);color:#34d399}
+.dj-up{width:100%;margin:8px 0 0;padding:10px;font-size:13.5px}
 .iva-foto small{flex-basis:100%;text-align:center;font-size:12px;font-weight:600;opacity:.75}
 #dzOverlay{position:fixed;inset:0;z-index:9999;background:rgba(10,14,40,.82);display:none;align-items:center;justify-content:center;pointer-events:none}
 #dzOverlay.on{display:flex}
@@ -501,6 +511,8 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="iva-pagos" id="ivaPagos"></div>
 <div class="ptabs" id="ivaMeses"></div>
 <div class="iva-res" id="ivaRes"></div>
+<div class="mc" id="ddjjBox"></div>
+<input type="file" id="ddjjInput" accept="image/*,application/pdf" style="display:none" onchange="ddjjElegido(this)"/>
 <div class="mc">
 <div style="font-weight:800;font-size:16px;margin-bottom:12px">Cargar factura</div>
 <button type="button" class="iva-foto" id="ivaFotoBtn" onclick="document.getElementById('ivaFotoInput').click()">&#128247; Sacar foto o adjuntar factura<small>o arrastrá el archivo acá desde la PC</small></button>
@@ -2789,6 +2801,7 @@ function mostrarIva(){
     if(!r.ok){toast('Error: '+r.error);return;}
     ivaData=r.data||[];ivaRender();ctCalc();
   }).catch(function(e){toast('Error: '+e.message);});
+  ddjjCargar();
 }
 function ivaSetTipo(t){
   ivaTipo=t;
@@ -2901,6 +2914,98 @@ function ivaRender(){
     b+='<tr><td>'+fmtFecha(x.fecha)+'</td><td><span class="iva-badge '+x.tipo+'">'+(x.tipo==='venta'?'VENTA':'COMPRA')+'</span></td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td>$'+formatARS(x.neto)+'</td><td style="font-weight:700">$'+formatARS(x.iva)+'</td><td>$'+formatARS(x.total)+'</td><td>'+(x.foto_id?'<a href="https://drive.google.com/file/d/'+x.foto_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">&#128247; Ver</a>':'<span style="color:var(--muted2)">—</span>')+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ivaEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';
   });
   document.getElementById('ivaBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin facturas en '+mesTxt+'</td></tr>';
+  ddjjRender();
+}
+// ---- Declaraciones juradas IVA / IIBB por mes ----
+var ddjjData=[],ddjjCargado=false,ddjjSubiendo='',ddjjTipoSubir='IVA';
+function ddjjPeriodo(){return ivaAnio+'-'+String(ivaMes+1).padStart(2,'0');}
+function ddjjNomPeriodo(p){var a=String(p).split('-');return NOMBRES_MES[parseInt(a[1],10)-1]+' '+a[0];}
+function ddjjCargar(){
+  ddjjCargado=false;ddjjRender();
+  apiPost('ddjjGet').then(function(r){
+    if(!r.ok){toast('Error: '+r.error);return;}
+    ddjjData=r.data||[];ddjjCargado=true;ddjjRender();
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function ddjjRender(){
+  var el=document.getElementById('ddjjBox');if(!el||ivaMes===null)return;
+  var per=ddjjPeriodo(),nomPer=ddjjNomPeriodo(per);
+  var h='<div style="font-weight:800;font-size:16px">&#128209; Declaraciones juradas de '+nomPer+'</div>';
+  h+='<div style="font-size:12.5px;color:var(--muted);margin-top:2px">Subí la DDJJ (o el VEP) del período '+nomPer+'. La IA lee el saldo a pagar. Tocá el monto para corregirlo.</div>';
+  if(!ddjjCargado){el.innerHTML=h+'<div class="loading" style="padding:.5rem">Cargando...</div>';return;}
+  h+='<div class="dj-grid">';
+  ['IVA','IIBB'].forEach(function(t){
+    var lista=ddjjData.filter(function(x){return x.periodo===per&&x.tipo===t;});
+    var tot=lista.reduce(function(a,x){return a+x.monto;},0);
+    h+='<div class="dj-col" data-ddjj="'+t+'"><h4><span>'+(t==='IVA'?'&#129534; DDJJ de IVA':'&#127963; DDJJ de Ingresos Brutos')+'</span>'+(lista.length?'<span style="color:'+(tot>=0?'var(--red)':'var(--green)')+'">'+(tot>=0?'$'+formatARS(tot):'a favor $'+formatARS(-tot))+'</span>':'')+'</h4>';
+    if(!lista.length)h+='<div style="font-size:13px;color:var(--muted2);padding:6px 0">Todavía no cargaste la de '+nomPer+'.</div>';
+    lista.forEach(function(x){
+      h+='<div class="dj-item"><span class="nm" title="'+lpEsc(x.nombre)+'">'+lpEsc(x.nombre||'DDJJ')+'</span>';
+      h+='<span class="mt" title="Corregir monto" onclick="ddjjEditarMonto(\''+x.id+'\')" style="color:'+(x.monto>=0?'var(--ink)':'var(--green)')+'">'+(x.monto>=0?'$'+formatARS(x.monto):'a favor $'+formatARS(-x.monto))+'</span>';
+      h+='<button class="dj-pag'+(x.pagado?' on':'')+'" onclick="ddjjPagado(\''+x.id+'\')">'+(x.pagado?'&#10004; Pagada':'Sin pagar')+'</button>';
+      if(x.archivo_id)h+='<a href="https://drive.google.com/file/d/'+x.archivo_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">Ver</a>';
+      h+='<div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ddjjEliminar(\''+x.id+'\')">&#10005;</button></div></div>';
+    });
+    if(t==='IVA'){var s=ivaSaldoMes(ivaMes,ivaAnio);if(s.cant)h+='<div style="font-size:12px;color:var(--muted);margin-top:6px">Según las facturas cargadas en la app: '+(s.saldo>=0?'$'+formatARS(s.saldo)+' a pagar':'$'+formatARS(-s.saldo)+' a favor')+'</div>';}
+    var sub=ddjjSubiendo===t;
+    h+='<button class="iva-foto dj-up" data-ddjj="'+t+'" '+(ddjjSubiendo?'disabled':'')+' onclick="ddjjElegir(\''+t+'\')">'+(sub?'Subiendo y leyendo...':'&#128206; Subir DDJJ de '+t+'<small>PDF o foto · o arrastrala acá</small>')+'</button>';
+    h+='</div>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+function ddjjElegir(t){
+  if(ddjjSubiendo)return;
+  ddjjTipoSubir=t;
+  var i=document.getElementById('ddjjInput');i.value='';i.click();
+}
+function ddjjElegido(inp){
+  var f=inp.files&&inp.files[0];inp.value='';
+  if(!f)return;
+  if(f.size>18*1024*1024){toast('Archivo muy pesado (max 18 MB)');return;}
+  if(ddjjSubiendo){toast('Esperá que termine la anterior');return;}
+  var t=ddjjTipoSubir,per=ddjjPeriodo();
+  ddjjSubiendo=t;ddjjRender();
+  lpPrepararArchivo(f).then(function(a){
+    return apiPost('ddjjSubir',{tipo:t,periodo:per,nombre:f.name,mime:a.mime,data:a.data});
+  }).then(function(r){
+    ddjjSubiendo='';
+    if(!r.ok){ddjjRender();toast('Error: '+r.error);return;}
+    ddjjCargar();
+    if(r.periodo_leido&&r.periodo_leido!==per){
+      if(confirm('La DDJJ parece ser del período '+ddjjNomPeriodo(r.periodo_leido)+', no de '+ddjjNomPeriodo(per)+'. ¿La muevo a '+ddjjNomPeriodo(r.periodo_leido)+'?')){
+        apiPost('ddjjActualizar',{id:r.id,periodo:r.periodo_leido}).then(function(){toast('Movida a '+ddjjNomPeriodo(r.periodo_leido));ddjjCargar();});
+      }
+    }else toast(r.monto?'DDJJ de '+t+' guardada':'DDJJ guardada. No se pudo leer el monto: tocalo para cargarlo');
+  }).catch(function(e){ddjjSubiendo='';ddjjRender();toast('Error: '+e.message);});
+}
+function ddjjBuscar(id){return ddjjData.filter(function(x){return x.id===id;})[0];}
+function ddjjEditarMonto(id){
+  var x=ddjjBuscar(id);if(!x)return;
+  var v=prompt('Saldo a pagar (si es a favor, ponelo en negativo):',formatARS(x.monto));
+  if(v===null)return;
+  var neg=/^\s*-/.test(v),n=lpNum(v.replace('-',''));
+  if(isNaN(n)){toast('Monto inválido');return;}
+  if(neg)n=-n;
+  apiPost('ddjjActualizar',{id:id,monto:n}).then(function(r){
+    if(!r.ok){toast('Error: '+r.error);return;}
+    x.monto=n;ddjjRender();toast('Monto actualizado');
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function ddjjPagado(id){
+  var x=ddjjBuscar(id);if(!x)return;
+  var v=!x.pagado;
+  apiPost('ddjjActualizar',{id:id,pagado:v}).then(function(r){
+    if(!r.ok){toast('Error: '+r.error);return;}
+    x.pagado=v;ddjjRender();
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function ddjjEliminar(id){
+  if(!confirm('¿Eliminar esta declaración jurada y su archivo?'))return;
+  apiPost('ddjjEliminar',{id:id}).then(function(r){
+    if(!r.ok){toast('Error: '+r.error);return;}
+    ddjjData=ddjjData.filter(function(x){return x.id!==id;});ddjjRender();toast('DDJJ eliminada');
+  }).catch(function(e){toast('Error: '+e.message);});
 }
 // ---- Compras (antes Pedidos) ----
 var pedData=[],pedMes=null,pedAnio=null,pedFac=0,pedArchivo={id:'',mime:''};
@@ -3677,7 +3782,9 @@ document.addEventListener('keydown',function(ev){
 
 // ---- Arrastrar y soltar archivos (listas, facturas IVA, compras) ----
 function dzVisible(id){var el=document.getElementById(id);return !!(el&&el.offsetParent!==null);}
-function dzDestino(){
+function dzDestino(e){
+  var dj=e&&e.target&&e.target.closest&&e.target.closest('[data-ddjj]');
+  if(dj&&dzVisible('ddjjBox'))return {txt:'Soltá para subir la DDJJ de '+dj.getAttribute('data-ddjj'),fn:function(f){if(ddjjSubiendo)return toast('Esperá que termine la anterior');ddjjTipoSubir=dj.getAttribute('data-ddjj');ddjjElegido({files:[f[0]],value:''});}};
   if(dzVisible('pedFotoBtn'))return {txt:'Soltá para cargar la compra',fn:function(f){var b=document.getElementById('pedFotoBtn');if(b.disabled)return toast('Esperá que termine la anterior');pedArchivoElegido({files:[f[0]],value:''});}};
   if(dzVisible('ivaFotoBtn'))return {txt:'Soltá para leer la factura',fn:function(f){var b=document.getElementById('ivaFotoBtn');if(b.disabled)return toast('Esperá que termine la anterior');ivaFotoElegida({files:[f[0]],value:''});}};
   if(dzVisible('lpInput')||(document.getElementById('p10')&&!document.getElementById('p10').classList.contains('hidden')))return {txt:'Soltá para subir la lista a '+DISTRIBUIDORES[lpActual],fn:function(f){if(lpOcupado)return toast('Esperá que termine la subida anterior');lpModo='agregar';lpArchivoElegido({files:f,value:''});}};
@@ -3689,15 +3796,15 @@ function dzDestino(){
   function ocultar(){cont=0;ov.classList.remove('on');}
   window.addEventListener('dragenter',function(e){
     if(!esArchivo(e))return;e.preventDefault();cont++;
-    var d=dzDestino();tx.textContent=d?d.txt:'En esta sección no se suben archivos';ov.classList.add('on');
+    var d=dzDestino(e);tx.textContent=d?d.txt:'En esta sección no se suben archivos';ov.classList.add('on');
   });
-  window.addEventListener('dragover',function(e){if(!esArchivo(e))return;e.preventDefault();e.dataTransfer.dropEffect=dzDestino()?'copy':'none';});
+  window.addEventListener('dragover',function(e){if(!esArchivo(e))return;e.preventDefault();var d=dzDestino(e);tx.textContent=d?d.txt:'En esta sección no se suben archivos';e.dataTransfer.dropEffect=d?'copy':'none';});
   window.addEventListener('dragleave',function(e){if(!esArchivo(e))return;cont--;if(cont<=0)ocultar();});
   window.addEventListener('drop',function(e){
     if(!esArchivo(e))return;e.preventDefault();ocultar();
     var files=Array.prototype.filter.call(e.dataTransfer.files||[],function(f){return /^image\//.test(f.type)||f.type==='application/pdf'||/\.pdf$/i.test(f.name);});
     if(!files.length){toast('Solo fotos (JPG/PNG) o PDF');return;}
-    var d=dzDestino();if(!d){toast('En esta sección no se suben archivos');return;}
+    var d=dzDestino(e);if(!d){toast('En esta sección no se suben archivos');return;}
     d.fn(files);
   });
 })();

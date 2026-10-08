@@ -53,7 +53,11 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .iva-calc{font-size:13px;color:var(--ink-soft);margin-top:10px;font-weight:600}
 .iva-badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px;white-space:nowrap}
 .iva-badge.compra{background:rgba(45,212,191,.14);color:#2dd4bf}
-.iva-foto{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:rgba(45,212,191,.10);border:1.5px dashed rgba(45,212,191,.55);border-radius:var(--r-md);padding:16px;font-size:15px;font-weight:800;color:#2dd4bf;cursor:pointer;margin-bottom:12px;font-family:var(--sans)}
+.iva-foto small{flex-basis:100%;text-align:center;font-size:12px;font-weight:600;opacity:.75}
+#dzOverlay{position:fixed;inset:0;z-index:9999;background:rgba(10,14,40,.82);display:none;align-items:center;justify-content:center;pointer-events:none}
+#dzOverlay.on{display:flex}
+#dzOverlay div{border:3px dashed #2dd4bf;border-radius:18px;padding:40px 48px;color:#2dd4bf;font-size:22px;font-weight:800;text-align:center;font-family:var(--sans);background:rgba(45,212,191,.08)}
+.iva-foto{flex-wrap:wrap;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:rgba(45,212,191,.10);border:1.5px dashed rgba(45,212,191,.55);border-radius:var(--r-md);padding:16px;font-size:15px;font-weight:800;color:#2dd4bf;cursor:pointer;margin-bottom:12px;font-family:var(--sans)}
 .iva-foto:disabled{opacity:.5;cursor:wait}
 .iva-leido{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 12px;margin-bottom:12px;font-size:13px;color:var(--ink-soft);line-height:1.5}
 .iva-leido:empty{display:none}
@@ -428,6 +432,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button class="bp" onclick="lpElegirArchivo('agregar')">+ Subir lista</button>
 <button class="bs" onclick="lpElegirArchivo('reemplazar')">&#8635; Reemplazar lista</button>
 </div>
+<button type="button" class="iva-foto" onclick="lpElegirArchivo('agregar')">&#128229; Arrastrá acá la lista (foto o PDF)<small>o tocá para elegirla desde la PC · se suma a las listas cargadas</small></button>
 <div class="lp-margen"><span id="lpMargenLbl">Venta de esta lista = costo + $</span><input type="text" inputmode="numeric" id="lpMargen" value="55.000" onkeydown="if(event.key==='Enter')lpGuardarMargen()"/><button class="bs" onclick="lpGuardarMargen()">Guardar</button></div>
 <div class="lp-desc" id="lpDescBox"></div>
 <div class="lp-estado" id="lpEstado"></div>
@@ -498,7 +503,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="iva-res" id="ivaRes"></div>
 <div class="mc">
 <div style="font-weight:800;font-size:16px;margin-bottom:12px">Cargar factura</div>
-<button type="button" class="iva-foto" id="ivaFotoBtn" onclick="document.getElementById('ivaFotoInput').click()">&#128247; Sacar foto o adjuntar factura</button>
+<button type="button" class="iva-foto" id="ivaFotoBtn" onclick="document.getElementById('ivaFotoInput').click()">&#128247; Sacar foto o adjuntar factura<small>o arrastrá el archivo acá desde la PC</small></button>
 <input type="file" id="ivaFotoInput" accept="image/*,application/pdf" style="display:none" onchange="ivaFotoElegida(this)"/>
 <div class="iva-leido" id="ivaLeido"></div>
 <div class="iva-form">
@@ -523,7 +528,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="iva-res" id="pedRes"></div>
 <div class="mc">
 <div style="font-weight:800;font-size:16px;margin-bottom:12px">Cargar compra</div>
-<button type="button" class="iva-foto" id="pedFotoBtn" onclick="document.getElementById('pedFotoInput').click()">&#128206; Adjuntar compra (JPG o PDF)</button>
+<button type="button" class="iva-foto" id="pedFotoBtn" onclick="document.getElementById('pedFotoInput').click()">&#128206; Adjuntar compra (JPG o PDF)<small>o arrastrá el archivo acá desde la PC</small></button>
 <input type="file" id="pedFotoInput" accept="image/*,application/pdf" style="display:none" onchange="pedArchivoElegido(this)"/>
 <div class="iva-leido" id="pedLeido"></div>
 <div class="iva-form">
@@ -727,6 +732,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </div>
 </div>
 </div>
+<div id="dzOverlay"><div id="dzTxt">Soltá el archivo para subirlo</div></div>
 <script>
 var API_URL='https://script.google.com/macros/s/AKfycbxpg41wxhjZtU2bTkUJ6LuvwEdgT2IDgDatwmA1hiTRLosaDPzSj57aGBLNdzIKJbYyDQ/exec';
 function api(action,params){
@@ -2716,7 +2722,7 @@ function ivaFotoElegida(inp){
   lpPrepararArchivo(f).then(function(a){
     return apiPost('ivaLeerFactura',{nombre:a.nombre,mime:a.mime,data:a.data});
   }).then(function(r){
-    btn.disabled=false;btn.innerHTML='&#128247; Sacar foto o adjuntar factura';
+    btn.disabled=false;btn.innerHTML='&#128247; Sacar foto o adjuntar factura<small>o arrastrá el archivo acá desde la PC</small>';
     if(!r.ok){toast('Error: '+r.error);return;}
     ivaFotoId=r.foto_id||'';
     var link=ivaFotoId?' <a href="https://drive.google.com/file/d/'+ivaFotoId+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700">Ver foto</a>':'';
@@ -2726,7 +2732,7 @@ function ivaFotoElegida(inp){
     }
     ivaAplicarLectura(r.datos,link);
   }).catch(function(e){
-    btn.disabled=false;btn.innerHTML='&#128247; Sacar foto o adjuntar factura';
+    btn.disabled=false;btn.innerHTML='&#128247; Sacar foto o adjuntar factura<small>o arrastrá el archivo acá desde la PC</small>';
     toast('Error: '+e.message);
   });
 }
@@ -2928,7 +2934,7 @@ function pedArchivoElegido(inp){
   lpPrepararArchivo(f).then(function(a){
     return apiPost('pedLeer',{nombre:a.nombre,mime:a.mime,data:a.data});
   }).then(function(r){
-    btn.disabled=false;btn.innerHTML='&#128206; Adjuntar compra (JPG o PDF)';
+    btn.disabled=false;btn.innerHTML='&#128206; Adjuntar compra (JPG o PDF)<small>o arrastrá el archivo acá desde la PC</small>';
     if(!r.ok){toast('Error: '+r.error);return;}
     pedArchivo={id:r.archivo_id||'',mime:r.mime||''};
     var link=pedArchivo.id?' <a href="https://drive.google.com/file/d/'+pedArchivo.id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700">Ver archivo</a>':'';
@@ -2938,7 +2944,7 @@ function pedArchivoElegido(inp){
     if(d.distribuidor&&!document.getElementById('pedDetalle').value)document.getElementById('pedDetalle').value=d.distribuidor;
     info.innerHTML=(Number(d.total)>0?'&#10004; Archivo adjuntado. Revisá fecha y monto, elegí el % facturado y guardá.':'Archivo adjuntado. Completá fecha y monto a mano.')+link;
     pedPreview();
-  }).catch(function(e){btn.disabled=false;btn.innerHTML='&#128206; Adjuntar compra (JPG o PDF)';toast('Error: '+e.message);});
+  }).catch(function(e){btn.disabled=false;btn.innerHTML='&#128206; Adjuntar compra (JPG o PDF)<small>o arrastrá el archivo acá desde la PC</small>';toast('Error: '+e.message);});
 }
 function pedGuardar(){
   var fecha=document.getElementById('pedFecha').value;
@@ -3646,6 +3652,33 @@ document.addEventListener('keydown',function(ev){
   var editGarOv=document.getElementById('editGarantiaOverlay');
   if(editGarOv&&!editGarOv.classList.contains('hidden')){cerrarEditGarantiaOverlay();return;}
 });
+
+// ---- Arrastrar y soltar archivos (listas, facturas IVA, compras) ----
+function dzVisible(id){var el=document.getElementById(id);return !!(el&&el.offsetParent!==null);}
+function dzDestino(){
+  if(dzVisible('pedFotoBtn'))return {txt:'Soltá para cargar la compra',fn:function(f){var b=document.getElementById('pedFotoBtn');if(b.disabled)return toast('Esperá que termine la anterior');pedArchivoElegido({files:[f[0]],value:''});}};
+  if(dzVisible('ivaFotoBtn'))return {txt:'Soltá para leer la factura',fn:function(f){var b=document.getElementById('ivaFotoBtn');if(b.disabled)return toast('Esperá que termine la anterior');ivaFotoElegida({files:[f[0]],value:''});}};
+  if(dzVisible('lpInput')||(document.getElementById('p10')&&!document.getElementById('p10').classList.contains('hidden')))return {txt:'Soltá para subir la lista a '+DISTRIBUIDORES[lpActual],fn:function(f){if(lpOcupado)return toast('Esperá que termine la subida anterior');lpModo='agregar';lpArchivoElegido({files:f,value:''});}};
+  return null;
+}
+(function(){
+  var cont=0,ov=document.getElementById('dzOverlay'),tx=document.getElementById('dzTxt');
+  function esArchivo(e){var t=e.dataTransfer&&e.dataTransfer.types;return t&&Array.prototype.indexOf.call(t,'Files')>=0;}
+  function ocultar(){cont=0;ov.classList.remove('on');}
+  window.addEventListener('dragenter',function(e){
+    if(!esArchivo(e))return;e.preventDefault();cont++;
+    var d=dzDestino();tx.textContent=d?d.txt:'En esta sección no se suben archivos';ov.classList.add('on');
+  });
+  window.addEventListener('dragover',function(e){if(!esArchivo(e))return;e.preventDefault();e.dataTransfer.dropEffect=dzDestino()?'copy':'none';});
+  window.addEventListener('dragleave',function(e){if(!esArchivo(e))return;cont--;if(cont<=0)ocultar();});
+  window.addEventListener('drop',function(e){
+    if(!esArchivo(e))return;e.preventDefault();ocultar();
+    var files=Array.prototype.filter.call(e.dataTransfer.files||[],function(f){return /^image\//.test(f.type)||f.type==='application/pdf'||/\.pdf$/i.test(f.name);});
+    if(!files.length){toast('Solo fotos (JPG/PNG) o PDF');return;}
+    var d=dzDestino();if(!d){toast('En esta sección no se suben archivos');return;}
+    d.fn(files);
+  });
+})();
 </script>
 </body>
 </html>

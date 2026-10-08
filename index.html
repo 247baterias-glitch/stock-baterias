@@ -424,12 +424,12 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div id="p12" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
 <div class="gtabs" style="margin-bottom:14px;flex-wrap:wrap">
-<button class="gtab active" id="ivTab0" onclick="ivaVista(0)">&#128202; Contador de IVA</button>
-<button class="gtab" id="ivTab1" onclick="ivaVista(1)">&#129534; Facturas IVA</button>
+<button class="gtab active" id="ivTab1" onclick="ivaVista(1)">&#129534; Compras con Factura A</button>
+<button class="gtab" id="ivTab0" onclick="ivaVista(0)">&#128202; Calculador de IVA</button>
 <button class="gtab" id="ivTab2" onclick="ivaVista(2)">&#10067; Preguntas contador</button>
 <button class="gtab" id="ivTab3" onclick="ivaVista(3)">&#128179; Simulador tarjeta</button>
 </div>
-<div id="ivVista0">
+<div id="ivVista0" class="hidden">
 <div class="ptabs" id="ctMeses"></div>
 <div class="mc">
 <div style="font-weight:800;font-size:16px;margin-bottom:4px">Planificá tu IVA del mes</div>
@@ -466,7 +466,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </div>
 <div id="tjRes"></div>
 </div>
-<div id="ivVista1" class="hidden">
+<div id="ivVista1">
 <div class="iva-pagos" id="ivaPagos"></div>
 <div class="ptabs" id="ivaMeses"></div>
 <div class="iva-res" id="ivaRes"></div>
@@ -2713,7 +2713,7 @@ function mostrarIva(){
   document.getElementById('p12').classList.remove('hidden');
   titulo('Contador de IVA');
   var d=new Date();ivaMes=d.getMonth();ivaAnio=d.getFullYear();
-  ivaVista(0);
+  ivaVista(1);
   document.getElementById('ivaFecha').value=hoyStr();
   ivaSetTipo(ivaTipo);ivaCalcPreview();
   document.getElementById('ivaBody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Cargando...</td></tr>';

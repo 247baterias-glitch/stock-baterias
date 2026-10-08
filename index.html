@@ -294,7 +294,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button class="card" onclick="mostrarGarantias()"><div class="icon red">&#128220;</div><div class="ci"><h2>Garantias</h2><p>Registrar y consultar</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarMoto()"><div class="icon" style="background:#dff1f5">&#127949;</div><div class="ci"><h2>Baterias Moto</h2><p>Lista de precios moto</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarListasDist()"><div class="icon" style="background:#e6ecff">&#128203;</div><div class="ci"><h2>Listas de Distribuidores</h2><p>Fotos y PDF con precio de venta</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="mostrarIva()"><div class="icon" style="background:#e1f5ea">&#129534;</div><div class="ci"><h2>IVA Compras y Ventas</h2><p>Crédito y débito fiscal para la DDJJ</p></div><span class="arr">&#8250;</span></button>
+<button class="card" onclick="mostrarIva()"><div class="icon" style="background:#e1f5ea">&#129534;</div><div class="ci"><h2>Contador de IVA</h2><p>Cuánto comprar facturado, DDJJ, crédito y débito fiscal para la DDJJ</p></div><span class="arr">&#8250;</span></button>
 </div>
 </div>
 <div id="p0load"><div class="loading">Cargando...</div></div>
@@ -423,10 +423,24 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </div>
 <div id="p12" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
-<div class="gtabs" style="margin-bottom:14px">
-<button class="gtab active" id="ivTab1" onclick="ivaVista(1)">&#129534; Facturas IVA</button>
+<div class="gtabs" style="margin-bottom:14px;flex-wrap:wrap">
+<button class="gtab active" id="ivTab0" onclick="ivaVista(0)">&#128202; Contador de IVA</button>
+<button class="gtab" id="ivTab1" onclick="ivaVista(1)">&#129534; Facturas IVA</button>
 <button class="gtab" id="ivTab2" onclick="ivaVista(2)">&#10067; Preguntas contador</button>
 <button class="gtab" id="ivTab3" onclick="ivaVista(3)">&#128179; Simulador tarjeta</button>
+</div>
+<div id="ivVista0">
+<div class="ptabs" id="ctMeses"></div>
+<div class="mc">
+<div style="font-weight:800;font-size:16px;margin-bottom:4px">Planificá tu IVA del mes</div>
+<div style="font-size:13px;color:var(--muted);margin-bottom:14px">Toma las facturas cargadas del mes y te dice cuánta mercadería facturada te conviene comprar para equilibrar el IVA.</div>
+<div class="iva-form">
+<div class="gfield"><label>Ventas A que todavía vas a facturar este mes (total c/IVA)</label><input type="text" inputmode="decimal" id="ctPrev" placeholder="0" oninput="ctGuardar()"/></div>
+<div class="gfield"><label>Saldo que querés pagar (objetivo)</label><input type="text" inputmode="decimal" id="ctObj" placeholder="0" oninput="ctGuardar()"/></div>
+<div class="gfield"><label>Costo promedio por batería (sin IVA)</label><input type="text" inputmode="decimal" id="ctProm" placeholder="90.000" oninput="ctGuardar()"/></div>
+</div>
+</div>
+<div id="ctRes"></div>
 </div>
 <div id="ivVista2" class="hidden">
 <div class="mc">
@@ -452,7 +466,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </div>
 <div id="tjRes"></div>
 </div>
-<div id="ivVista1">
+<div id="ivVista1" class="hidden">
 <div class="iva-pagos" id="ivaPagos"></div>
 <div class="ptabs" id="ivaMeses"></div>
 <div class="iva-res" id="ivaRes"></div>
@@ -2397,12 +2411,95 @@ function lpCartCopiar(){
 }
 // ---- IVA compras / ventas ----
 function ivaVista(n){
-  [1,2,3].forEach(function(i){
+  [0,1,2,3].forEach(function(i){
     document.getElementById('ivTab'+i).classList.toggle('active',i===n);
     document.getElementById('ivVista'+i).classList.toggle('hidden',i!==n);
   });
   if(n===2)pregCargar();
   if(n===3)tjIniciar();
+  if(n===0)ctRender();
+}
+// ---- Contador de IVA (planificación) ----
+function ctCfgKey(){return 'ctCfg_'+ivaAnio+'_'+ivaMes;}
+function ctLeerCfg(){var c={};try{c=JSON.parse(localStorage.getItem(ctCfgKey())||'{}')||{};}catch(e){}return c;}
+function ctGuardar(){
+  var c={prev:document.getElementById('ctPrev').value,obj:document.getElementById('ctObj').value};
+  try{localStorage.setItem(ctCfgKey(),JSON.stringify(c));localStorage.setItem('ctProm',document.getElementById('ctProm').value);}catch(e){}
+  ctCalc();
+}
+function ctNum(id){var n=lpNum(document.getElementById(id).value);return isNaN(n)?0:n;}
+// Saldo a favor que arrastrás de meses anteriores al elegido
+function ctSaldoAFavorPrevio(mes,anio){
+  var meses={};
+  ivaData.forEach(function(x){var k=String(x.fecha).slice(0,7);if(k.length===7)meses[k]=true;});
+  var lim=anio+'-'+String(mes+1).padStart(2,'0');
+  var S=0;
+  Object.keys(meses).sort().forEach(function(k){
+    if(k>=lim)return;
+    var p=k.split('-');var s=ivaSaldoMes(parseInt(p[1],10)-1,parseInt(p[0],10)).saldo;
+    var r=s-S;S=r<0?-r:0;
+  });
+  return S;
+}
+function ctRender(){
+  var hoy=new Date(),h='';
+  if(ivaMes===null){ivaMes=hoy.getMonth();ivaAnio=hoy.getFullYear();}
+  for(var i=0;i<6;i++){
+    var dt=new Date(hoy.getFullYear(),hoy.getMonth()-i,1);
+    var act=dt.getMonth()===ivaMes&&dt.getFullYear()===ivaAnio;
+    h+='<button class="ptab'+(act?' active':'')+'" onclick="ivaMes='+dt.getMonth()+';ivaAnio='+dt.getFullYear()+';ctRender();ivaRender()">'+NOMBRES_MES[dt.getMonth()]+(dt.getFullYear()!==hoy.getFullYear()?' '+dt.getFullYear():'')+'</button>';
+  }
+  document.getElementById('ctMeses').innerHTML=h;
+  var c=ctLeerCfg();
+  document.getElementById('ctPrev').value=c.prev||'';
+  document.getElementById('ctObj').value=c.obj||'';
+  var prom='';try{prom=localStorage.getItem('ctProm')||'';}catch(e){}
+  document.getElementById('ctProm').value=prom;
+  ctCalc();
+}
+function ctCalc(){
+  var el=document.getElementById('ctRes');
+  if(!el)return;
+  var pref=ivaAnio+'-'+String(ivaMes+1).padStart(2,'0')+'-';
+  var deb=0,cre=0,ventasNeto=0,comprasNeto=0,nv=0,nc=0;
+  ivaData.forEach(function(x){
+    if(String(x.fecha).indexOf(pref)!==0)return;
+    if(x.tipo==='venta'){deb+=x.iva;ventasNeto+=x.neto;nv++;}else{cre+=x.iva;comprasNeto+=x.neto;nc++;}
+  });
+  var prevTot=ctNum('ctPrev'),debPrev=prevTot-prevTot/1.21;
+  var debTot=deb+debPrev;
+  var aFavor=ctSaldoAFavorPrevio(ivaMes,ivaAnio);
+  var obj=ctNum('ctObj');
+  var saldoHoy=debTot-cre-aFavor;
+  var falta=saldoHoy-obj;
+  var mesTxt=NOMBRES_MES[ivaMes]+' '+ivaAnio;
+  var pagoD=new Date(ivaAnio,ivaMes+ivaDesfase,1);
+  var r='<div class="iva-res">';
+  r+='<div class="iva-box"><div class="k">IVA VENTAS (débito)</div><div class="v" style="color:var(--amber)">$'+formatARS(debTot)+'</div><div class="s">'+nv+' factura'+(nv===1?'':'s')+' cargada'+(nv===1?'':'s')+(debPrev?' + $'+formatARS(debPrev)+' previsto':'')+'</div></div>';
+  r+='<div class="iva-box"><div class="k">IVA COMPRAS (crédito)</div><div class="v" style="color:#2dd4bf">$'+formatARS(cre)+'</div><div class="s">'+nc+' factura'+(nc===1?'':'s')+(aFavor?' | + $'+formatARS(aFavor)+' a favor de meses anteriores':'')+'</div></div>';
+  if(saldoHoy>=0)r+='<div class="iva-box" style="border-color:rgba(248,113,113,.45)"><div class="k">HOY PAGARÍAS</div><div class="v" style="color:var(--red)">$'+formatARS(saldoHoy)+'</div><div class="s">IVA de '+mesTxt+', se paga en '+NOMBRES_MES[pagoD.getMonth()]+'</div></div>';
+  else r+='<div class="iva-box" style="border-color:rgba(52,211,153,.45)"><div class="k">QUEDÁS A FAVOR</div><div class="v" style="color:var(--green)">$'+formatARS(-saldoHoy)+'</div><div class="s">Pasa al mes siguiente</div></div>';
+  r+='</div>';
+  r+='<div class="mc" style="border:1.5px solid rgba(242,169,60,.5)">';
+  if(falta>0){
+    var neto=falta/0.21,total=neto*1.21;
+    var prom=ctNum('ctProm');
+    r+='<div style="font-size:13px;color:var(--muted);font-weight:700">PARA PAGAR '+(obj?'$'+formatARS(obj):'$0')+' TE CONVIENE COMPRAR FACTURADO (A) EN '+NOMBRES_MES[ivaMes].toUpperCase()+':</div>';
+    r+='<div style="font-size:32px;font-weight:800;color:var(--amber);margin:6px 0">$'+formatARS(total)+' <span style="font-size:15px;color:var(--ink-soft)">con IVA</span></div>';
+    r+='<div style="font-size:14px;color:var(--ink-soft)">Neto $'+formatARS(neto)+' + IVA $'+formatARS(falta)+' (ese IVA es el crédito que te falta)'+(prom?'<br>Equivale a unas <b style="color:var(--ink)">'+Math.ceil(neto/prom)+' baterías</b> de $'+formatARS(prom)+' de costo':'')+'</div>';
+  }else{
+    r+='<div style="font-size:16px;font-weight:800;color:var(--green)">&#10004; Ya tenés suficiente IVA compras para '+mesTxt+'.</div>';
+    if(falta<0)r+='<div style="font-size:14px;color:var(--ink-soft);margin-top:4px">Te sobran $'+formatARS(-falta)+' de crédito: no hace falta comprar más facturado este mes (el sobrante pasa como saldo a favor).</div>';
+  }
+  r+='</div>';
+  if(ventasNeto&&comprasNeto){
+    var marg=(ventasNeto/comprasNeto-1)*100;
+    r+='<div class="mc"><div style="font-weight:800;margin-bottom:6px">Coherencia compras / ventas</div><div style="font-size:14px;color:var(--ink-soft)">Vendés facturado $'+formatARS(ventasNeto)+' neto y comprás $'+formatARS(comprasNeto)+' neto: margen implícito <b style="color:var(--ink)">'+marg.toLocaleString('es-AR',{maximumFractionDigits:0})+'%</b>.';
+    if(marg<0)r+='<br><span style="color:var(--warn);font-weight:700">Estás comprando más de lo que vendés facturado. Si es por stock está bien, pero si se repite muchos meses seguidos, el saldo a favor crece y conviene revisarlo con el contador.</span>';
+    r+='</div></div>';
+  }
+  r+='<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:4px">Para que el crédito valga: factura A a tu nombre, de mercadería o gastos reales de la actividad, y con la compra pagada desde tu cuenta. Es una estimación: no incluye percepciones, retenciones ni la reducción por pase de monotributo; el número final lo confirma el contador.</div>';
+  el.innerHTML=r;
 }
 // ---- Preguntas para el contador ----
 var pregData=[];
@@ -2578,15 +2675,15 @@ function ivaAplicarLectura(d,link){
 function mostrarIva(){
   document.getElementById('p0').classList.add('hidden');
   document.getElementById('p12').classList.remove('hidden');
-  titulo('IVA Compras y Ventas');
-  ivaVista(1);
+  titulo('Contador de IVA');
   var d=new Date();ivaMes=d.getMonth();ivaAnio=d.getFullYear();
+  ivaVista(0);
   document.getElementById('ivaFecha').value=hoyStr();
   ivaSetTipo(ivaTipo);ivaCalcPreview();
   document.getElementById('ivaBody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Cargando...</td></tr>';
   apiPost('ivaGet').then(function(r){
     if(!r.ok){toast('Error: '+r.error);return;}
-    ivaData=r.data||[];ivaRender();
+    ivaData=r.data||[];ivaRender();ctCalc();
   }).catch(function(e){toast('Error: '+e.message);});
 }
 function ivaSetTipo(t){

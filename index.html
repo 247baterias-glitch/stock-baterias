@@ -3179,19 +3179,29 @@ function lpCambiarDist(i){
 }
 // ---- Descuentos por marca ----
 var lpDesc={marcas:{},nota:''},lpDescEditando=false;
-// "35+15", "35-15", "35, 15" -> [35,15]
+// "35+15", "35-15", "35, 15" -> [35,15] (todos descuentos)
+// Con signos: "+4 -3" -> [-4,3] = primero recargo 4%, después descuento 3%
+// (modo con signos si empieza con "+" o si tiene algún "-")
 function lpParseDesc(s){
-  return String(s||'').split(/[^0-9.,]+/).map(function(x){return parseFloat(x.replace(',','.'));}).filter(function(n){return n>0&&n<100;});
+  s=String(s||'').trim();
+  var conSigno=/^\+/.test(s)||/-/.test(s);
+  var out=[],re=/([+-]?)\s*(\d+(?:[.,]\d+)?)/g,m;
+  while((m=re.exec(s))){
+    var n=parseFloat(m[2].replace(',','.'));
+    if(!(n>0&&n<100))continue;
+    out.push(conSigno&&m[1]==='+'?-n:n);
+  }
+  return out;
 }
 function lpFactorDesc(s){return lpParseDesc(s).reduce(function(f,d){return f*(1-d/100);},1);}
-function lpDescTexto(s){var a=lpParseDesc(s);return a.length?'-'+a.join('% -')+'%':'';}
+function lpDescTexto(s){return lpParseDesc(s).map(function(d){return (d<0?'+':'-')+String(Math.abs(d)).replace('.',',')+'%';}).join(' ');}
 function lpAplicarDesc(items,desc){
   var marcas=(desc&&desc.marcas)||{};
   items.forEach(function(it){
     if(it.lista===undefined)it.lista=it.precio;
     var s=marcas[lpMarcaNorm(it.marca,it.modelo)];
     var f=s?lpFactorDesc(s):1;
-    it.desc=f<1?s:'';
+    it.desc=f!==1?s:'';
     it.precio=Math.round(it.lista*f*100)/100;
   });
 }
@@ -3205,7 +3215,7 @@ function lpRenderDesc(){
   var lista=Object.keys(presentes).sort();
   if(lpDescEditando){
     var h='<div style="font-weight:800;font-size:14px">% Descuentos de '+lpEsc(DISTRIBUIDORES[lpActual])+' por marca</div>';
-    h+='<div style="font-size:12.5px;color:var(--muted);margin-top:2px">Escribí los descuentos en cadena, por ejemplo 35+15 (= -35% y después -15%). Vacío = sin descuento.</div>';
+    h+='<div style="font-size:12.5px;color:var(--muted);margin-top:2px">Escribí los descuentos en cadena, por ejemplo 35+15 (= -35% y después -15%). Si la lista está vieja y hay que sumarle un aumento, usá signos: +4 -3 (= primero +4% y después -3%). Vacío = sin descuento.</div>';
     h+='<div class="lp-desc-grid">';
     lista.forEach(function(m,i){h+='<div><label>'+lpEsc(m)+'</label><input type="text" data-marca="'+lpEsc(m)+'" class="lpDescIn" value="'+lpEsc(marcas[m]||'')+'" placeholder="Ej: 35+15"/></div>';});
     h+='<div><label>Otra marca</label><input type="text" id="lpDescNuevaMarca" placeholder="Ej: MOURA"/></div><div><label>Descuento</label><input type="text" id="lpDescNuevaVal" placeholder="Ej: 30+10"/></div>';
@@ -3213,7 +3223,7 @@ function lpRenderDesc(){
     h+='<div style="display:flex;gap:8px"><button class="bp lp-mini" style="flex:0 0 auto;padding:9px 16px" onclick="lpGuardarDesc()">Guardar descuentos</button><button class="bs lp-mini" onclick="lpDescEditando=false;lpRenderDesc()">Cancelar</button></div>';
     el.innerHTML=h;return;
   }
-  var con=lista.filter(function(m){return lpFactorDesc(marcas[m])<1;});
+  var con=lista.filter(function(m){return lpFactorDesc(marcas[m])!==1;});
   var h2='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div class="lp-desc-res">';
   if(con.length){
     h2+='&#127991; Descuentos: '+con.map(function(m){var f=lpFactorDesc(marcas[m]);return lpEsc(m)+' <b>'+lpDescTexto(marcas[m])+'</b> (pagás el '+(f*100).toLocaleString('es-AR',{maximumFractionDigits:2})+'%)';}).join(' · ');

@@ -435,6 +435,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div id="p11" class="hidden">
 <button class="back" onclick="cmpVolver()">&#8592; Volver a las listas</button>
 <div class="sbox"><input type="text" id="busCmp" placeholder="Buscar marca o modelo..." oninput="cmpRender()"/></div>
+<div class="lp-margen" style="margin-bottom:12px"><span>Se podría vender a = precio más barato + $</span><input type="text" inputmode="numeric" id="cmpMargen" onkeydown="if(event.key==='Enter')cmpGuardarMargen()"/><button class="bs" onclick="cmpGuardarMargen()">Guardar</button></div>
 <div id="cmpBody"><div class="loading">Cargando...</div></div>
 </div>
 <div id="p12" class="hidden">
@@ -2852,11 +2853,21 @@ function ivaRender(){
 }
 // ---- Comparador entre distribuidores ----
 var cmpData=[];
+var cmpMargen=48000;
+try{var _cm=parseFloat(localStorage.getItem('cmpMargen'));if(_cm>=0)cmpMargen=_cm;}catch(e){}
+function cmpGuardarMargen(){
+  var n=lpNum(document.getElementById('cmpMargen').value);
+  if(isNaN(n)||n<0){toast('Monto invalido');return;}
+  cmpMargen=n;try{localStorage.setItem('cmpMargen',String(n));}catch(e){}
+  document.getElementById('cmpMargen').value=formatMoney(n);
+  cmpRender();toast('Se podría vender a: más barato + $'+formatMoney(n));
+}
 function mostrarComparador(){
   document.getElementById('p10').classList.add('hidden');
   document.getElementById('p11').classList.remove('hidden');
   titulo('Comparar distribuidores');
   document.getElementById('busCmp').value='';
+  document.getElementById('cmpMargen').value=formatMoney(cmpMargen);
   document.getElementById('cmpBody').innerHTML='<div class="loading">Cargando todas las listas...</div>';
   apiPost('listasTodos').then(function(r){
     if(!r.ok){document.getElementById('cmpBody').innerHTML='<div class="err">'+lpEsc(r.error)+'</div>';return;}
@@ -2963,6 +2974,7 @@ function cmpRender(){
     h+='<div class="cmp-sec">'+lpEsc(mn)+'</div>';
     h+='<div class="twrap" style="max-height:none"><table class="ptable"><thead><tr><th>Modelo</th>';
     M.dists.forEach(function(d){h+='<th>'+lpEsc(d)+'</th>';});
+    h+='<th style="color:#15803d">Se podría vender a (+$'+formatMoney(cmpMargen)+')</th>';
     h+='</tr></thead><tbody>';
     keys.forEach(function(k){
       var mod=M.modelos[k],ds=Object.keys(mod.precios);
@@ -2976,6 +2988,8 @@ function cmpRender(){
         else if(comp)h+='<td>$'+formatARS(p)+'<span class="cmp-mas">+$'+formatARS(p-min)+'</span></td>';
         else h+='<td>$'+formatARS(p)+'</td>';
       });
+      var vta=min+cmpMargen;
+      h+='<td style="font-weight:800;color:var(--green)">$'+formatARS(vta)+'<span style="display:block;font-size:11.5px;color:var(--muted);font-weight:700">c/IVA $'+formatARS(vta*1.21)+'</span></td>';
       h+='</tr>';
     });
     h+='</tbody></table></div>';

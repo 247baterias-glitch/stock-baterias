@@ -423,6 +423,36 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </div>
 <div id="p12" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
+<div class="gtabs" style="margin-bottom:14px">
+<button class="gtab active" id="ivTab1" onclick="ivaVista(1)">&#129534; Facturas IVA</button>
+<button class="gtab" id="ivTab2" onclick="ivaVista(2)">&#10067; Preguntas contador</button>
+<button class="gtab" id="ivTab3" onclick="ivaVista(3)">&#128179; Simulador tarjeta</button>
+</div>
+<div id="ivVista2" class="hidden">
+<div class="mc">
+<div style="display:flex;gap:8px;align-items:center">
+<input type="text" id="pregNueva" placeholder="Escribí una pregunta para el contador..." onkeydown="if(event.key==='Enter')pregAgregar()" style="flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:12px;font-size:15px;color:var(--ink);font-family:var(--sans);outline:none"/>
+<button class="bp" id="pregBtn" style="flex:0 0 auto;width:52px;font-size:22px;padding:8px" title="Agregar pregunta" onclick="pregAgregar()">+</button>
+</div>
+</div>
+<div id="pregLista"></div>
+</div>
+<div id="ivVista3" class="hidden">
+<div class="mc">
+<div style="font-weight:800;font-size:16px;margin-bottom:4px">Simulador de cobro con tarjeta de crédito</div>
+<div style="font-size:13px;color:var(--muted);margin-bottom:14px">Venta facturada A: el precio que cobrás incluye IVA 21%. Al depósito el banco le descuenta la comisión, el costo de las cuotas y las retenciones.</div>
+<div class="iva-form">
+<div class="gfield"><label>Monto</label><input type="text" inputmode="decimal" id="tjMonto" placeholder="Ej: 150.000" oninput="tjCalc()"/></div>
+<div class="gfield"><label>El monto es</label><select id="tjModo" onchange="tjCalc()"><option value="queda">Lo que quiero que me quede</option><option value="cobro">Lo que le cobro al cliente</option></select></div>
+<div class="gfield"><label>Comisión de la tarjeta (%)</label><input type="text" inputmode="decimal" id="tjCom" oninput="tjGuardarCfg()"/></div>
+<div class="gfield"><label>Retenciones (%)</label><input type="text" inputmode="decimal" id="tjRet" oninput="tjGuardarCfg()"/></div>
+</div>
+<div style="font-weight:700;font-size:13px;color:var(--muted);margin:14px 0 6px">Costo financiero por plan de cuotas (% que te descuenta el banco emisor)</div>
+<div class="iva-form" id="tjPlanes"></div>
+</div>
+<div id="tjRes"></div>
+</div>
+<div id="ivVista1">
 <div class="iva-pagos" id="ivaPagos"></div>
 <div class="ptabs" id="ivaMeses"></div>
 <div class="iva-res" id="ivaRes"></div>
@@ -445,6 +475,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="twrap" style="margin-top:12px;max-height:none"><table class="ptable">
 <thead><tr><th>Fecha</th><th>Tipo</th><th>Proveedor / cliente</th><th>Neto</th><th>IVA</th><th>Total</th><th>Foto</th><th></th></tr></thead><tbody id="ivaBody"></tbody>
 </table></div>
+</div>
 </div>
 <div id="lpViewer" class="lpv hidden">
 <div class="lpv-bar">
@@ -2365,6 +2396,129 @@ function lpCartCopiar(){
   else prompt('Copiá el pedido:',txt);
 }
 // ---- IVA compras / ventas ----
+function ivaVista(n){
+  [1,2,3].forEach(function(i){
+    document.getElementById('ivTab'+i).classList.toggle('active',i===n);
+    document.getElementById('ivVista'+i).classList.toggle('hidden',i!==n);
+  });
+  if(n===2)pregCargar();
+  if(n===3)tjIniciar();
+}
+// ---- Preguntas para el contador ----
+var pregData=[];
+function pregCargar(){
+  document.getElementById('pregLista').innerHTML='<div class="loading" style="padding:1rem">Cargando...</div>';
+  apiPost('pregGet').then(function(r){
+    if(!r.ok){toast('Error: '+r.error);return;}
+    pregData=r.data||[];pregRender();
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function pregRender(){
+  var el=document.getElementById('pregLista');
+  if(!pregData.length){el.innerHTML='<div class="no-res">Todavía no hay preguntas. Escribí una arriba y tocá +.</div>';return;}
+  var pend=pregData.filter(function(p){return !p.respondida;}),resp=pregData.filter(function(p){return p.respondida;});
+  var h='';
+  function fila(p){
+    var s='<div class="gcard" style="display:flex;gap:12px;align-items:flex-start;'+(p.respondida?'opacity:.7':'')+'">';
+    s+='<input type="checkbox" '+(p.respondida?'checked':'')+' onchange="pregTick(\''+p.id+'\',this.checked)" style="width:22px;height:22px;margin-top:2px;accent-color:#34d399;cursor:pointer;flex-shrink:0">';
+    s+='<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:15px;'+(p.respondida?'text-decoration:line-through;color:var(--muted)':'')+'">'+lpEsc(p.texto)+'</div>';
+    s+='<div style="font-size:12px;color:var(--muted2);margin-top:3px">'+fmtFecha(String(p.fecha||''))+'</div>';
+    if(p.respuesta)s+='<div style="font-size:13.5px;color:var(--green);margin-top:6px;font-weight:600">&#8618; '+lpEsc(p.respuesta)+'</div>';
+    s+='</div><div class="lp-row-act"><button title="Anotar respuesta" onclick="pregRespuesta(\''+p.id+'\')">&#128172;</button><button title="Editar" onclick="pregEditar(\''+p.id+'\')">&#9998;</button><button title="Eliminar" style="color:#f87171" onclick="pregEliminar(\''+p.id+'\')">&#10005;</button></div></div>';
+    return s;
+  }
+  h+='<div class="lp-sec">Pendientes ('+pend.length+')</div>';
+  h+=pend.length?pend.map(fila).join(''):'<div class="no-res" style="padding:1rem">No hay preguntas pendientes &#127881;</div>';
+  if(resp.length)h+='<div class="lp-sec">Respondidas ('+resp.length+')</div>'+resp.map(fila).join('');
+  el.innerHTML=h;
+}
+function pregBuscar(id){return pregData.filter(function(x){return x.id===id;})[0];}
+function pregAgregar(){
+  var inp=document.getElementById('pregNueva');
+  var t=inp.value.trim();
+  if(!t){inp.focus();return;}
+  var btn=document.getElementById('pregBtn');btn.disabled=true;
+  apiPost('pregAgregar',{texto:t}).then(function(r){
+    btn.disabled=false;
+    if(!r.ok){toast('Error: '+r.error);return;}
+    pregData.push({id:r.id,fecha:r.fecha,texto:t,respondida:false,respuesta:''});
+    inp.value='';inp.focus();pregRender();toast('Pregunta agregada');
+  }).catch(function(e){btn.disabled=false;toast('Error: '+e.message);});
+}
+function pregGuardar(p,cambios,msg){
+  cambios.id=p.id;
+  apiPost('pregActualizar',cambios).then(function(r){
+    if(!r.ok){toast('Error: '+r.error);pregCargar();return;}
+    Object.keys(cambios).forEach(function(k){if(k!=='id')p[k]=cambios[k];});
+    pregRender();if(msg)toast(msg);
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function pregTick(id,v){var p=pregBuscar(id);if(p)pregGuardar(p,{respondida:v},v?'Marcada como respondida':'Vuelve a pendientes');}
+function pregEditar(id){
+  var p=pregBuscar(id);if(!p)return;
+  var t=prompt('Editar pregunta',p.texto);
+  if(t===null||!t.trim())return;
+  pregGuardar(p,{texto:t.trim()},'Pregunta actualizada');
+}
+function pregRespuesta(id){
+  var p=pregBuscar(id);if(!p)return;
+  var t=prompt('¿Qué respondió el contador?',p.respuesta||'');
+  if(t===null)return;
+  var c={respuesta:t.trim()};
+  if(t.trim())c.respondida=true;
+  pregGuardar(p,c,'Respuesta guardada');
+}
+function pregEliminar(id){
+  if(!confirm('¿Eliminar esta pregunta?'))return;
+  apiPost('pregEliminar',{id:id}).then(function(r){
+    if(r.ok){pregData=pregData.filter(function(x){return x.id!==id;});pregRender();toast('Pregunta eliminada');}
+    else toast('Error: '+r.error);
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+// ---- Simulador de cobro con tarjeta ----
+var TJ_DEF={com:1.8,ret:0,planes:[{c:1,t:0},{c:3,t:10},{c:6,t:18},{c:12,t:35}]};
+var tjCfg=null;
+function tjIniciar(){
+  if(!tjCfg){
+    try{tjCfg=JSON.parse(localStorage.getItem('tjCfg')||'null');}catch(e){}
+    if(!tjCfg||!tjCfg.planes)tjCfg=JSON.parse(JSON.stringify(TJ_DEF));
+  }
+  document.getElementById('tjCom').value=String(tjCfg.com).replace('.',',');
+  document.getElementById('tjRet').value=String(tjCfg.ret).replace('.',',');
+  var h='';
+  tjCfg.planes.forEach(function(p,i){
+    h+='<div class="gfield"><label>'+p.c+' cuota'+(p.c===1?'':'s')+' (%)</label><input type="text" inputmode="decimal" id="tjPlan'+i+'" value="'+String(p.t).replace('.',',')+'" oninput="tjGuardarCfg()"/></div>';
+  });
+  document.getElementById('tjPlanes').innerHTML=h;
+  tjCalc();
+}
+function tjPct(id){var v=parseFloat(String(document.getElementById(id).value).replace(',','.'));return isNaN(v)?0:v;}
+function tjGuardarCfg(){
+  tjCfg.com=tjPct('tjCom');tjCfg.ret=tjPct('tjRet');
+  tjCfg.planes.forEach(function(p,i){p.t=tjPct('tjPlan'+i);});
+  try{localStorage.setItem('tjCfg',JSON.stringify(tjCfg));}catch(e){}
+  tjCalc();
+}
+function tjCalc(){
+  var el=document.getElementById('tjRes');
+  var m=lpNum(document.getElementById('tjMonto').value);
+  if(isNaN(m)||m<=0){el.innerHTML='<div class="no-res">Poné un monto para ver cuánto cobrar en cada plan.</div>';return;}
+  var modo=document.getElementById('tjModo').value;
+  var ivaParte=0.21/1.21;
+  var h='<div class="twrap" style="max-height:none"><table class="ptable"><thead><tr><th>Plan</th><th style="color:#f2a93c">Le cobrás al cliente</th><th>Valor cuota</th><th>Factura A: neto</th><th style="color:#f87171">IVA a pagar</th><th>Comisión</th><th>Costo cuotas</th><th>Retenciones</th><th>Te deposita</th><th style="color:#34d399">Te queda limpio</th></tr></thead><tbody>';
+  tjCfg.planes.forEach(function(p){
+    var d=(tjCfg.com+p.t+tjCfg.ret)/100;
+    var factor=1-d-ivaParte;
+    var P=modo==='queda'?(factor>0?m/factor:NaN):m;
+    if(!(P>0)){h+='<tr><td><b>'+p.c+' cuota'+(p.c===1?'':'s')+'</b></td><td colspan="9" style="color:var(--red)">Los porcentajes suman demasiado</td></tr>';return;}
+    var neto=P/1.21,iva=P-neto,com=P*tjCfg.com/100,fin=P*p.t/100,ret=P*tjCfg.ret/100;
+    var dep=P-com-fin-ret,queda=dep-iva;
+    h+='<tr><td><b>'+p.c+' cuota'+(p.c===1?'':'s')+'</b></td><td style="color:#f2a93c;font-weight:800">$'+formatARS(P)+'</td><td>'+(p.c>1?p.c+' x $'+formatARS(P/p.c):'—')+'</td><td>$'+formatARS(neto)+'</td><td style="color:#f87171">$'+formatARS(iva)+'</td><td>$'+formatARS(com)+'</td><td>$'+formatARS(fin)+'</td><td>$'+formatARS(ret)+'</td><td>$'+formatARS(dep)+'</td><td style="color:#34d399;font-weight:800">$'+formatARS(queda)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div style="font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.5">"Te queda limpio" = lo que te deposita el banco menos el IVA que vas a pagar en la DDJJ. La comisión de la tarjeta suele venir con IVA, que es crédito fiscal y podés descontar en la DDJJ. Las retenciones de IVA/IIBB que te hacen se recuperan después a cuenta de impuestos. Los % por cuotas son de ejemplo: cargá los de tu banco o procesadora; quedan guardados en este dispositivo.</div>';
+  el.innerHTML=h;
+}
 var ivaData=[],ivaTipo='compra',ivaMes=null,ivaAnio=null,ivaLeidoDatos=null,ivaFotoId='';
 function ivaManual(){ivaLeidoDatos=null;ivaCalcPreview();}
 function ivaFotoElegida(inp){
@@ -2425,6 +2579,7 @@ function mostrarIva(){
   document.getElementById('p0').classList.add('hidden');
   document.getElementById('p12').classList.remove('hidden');
   titulo('IVA Compras y Ventas');
+  ivaVista(1);
   var d=new Date();ivaMes=d.getMonth();ivaAnio=d.getFullYear();
   document.getElementById('ivaFecha').value=hoyStr();
   ivaSetTipo(ivaTipo);ivaCalcPreview();

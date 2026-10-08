@@ -317,7 +317,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button class="card" onclick="mostrarMoto()"><div class="icon" style="background:#dff1f5">&#127949;</div><div class="ci"><h2>Baterias Moto</h2><p>Lista de precios moto</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarListasDist()"><div class="icon" style="background:#e6ecff">&#128203;</div><div class="ci"><h2>Listas de Distribuidores</h2><p>Fotos y PDF con precio de venta</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarIva()"><div class="icon" style="background:#e1f5ea">&#129534;</div><div class="ci"><h2>Contador de IVA</h2><p>Cuánto comprar facturado, DDJJ, crédito y débito fiscal para la DDJJ</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="mostrarPedidos()"><div class="icon" style="background:#fdeed0">&#128230;</div><div class="ci"><h2>Pedidos</h2><p>Archivos de pedidos con fecha, monto y % facturado</p></div><span class="arr">&#8250;</span></button>
+<button class="card" onclick="mostrarPedidos()"><div class="icon" style="background:#fdeed0">&#128230;</div><div class="ci"><h2>Compras</h2><p>Archivos de compras con fecha, monto y % facturado</p></div><span class="arr">&#8250;</span></button>
 </div>
 </div>
 <div id="p0load"><div class="loading">Cargando...</div></div>
@@ -522,8 +522,8 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="ptabs" id="pedMeses"></div>
 <div class="iva-res" id="pedRes"></div>
 <div class="mc">
-<div style="font-weight:800;font-size:16px;margin-bottom:12px">Cargar pedido</div>
-<button type="button" class="iva-foto" id="pedFotoBtn" onclick="document.getElementById('pedFotoInput').click()">&#128206; Adjuntar pedido (JPG o PDF)</button>
+<div style="font-weight:800;font-size:16px;margin-bottom:12px">Cargar compra</div>
+<button type="button" class="iva-foto" id="pedFotoBtn" onclick="document.getElementById('pedFotoInput').click()">&#128206; Adjuntar compra (JPG o PDF)</button>
 <input type="file" id="pedFotoInput" accept="image/*,application/pdf" style="display:none" onchange="pedArchivoElegido(this)"/>
 <div class="iva-leido" id="pedLeido"></div>
 <div class="iva-form">
@@ -535,7 +535,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="ped-chips" id="pedChips"></div>
 </div>
 <div class="iva-calc" id="pedPrev"></div>
-<button class="bp" id="pedGuardarBtn" style="width:100%;margin-top:12px" onclick="pedGuardar()">Guardar pedido</button>
+<button class="bp" id="pedGuardarBtn" style="width:100%;margin-top:12px" onclick="pedGuardar()">Guardar compra</button>
 </div>
 <div class="twrap" style="margin-top:12px;max-height:none"><table class="ptable">
 <thead><tr><th>Fecha</th><th>Detalle</th><th>Monto</th><th>Facturado</th><th>Con factura</th><th>Sin factura</th><th>Archivo</th><th></th></tr></thead><tbody id="pedBody"></tbody>
@@ -2884,13 +2884,13 @@ function ivaRender(){
   });
   document.getElementById('ivaBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin facturas en '+mesTxt+'</td></tr>';
 }
-// ---- Pedidos ----
+// ---- Compras (antes Pedidos) ----
 var pedData=[],pedMes=null,pedAnio=null,pedFac=0,pedArchivo={id:'',mime:''};
 var PED_OPC=[0,30,50,70,100];
 function mostrarPedidos(){
   document.getElementById('p0').classList.add('hidden');
   document.getElementById('p13').classList.remove('hidden');
-  titulo('Pedidos');
+  titulo('Compras');
   var d=new Date();pedMes=d.getMonth();pedAnio=d.getFullYear();
   pedFac=0;
   document.getElementById('pedFecha').value=hoyStr();
@@ -2924,11 +2924,11 @@ function pedArchivoElegido(inp){
   if(!f)return;
   if(f.size>18*1024*1024){toast('Archivo muy pesado (max 18 MB)');return;}
   var btn=document.getElementById('pedFotoBtn'),info=document.getElementById('pedLeido');
-  btn.disabled=true;btn.textContent='Subiendo y leyendo el pedido...';info.innerHTML='';
+  btn.disabled=true;btn.textContent='Subiendo y leyendo la compra...';info.innerHTML='';
   lpPrepararArchivo(f).then(function(a){
     return apiPost('pedLeer',{nombre:a.nombre,mime:a.mime,data:a.data});
   }).then(function(r){
-    btn.disabled=false;btn.innerHTML='&#128206; Adjuntar pedido (JPG o PDF)';
+    btn.disabled=false;btn.innerHTML='&#128206; Adjuntar compra (JPG o PDF)';
     if(!r.ok){toast('Error: '+r.error);return;}
     pedArchivo={id:r.archivo_id||'',mime:r.mime||''};
     var link=pedArchivo.id?' <a href="https://drive.google.com/file/d/'+pedArchivo.id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700">Ver archivo</a>':'';
@@ -2938,7 +2938,7 @@ function pedArchivoElegido(inp){
     if(d.distribuidor&&!document.getElementById('pedDetalle').value)document.getElementById('pedDetalle').value=d.distribuidor;
     info.innerHTML=(Number(d.total)>0?'&#10004; Archivo adjuntado. Revisá fecha y monto, elegí el % facturado y guardá.':'Archivo adjuntado. Completá fecha y monto a mano.')+link;
     pedPreview();
-  }).catch(function(e){btn.disabled=false;btn.innerHTML='&#128206; Adjuntar pedido (JPG o PDF)';toast('Error: '+e.message);});
+  }).catch(function(e){btn.disabled=false;btn.innerHTML='&#128206; Adjuntar compra (JPG o PDF)';toast('Error: '+e.message);});
 }
 function pedGuardar(){
   var fecha=document.getElementById('pedFecha').value;
@@ -2948,15 +2948,15 @@ function pedGuardar(){
   var datos={fecha:fecha,monto:m,facturado:pedFac,detalle:document.getElementById('pedDetalle').value.trim(),archivo_id:pedArchivo.id,mime:pedArchivo.mime};
   var btn=document.getElementById('pedGuardarBtn');btn.disabled=true;btn.textContent='Guardando...';
   apiPost('pedAgregar',datos).then(function(r){
-    btn.disabled=false;btn.textContent='Guardar pedido';
+    btn.disabled=false;btn.textContent='Guardar compra';
     if(!r.ok){toast('Error: '+r.error);return;}
     datos.id=r.id;pedData.push(datos);
     var p=fecha.split('-');pedAnio=parseInt(p[0],10);pedMes=parseInt(p[1],10)-1;
     document.getElementById('pedMonto').value='';document.getElementById('pedDetalle').value='';
     document.getElementById('pedLeido').innerHTML='';pedArchivo={id:'',mime:''};
     pedFac=0;pedRenderChips();
-    pedPreview();pedRender();toast('Pedido guardado');
-  }).catch(function(e){btn.disabled=false;btn.textContent='Guardar pedido';toast('Error: '+e.message);});
+    pedPreview();pedRender();toast('Compra guardada');
+  }).catch(function(e){btn.disabled=false;btn.textContent='Guardar compra';toast('Error: '+e.message);});
 }
 function pedCambiarFac(id,v){
   var p=pedData.filter(function(x){return x.id===id;})[0];if(!p)return;
@@ -2966,9 +2966,9 @@ function pedCambiarFac(id,v){
   }).catch(function(e){toast('Error: '+e.message);});
 }
 function pedEliminar(id){
-  if(!confirm('¿Eliminar este pedido y su archivo?'))return;
+  if(!confirm('¿Eliminar esta compra y su archivo?'))return;
   apiPost('pedEliminar',{id:id}).then(function(r){
-    if(r.ok){pedData=pedData.filter(function(x){return x.id!==id;});pedRender();toast('Pedido eliminado');}
+    if(r.ok){pedData=pedData.filter(function(x){return x.id!==id;});pedRender();toast('Compra eliminada');}
     else toast('Error: '+r.error);
   }).catch(function(e){toast('Error: '+e.message);});
 }
@@ -2988,7 +2988,7 @@ function pedRender(){
   });
   var tot=0,fac=0;
   lista.forEach(function(x){tot+=x.monto;fac+=x.monto*x.facturado/100;});
-  var r='<div class="iva-box"><div class="k">PEDIDOS DE '+NOMBRES_MES[pedMes].toUpperCase()+'</div><div class="v">$'+formatARS(tot)+'</div><div class="s">'+lista.length+' pedido'+(lista.length===1?'':'s')+'</div></div>';
+  var r='<div class="iva-box"><div class="k">COMPRAS DE '+NOMBRES_MES[pedMes].toUpperCase()+'</div><div class="v">$'+formatARS(tot)+'</div><div class="s">'+lista.length+' compra'+(lista.length===1?'':'s')+'</div></div>';
   r+='<div class="iva-box"><div class="k">CON FACTURA</div><div class="v" style="color:#2dd4bf">$'+formatARS(fac)+'</div><div class="s">'+(tot?Math.round(fac/tot*100):0)+'% del total | IVA crédito aprox. $'+formatARS(fac-fac/1.21)+'</div></div>';
   r+='<div class="iva-box"><div class="k">SIN FACTURA</div><div class="v" style="color:var(--amber)">$'+formatARS(tot-fac)+'</div><div class="s">'+(tot?100-Math.round(fac/tot*100):0)+'% del total</div></div>';
   document.getElementById('pedRes').innerHTML=r;
@@ -3002,7 +3002,7 @@ function pedRender(){
     var arch=x.archivo_id?'<a href="https://drive.google.com/file/d/'+x.archivo_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">'+(/pdf/.test(x.mime||'')?'&#128196;':'&#128444;')+' Ver</a>':'<span style="color:var(--muted2)">—</span>';
     b+='<tr><td>'+fmtFecha(x.fecha)+'</td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td style="font-weight:800">$'+formatARS(x.monto)+'</td><td>'+sel+'</td><td style="color:#2dd4bf;font-weight:700">$'+formatARS(f)+'</td><td style="color:var(--amber)">$'+formatARS(x.monto-f)+'</td><td>'+arch+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="pedEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';
   });
-  document.getElementById('pedBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin pedidos en '+NOMBRES_MES[pedMes]+'</td></tr>';
+  document.getElementById('pedBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin compras en '+NOMBRES_MES[pedMes]+'</td></tr>';
 }
 // ---- Comparador entre distribuidores ----
 var cmpData=[];
@@ -3596,6 +3596,37 @@ function lpGuardarMargen(){
 
 cargar();
 cargarAlertaReservados();
+// ---- Deslizar el dedo hacia la derecha = Volver (celular) ----
+(function(){
+  var ini=null;
+  function bloquea(el){
+    // No interferir con barras y tablas que se deslizan de costado, campos de texto ni el visor de imágenes
+    while(el&&el!==document.body){
+      if(el.matches&&el.matches('.ptabs,.gtabs,.twrap,.lpv,.lpv-box,input,textarea,select,.col-overlay'))return true;
+      el=el.parentElement;
+    }
+    return false;
+  }
+  document.addEventListener('touchstart',function(ev){
+    if(ev.touches.length!==1||bloquea(ev.target)){ini=null;return;}
+    var t=ev.touches[0];ini={x:t.clientX,y:t.clientY,t:Date.now()};
+  },{passive:true});
+  document.addEventListener('touchend',function(ev){
+    if(!ini)return;
+    var t=ev.changedTouches[0];
+    var dx=t.clientX-ini.x,dy=t.clientY-ini.y,dt=Date.now()-ini.t;
+    ini=null;
+    if(dx<90||Math.abs(dy)>60||dt>700)return;
+    if(document.querySelector('.col-overlay:not(.hidden)')||document.getElementById('garantiaResultOverlay'))return;
+    var paginas=document.querySelectorAll('[id^="p"]');
+    for(var i=0;i<paginas.length;i++){
+      var pg=paginas[i];
+      if(!/^p\d+$/.test(pg.id)||pg.id==='p0'||pg.classList.contains('hidden'))continue;
+      var btn=pg.querySelector('.back');
+      if(btn){btn.click();return;}
+    }
+  },{passive:true});
+})();
 document.addEventListener('keydown',function(ev){
   if(ev.key!=='Escape')return;
   var lpvOv=document.getElementById('lpViewer');

@@ -2252,7 +2252,7 @@ function mostrarResultadoGarantia(url,telefono){
 }
 
 // ===================== LISTAS DE DISTRIBUIDORES =====================
-var DISTRIBUIDORES=['4K distribuidora','Bari','Dimac','Telmo','Ocean Bat','Mateo','Vzh','Varta (Hernan No Oficial)'];
+var DISTRIBUIDORES=['4K distribuidora','Bari','Dimac','Telmo','Ocean Bat','Mateo','Baterias Ronconi','Varta (Hernan No Oficial)'];
 var lpInfoData={},lpInfoEditando=false;
 var lpActual=0,lpData={archivos:[],items:[]},lpMargen=55000,lpModo='agregar',lpOcupado=false,lpPedido=0;
 function apiPost(action,payload){
@@ -2871,6 +2871,7 @@ function cmpKey(marca,modelo){
 function cmpAgrupar(){
   var marcas={};
   cmpData.forEach(function(it){
+    if(DISTRIBUIDORES.indexOf(it.d)===-1)return;
     var precio=Number(it.precio)||0;
     if(precio<=0)return;
     var mn=lpMarcaNorm(it.marca,it.modelo)||'SIN MARCA';

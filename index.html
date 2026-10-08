@@ -414,6 +414,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div id="lpErr"></div>
 <div class="mc lp-info" id="lpInfo"></div>
 <div class="mc" style="margin-bottom:12px">
+<div class="lp-margen" style="margin-bottom:12px"><span>Marca de la lista que vas a subir</span><input type="text" id="lpMarcaSubir" list="lpMarcasDL" placeholder="Detectar sola" style="width:170px;text-transform:uppercase"/><datalist id="lpMarcasDL"><option value="WILLARD"><option value="MOURA"><option value="SERMAT"><option value="VARTA"><option value="BARI"><option value="VOLTA"><option value="HERBO"><option value="BOSCH"><option value="MEGABAT"><option value="ACDELCO"></datalist><span style="font-size:12px;color:var(--muted)">Completala solo si la lista no dice la marca</span></div>
 <div class="lp-tools">
 <button class="bp" onclick="lpElegirArchivo('agregar')">+ Subir lista</button>
 <button class="bs" onclick="lpElegirArchivo('reemplazar')">&#8635; Reemplazar lista</button>
@@ -2860,6 +2861,7 @@ function mostrarComparador(){
   apiPost('listasTodos').then(function(r){
     if(!r.ok){document.getElementById('cmpBody').innerHTML='<div class="err">'+lpEsc(r.error)+'</div>';return;}
     cmpData=r.items||[];
+    lpNormItems(cmpData);
     var descs=r.descs||{};
     cmpData.forEach(function(it){
       var d=descs[it.d];
@@ -2884,9 +2886,12 @@ function cmpKey(marca,modelo){
   s=s.replace(/EFB|START\s*STOP/g,' ').replace(/\s+/g,' ').trim();
   var m=s.match(/(\d{2,4})([A-Z]{0,3})/);
   if(!m)return s.replace(/[^A-Z0-9]/g,'');
-  var core=m[1]+m[2];
+  var num=m[1].replace(/^0+(?=\d)/,'');
+  var core=num+m[2];
+  // Willard y Dynasty: la letra final es el lado del borne (D/I), no otro modelo ("UB450D" = "UB 450")
+  if(marca==='WILLARD'||marca==='DYNASTY')core=num+(/HF/.test(s)?'HF':'');
   var resto=s.slice(m.index+m[0].length);
-  if(m[2]==='X'&&/^\d/.test(resto))core=m[1]+'X'+resto.match(/^\d+/)[0];
+  if(m[2]==='X'&&/^\d/.test(resto))core=num+'X'+resto.match(/^\d+/)[0];
   return (efb?'EFB':'')+core;
 }
 function cmpAgrupar(){
@@ -3067,6 +3072,7 @@ function lpCargar(){
     if(pedido!==lpPedido)return;
     if(!r.ok){lpError(r.error);return;}
     lpData={archivos:r.archivos||[],items:r.items||[]};
+    lpNormItems(lpData.items);
     lpDesc=r.desc||{marcas:{},nota:''};lpDescEditando=false;
     lpAplicarDesc(lpData.items,lpDesc);
     lpRenderDesc();
@@ -3146,7 +3152,7 @@ function lpRenderArchivos(){
     var meta,cls='';
     if(a.estado==='error'){meta='No se pudo leer: '+a.detalle;cls=' err';}
     else if(a.estado==='leyendo'){meta='Leyendo con IA...';cls=' leyendo';}
-    else{meta='Se subió el: '+a.fecha+' | '+cant+' modelo'+(cant===1?'':'s')+(a.detalle?' | columna: '+a.detalle:'');}
+    else{meta='Se subió el: '+a.fecha+(a.marca?' | marca: '+a.marca:'')+' | '+cant+' modelo'+(cant===1?'':'s')+(a.detalle?' | columna: '+a.detalle:'');}
     var thumb=esImg?'<a class="lp-thumb" href="#" onclick="lpVerArchivo(\''+a.file_id+'\');return false;">&#128444;':'<a class="lp-thumb" href="'+a.url+'" target="_blank" rel="noopener">&#128196;';
     if(esImg)thumb+='<img src="https://drive.google.com/thumbnail?id='+encodeURIComponent(a.file_id)+'&sz=w200" alt="" onerror="this.remove()">';
     thumb+='</a>';
@@ -3161,8 +3167,14 @@ function lpRenderArchivos(){
   el.innerHTML=h+'</div>';
 }
 // Unifica nombres de marca entre distribuidores (VOL = VOLTA, UB = WILLARD, etc.)
-var LP_MARCAS_ALIAS={'VOL':'VOLTA','VOLTA':'VOLTA','UB':'WILLARD','WILL':'WILLARD','WILLARD':'WILLARD','MOURA':'MOURA','SERMAT':'SERMAT','HERBO':'HERBO','BARI':'BARI','BOSCH':'BOSCH','VARTA':'VARTA','MEGABAT':'MEGABAT','MEGA':'MEGABAT'};
+var LP_MARCAS_ALIAS={'VOL':'VOLTA','VOLTA':'VOLTA','UB':'WILLARD','WILL':'WILLARD','WILLARD':'WILLARD','MOURA':'MOURA','SERMAT':'SERMAT','HERBO':'HERBO','BARI':'BARI','BOSCH':'BOSCH','VARTA':'VARTA','MEGABAT':'MEGABAT','MEGA':'MEGABAT','DYNASTY':'DYNASTY','DYN':'DYNASTY','DYC':'DYNASTY'};
+// Unifica como escribe cada distribuidor algunos modelos: "DYC 045" = "DYN45"
+function lpNormModelo(m){
+  return String(m||'').replace(/^\s*DY[CN][\s-]*0*(\d+)/i,function(_,n){return 'DYN'+n;});
+}
+function lpNormItems(items){items.forEach(function(it){it.modelo=lpNormModelo(it.modelo);});}
 function lpMarcaNorm(marca,modelo){
+  if(/^\s*DY[CN][\s-]*\d/i.test(String(modelo||'')))return 'DYNASTY';
   var s=String(marca||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
   if(LP_MARCAS_ALIAS[s])return LP_MARCAS_ALIAS[s];
   var primera=s.split(/[\s\/\-]+/)[0];
@@ -3268,6 +3280,7 @@ function lpArchivoElegido(inp){
   if(files.some(function(f){return f.size>18*1024*1024;})){toast('Archivo muy pesado (max 18 MB)');return;}
   var dist=DISTRIBUIDORES[lpActual];
   var reemplazar=lpModo==='reemplazar';
+  var marcaSubir=(document.getElementById('lpMarcaSubir').value||'').trim().toUpperCase();
   var total=files.length,leidos=0,errores=0;
   lpOcupado=true;lpBotones(true);
   function siguiente(i){
@@ -3282,7 +3295,7 @@ function lpArchivoElegido(inp){
     lpEstado(pref+'preparando...');
     lpPrepararArchivo(files[i]).then(function(f){
       lpEstado(pref+'subiendo y leyendo con IA. Puede tardar hasta 1 minuto...');
-      return apiPost('listasSubir',{distribuidor:dist,nombre:f.nombre,mime:f.mime,data:f.data,reemplazar:reemplazar&&i===0});
+      return apiPost('listasSubir',{distribuidor:dist,nombre:f.nombre,mime:f.mime,data:f.data,reemplazar:reemplazar&&i===0,marca:marcaSubir});
     }).then(function(r){
       if(!r.ok){errores++;toast('Error: '+r.error);}
       else{leidos+=r.items||0;if(r.error_lectura)errores++;}

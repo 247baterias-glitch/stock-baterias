@@ -23,8 +23,11 @@ html{color-scheme:dark}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17px;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
 h1,h2,h3,p,button,input,a{color:inherit}
 .header,.section{max-width:600px;margin:0 auto}
-#p4,#p9,#p10,#p11,#p12{width:100vw;max-width:1040px;position:relative;left:50%;transform:translateX(-50%)}
-#p10,#p11,#p12{padding:1.25rem 1rem}
+#p4,#p9,#p10,#p11,#p12,#p13{width:100vw;max-width:1040px;position:relative;left:50%;transform:translateX(-50%)}
+#p10,#p11,#p12,#p13{padding:1.25rem 1rem}
+.ped-chips{display:flex;gap:6px;flex-wrap:wrap}
+.ped-chips button{padding:10px 14px;font-size:14px;flex:0 0 auto}
+.ped-sel{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:6px 8px;font-size:13.5px;font-weight:700;color:var(--amber);font-family:var(--sans)}
 @media (min-width:900px){
   #p5,#p10,#p11{width:100vw;max-width:calc(100vw - 48px);position:relative;left:50%;transform:translateX(-50%)}
   #p10 .twrap{max-height:82vh}
@@ -309,6 +312,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button class="card" onclick="mostrarMoto()"><div class="icon" style="background:#dff1f5">&#127949;</div><div class="ci"><h2>Baterias Moto</h2><p>Lista de precios moto</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarListasDist()"><div class="icon" style="background:#e6ecff">&#128203;</div><div class="ci"><h2>Listas de Distribuidores</h2><p>Fotos y PDF con precio de venta</p></div><span class="arr">&#8250;</span></button>
 <button class="card" onclick="mostrarIva()"><div class="icon" style="background:#e1f5ea">&#129534;</div><div class="ci"><h2>Contador de IVA</h2><p>Cuánto comprar facturado, DDJJ, crédito y débito fiscal para la DDJJ</p></div><span class="arr">&#8250;</span></button>
+<button class="card" onclick="mostrarPedidos()"><div class="icon" style="background:#fdeed0">&#128230;</div><div class="ci"><h2>Pedidos</h2><p>Archivos de pedidos con fecha, monto y % facturado</p></div><span class="arr">&#8250;</span></button>
 </div>
 </div>
 <div id="p0load"><div class="loading">Cargando...</div></div>
@@ -507,6 +511,30 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <thead><tr><th>Fecha</th><th>Tipo</th><th>Proveedor / cliente</th><th>Neto</th><th>IVA</th><th>Total</th><th>Foto</th><th></th></tr></thead><tbody id="ivaBody"></tbody>
 </table></div>
 </div>
+</div>
+<div id="p13" class="hidden">
+<button class="back" onclick="volverInicio()">&#8592; Volver</button>
+<div class="ptabs" id="pedMeses"></div>
+<div class="iva-res" id="pedRes"></div>
+<div class="mc">
+<div style="font-weight:800;font-size:16px;margin-bottom:12px">Cargar pedido</div>
+<button type="button" class="iva-foto" id="pedFotoBtn" onclick="document.getElementById('pedFotoInput').click()">&#128206; Adjuntar pedido (JPG o PDF)</button>
+<input type="file" id="pedFotoInput" accept="image/*,application/pdf" style="display:none" onchange="pedArchivoElegido(this)"/>
+<div class="iva-leido" id="pedLeido"></div>
+<div class="iva-form">
+<div class="gfield"><label>Fecha</label><input type="date" id="pedFecha"/></div>
+<div class="gfield"><label>Monto total</label><input type="text" inputmode="decimal" id="pedMonto" placeholder="Ej: 1.500.000" oninput="pedPreview()"/></div>
+<div class="gfield"><label>Detalle (opcional)</label><input type="text" id="pedDetalle" placeholder="Ej: Dimac, 30 Varta"/></div>
+</div>
+<div class="gfield" style="margin-top:12px"><label>Facturado:</label>
+<div class="ped-chips" id="pedChips"></div>
+</div>
+<div class="iva-calc" id="pedPrev"></div>
+<button class="bp" id="pedGuardarBtn" style="width:100%;margin-top:12px" onclick="pedGuardar()">Guardar pedido</button>
+</div>
+<div class="twrap" style="margin-top:12px;max-height:none"><table class="ptable">
+<thead><tr><th>Fecha</th><th>Detalle</th><th>Monto</th><th>Facturado</th><th>Con factura</th><th>Sin factura</th><th>Archivo</th><th></th></tr></thead><tbody id="pedBody"></tbody>
+</table></div>
 </div>
 <div id="lpViewer" class="lpv hidden">
 <div class="lpv-bar">
@@ -973,12 +1001,12 @@ function mostrarBuscador(){
 }
 function mostrarGarantias(){document.getElementById('p0').classList.add('hidden');document.getElementById('p6').classList.remove('hidden');titulo('Garantias');cambiarGTab(1);}
 function volverInicio(){
-  ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
+  ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
   document.getElementById('p0').classList.remove('hidden');titulo('Stock Baterias');
   tipoExtra='';camExtra=null;
 }
 function mostrarTipoServicio(){
-  ['p0','p1','p2','p3','p4','p5','p6','p7','p9','p10','p11','p12'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
+  ['p0','p1','p2','p3','p4','p5','p6','p7','p9','p10','p11','p12','p13'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
   document.getElementById('p8').classList.remove('hidden');
   titulo('Registrar Servicio');
 }
@@ -2850,6 +2878,117 @@ function ivaRender(){
     b+='<tr><td>'+fmtFecha(x.fecha)+'</td><td><span class="iva-badge '+x.tipo+'">'+(x.tipo==='venta'?'VENTA':'COMPRA')+'</span></td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td>$'+formatARS(x.neto)+'</td><td style="font-weight:700">$'+formatARS(x.iva)+'</td><td>$'+formatARS(x.total)+'</td><td>'+(x.foto_id?'<a href="https://drive.google.com/file/d/'+x.foto_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">&#128247; Ver</a>':'<span style="color:var(--muted2)">—</span>')+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ivaEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';
   });
   document.getElementById('ivaBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin facturas en '+mesTxt+'</td></tr>';
+}
+// ---- Pedidos ----
+var pedData=[],pedMes=null,pedAnio=null,pedFac=50,pedArchivo={id:'',mime:''};
+var PED_OPC=[0,30,50,70,100];
+function mostrarPedidos(){
+  document.getElementById('p0').classList.add('hidden');
+  document.getElementById('p13').classList.remove('hidden');
+  titulo('Pedidos');
+  var d=new Date();pedMes=d.getMonth();pedAnio=d.getFullYear();
+  document.getElementById('pedFecha').value=hoyStr();
+  pedRenderChips();pedPreview();
+  document.getElementById('pedBody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Cargando...</td></tr>';
+  apiPost('pedGet').then(function(r){
+    if(!r.ok){toast('Error: '+r.error);return;}
+    pedData=r.data||[];pedRender();
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function pedRenderChips(){
+  var h='';
+  PED_OPC.forEach(function(p){h+='<button type="button" class="bs" style="'+(p===pedFac?'background:#f2a93c;color:#1b2330':'')+'" onclick="pedFac='+p+';pedRenderChips();pedPreview()">'+p+'%</button>';});
+  var otro=PED_OPC.indexOf(pedFac)===-1;
+  h+='<input type="text" inputmode="numeric" placeholder="Otro %" value="'+(otro?pedFac:'')+'" style="width:90px;background:var(--bg);border:1.5px solid '+(otro?'#f2a93c':'var(--border)')+';border-radius:var(--r-sm);padding:10px;font-size:14px;color:var(--ink);font-family:var(--sans)" onchange="var n=parseFloat(this.value);if(n>=0&&n<=100){pedFac=n;pedRenderChips();pedPreview();}">';
+  document.getElementById('pedChips').innerHTML=h;
+}
+function pedPreview(){
+  var m=lpNum(document.getElementById('pedMonto').value);
+  var el=document.getElementById('pedPrev');
+  if(isNaN(m)||m<=0){el.textContent='';return;}
+  var f=m*pedFac/100;
+  el.textContent='Con factura $'+formatARS(f)+' ('+pedFac+'%)  |  Sin factura $'+formatARS(m-f)+'  |  IVA crédito aprox. $'+formatARS(f-f/1.21);
+}
+function pedArchivoElegido(inp){
+  var f=inp.files&&inp.files[0];inp.value='';
+  if(!f)return;
+  if(f.size>18*1024*1024){toast('Archivo muy pesado (max 18 MB)');return;}
+  var btn=document.getElementById('pedFotoBtn'),info=document.getElementById('pedLeido');
+  btn.disabled=true;btn.textContent='Subiendo y leyendo el pedido...';info.innerHTML='';
+  lpPrepararArchivo(f).then(function(a){
+    return apiPost('pedLeer',{nombre:a.nombre,mime:a.mime,data:a.data});
+  }).then(function(r){
+    btn.disabled=false;btn.innerHTML='&#128206; Adjuntar pedido (JPG o PDF)';
+    if(!r.ok){toast('Error: '+r.error);return;}
+    pedArchivo={id:r.archivo_id||'',mime:r.mime||''};
+    var link=pedArchivo.id?' <a href="https://drive.google.com/file/d/'+pedArchivo.id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700">Ver archivo</a>':'';
+    var d=r.datos||{};
+    if(/^\d{4}-\d{2}-\d{2}$/.test(d.fecha||''))document.getElementById('pedFecha').value=d.fecha;
+    if(Number(d.total)>0)document.getElementById('pedMonto').value=formatARS(Number(d.total));
+    if(d.distribuidor&&!document.getElementById('pedDetalle').value)document.getElementById('pedDetalle').value=d.distribuidor;
+    info.innerHTML=(Number(d.total)>0?'&#10004; Archivo adjuntado. Revisá fecha y monto, elegí el % facturado y guardá.':'Archivo adjuntado. Completá fecha y monto a mano.')+link;
+    pedPreview();
+  }).catch(function(e){btn.disabled=false;btn.innerHTML='&#128206; Adjuntar pedido (JPG o PDF)';toast('Error: '+e.message);});
+}
+function pedGuardar(){
+  var fecha=document.getElementById('pedFecha').value;
+  var m=lpNum(document.getElementById('pedMonto').value);
+  if(!fecha){toast('Completa la fecha');return;}
+  if(isNaN(m)||m<=0){toast('Completa el monto');return;}
+  var datos={fecha:fecha,monto:m,facturado:pedFac,detalle:document.getElementById('pedDetalle').value.trim(),archivo_id:pedArchivo.id,mime:pedArchivo.mime};
+  var btn=document.getElementById('pedGuardarBtn');btn.disabled=true;btn.textContent='Guardando...';
+  apiPost('pedAgregar',datos).then(function(r){
+    btn.disabled=false;btn.textContent='Guardar pedido';
+    if(!r.ok){toast('Error: '+r.error);return;}
+    datos.id=r.id;pedData.push(datos);
+    var p=fecha.split('-');pedAnio=parseInt(p[0],10);pedMes=parseInt(p[1],10)-1;
+    document.getElementById('pedMonto').value='';document.getElementById('pedDetalle').value='';
+    document.getElementById('pedLeido').innerHTML='';pedArchivo={id:'',mime:''};
+    pedPreview();pedRender();toast('Pedido guardado');
+  }).catch(function(e){btn.disabled=false;btn.textContent='Guardar pedido';toast('Error: '+e.message);});
+}
+function pedCambiarFac(id,v){
+  var p=pedData.filter(function(x){return x.id===id;})[0];if(!p)return;
+  var n=parseFloat(v);if(isNaN(n))return;
+  apiPost('pedActualizar',{id:id,facturado:n}).then(function(r){
+    if(r.ok){p.facturado=n;pedRender();toast('Facturado: '+n+'%');}else toast('Error: '+r.error);
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function pedEliminar(id){
+  if(!confirm('¿Eliminar este pedido y su archivo?'))return;
+  apiPost('pedEliminar',{id:id}).then(function(r){
+    if(r.ok){pedData=pedData.filter(function(x){return x.id!==id;});pedRender();toast('Pedido eliminado');}
+    else toast('Error: '+r.error);
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function pedRender(){
+  var hoy=new Date(),h='';
+  for(var i=0;i<6;i++){
+    var dt=new Date(hoy.getFullYear(),hoy.getMonth()-i,1);
+    var act=dt.getMonth()===pedMes&&dt.getFullYear()===pedAnio;
+    h+='<button class="ptab'+(act?' active':'')+'" onclick="pedMes='+dt.getMonth()+';pedAnio='+dt.getFullYear()+';pedRender()">'+NOMBRES_MES[dt.getMonth()]+(dt.getFullYear()!==hoy.getFullYear()?' '+dt.getFullYear():'')+'</button>';
+  }
+  document.getElementById('pedMeses').innerHTML=h;
+  var pref=pedAnio+'-'+String(pedMes+1).padStart(2,'0')+'-';
+  var lista=pedData.filter(function(x){return String(x.fecha).indexOf(pref)===0;});
+  lista.sort(function(a,b){return a.fecha<b.fecha?1:a.fecha>b.fecha?-1:0;});
+  var tot=0,fac=0;
+  lista.forEach(function(x){tot+=x.monto;fac+=x.monto*x.facturado/100;});
+  var r='<div class="iva-box"><div class="k">PEDIDOS DE '+NOMBRES_MES[pedMes].toUpperCase()+'</div><div class="v">$'+formatARS(tot)+'</div><div class="s">'+lista.length+' pedido'+(lista.length===1?'':'s')+'</div></div>';
+  r+='<div class="iva-box"><div class="k">CON FACTURA</div><div class="v" style="color:#2dd4bf">$'+formatARS(fac)+'</div><div class="s">'+(tot?Math.round(fac/tot*100):0)+'% del total | IVA crédito aprox. $'+formatARS(fac-fac/1.21)+'</div></div>';
+  r+='<div class="iva-box"><div class="k">SIN FACTURA</div><div class="v" style="color:var(--amber)">$'+formatARS(tot-fac)+'</div><div class="s">'+(tot?100-Math.round(fac/tot*100):0)+'% del total</div></div>';
+  document.getElementById('pedRes').innerHTML=r;
+  var b='';
+  lista.forEach(function(x){
+    var f=x.monto*x.facturado/100;
+    var sel='<select class="ped-sel" onchange="pedCambiarFac(\''+x.id+'\',this.value)">';
+    var opc=PED_OPC.slice();if(opc.indexOf(x.facturado)===-1){opc.push(x.facturado);opc.sort(function(a,c){return a-c;});}
+    opc.forEach(function(o){sel+='<option value="'+o+'"'+(o===x.facturado?' selected':'')+'>'+o+'%</option>';});
+    sel+='</select>';
+    var arch=x.archivo_id?'<a href="https://drive.google.com/file/d/'+x.archivo_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">'+(/pdf/.test(x.mime||'')?'&#128196;':'&#128444;')+' Ver</a>':'<span style="color:var(--muted2)">—</span>';
+    b+='<tr><td>'+fmtFecha(x.fecha)+'</td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td style="font-weight:800">$'+formatARS(x.monto)+'</td><td>'+sel+'</td><td style="color:#2dd4bf;font-weight:700">$'+formatARS(f)+'</td><td style="color:var(--amber)">$'+formatARS(x.monto-f)+'</td><td>'+arch+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="pedEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';
+  });
+  document.getElementById('pedBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin pedidos en '+NOMBRES_MES[pedMes]+'</td></tr>';
 }
 // ---- Comparador entre distribuidores ----
 var cmpData=[];

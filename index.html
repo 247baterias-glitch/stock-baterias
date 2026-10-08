@@ -25,6 +25,11 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .header,.section{max-width:600px;margin:0 auto}
 #p4,#p9,#p10,#p11,#p12,#p13{width:100vw;max-width:1040px;position:relative;left:50%;transform:translateX(-50%)}
 #p10,#p11,#p12,#p13{padding:1.25rem 1rem}
+@media (max-width:760px){
+  .ptabs,.gtabs{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-x;scroll-snap-type:x proximity;scrollbar-width:none}
+  .ptabs::-webkit-scrollbar,.gtabs::-webkit-scrollbar{display:none}
+  .ptab,.gtab{flex:0 0 auto;padding:10px 16px;white-space:nowrap;scroll-snap-align:start}
+}
 .ped-chips{display:flex;gap:6px;flex-wrap:wrap}
 .ped-chips button{padding:10px 14px;font-size:14px;flex:0 0 auto}
 .ped-sel{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:6px 8px;font-size:13.5px;font-weight:700;color:var(--amber);font-family:var(--sans)}

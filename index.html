@@ -3720,19 +3720,21 @@ function lpGuardarInfo(){
     }else{toast('Error: '+r.error);if(btn){btn.disabled=false;btn.textContent='Guardar datos';}}
   }).catch(function(e){toast('Error: '+e.message);if(btn){btn.disabled=false;btn.textContent='Guardar datos';}});
 }
-// Nombres puestos a mano a cada lista subida (se guardan en este dispositivo)
-function lpNombresGet(){try{return JSON.parse(localStorage.getItem('lpNombresArch')||'{}')||{};}catch(e){return {};}}
-function lpNombreArch(a){var n=lpNombresGet()[a.file_id];return n||a.nombre;}
+// Cambia el nombre de una lista subida (se guarda en la planilla, se ve en todos los dispositivos)
 function lpRenombrarArchivo(id){
   var a=lpData.archivos.filter(function(x){return x.file_id===id;})[0];
   if(!a)return;
-  var n=prompt('Nombre de la lista (dejalo vacío para volver al nombre original "'+a.nombre+'")',lpNombreArch(a));
+  var n=prompt('Nombre de la lista',a.nombre);
   if(n===null)return;
   n=n.trim();
-  var m=lpNombresGet();
-  if(n&&n!==a.nombre)m[id]=n;else delete m[id];
-  try{localStorage.setItem('lpNombresArch',JSON.stringify(m));}catch(e){toast('No se pudo guardar el nombre');return;}
-  lpRenderArchivos();toast(n&&n!==a.nombre?'Nombre cambiado':'Nombre original');
+  if(!n){toast('El nombre no puede quedar vacío');return;}
+  if(n===a.nombre)return;
+  var viejo=a.nombre;
+  a.nombre=n;lpRenderArchivos();
+  apiPost('listasRenombrar',{file_id:id,nombre:n}).then(function(r){
+    if(r.ok)toast('Nombre cambiado');
+    else{a.nombre=viejo;lpRenderArchivos();toast('Error: '+r.error);}
+  }).catch(function(e){a.nombre=viejo;lpRenderArchivos();toast('Error: '+e.message);});
 }
 function lpRenderArchivos(){
   var el=document.getElementById('lpArchivos');
@@ -3753,8 +3755,7 @@ function lpRenderArchivos(){
     if(esImg)thumb+='<img src="https://drive.google.com/thumbnail?id='+encodeURIComponent(a.file_id)+'&sz=w200" alt="" onerror="this.remove()">';
     thumb+='</a>';
     h+='<div class="lp-file">'+thumb;
-    var nom=lpNombreArch(a),renom=nom!==a.nombre;
-    h+='<div class="lp-finfo"><div class="lp-fname">'+lpEsc(nom)+' <button class="lp-ren" title="Cambiar nombre" onclick="lpRenombrarArchivo(\''+a.file_id+'\')">&#9998;</button></div><div class="lp-fmeta'+cls+'">'+(renom?'Archivo: '+lpEsc(a.nombre)+' | ':'')+lpEsc(meta)+'</div></div>';
+    h+='<div class="lp-finfo"><div class="lp-fname">'+lpEsc(a.nombre)+' <button class="lp-ren" title="Cambiar nombre" onclick="lpRenombrarArchivo(\''+a.file_id+'\')">&#9998;</button></div><div class="lp-fmeta'+cls+'">'+lpEsc(meta)+'</div></div>';
     h+='<div class="lp-fact">';
     h+=esImg?'<button class="lp-ib" title="Ver con zoom" onclick="lpVerArchivo(\''+a.file_id+'\')">&#128269;</button>':'<a class="lp-ib" href="'+a.url+'" target="_blank" rel="noopener" title="Ver archivo">&#128065;</a>';
     h+='<button class="lp-ib" title="Volver a leer con IA" onclick="lpReleer(\''+a.file_id+'\')">&#8635;</button>';

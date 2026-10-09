@@ -2936,12 +2936,23 @@ var ivaDesfase=3,ivaCuotas=1;
 try{var _d=parseInt(localStorage.getItem('ivaDesfase3'),10);if(_d>=1&&_d<=12)ivaDesfase=_d;}catch(e){}
 // Beneficio PyME de IVA diferido: dura 1 año. Guardamos hasta cuándo está vigente (AAAA-MM-DD)
 var ivaBenefHasta='';
-function ivaBenefDate(){if(!/^\d{4}-\d{2}-\d{2}$/.test(ivaBenefHasta))return null;var a=ivaBenefHasta.split('-');return new Date(+a[0],+a[1]-1,+a[2]);}
+function ivaBenefDate(){if(!/^\d{4}-\d{2}-\d{2}$/.test(ivaBenefHasta))return null;var a=ivaBenefHasta.split('-');if(+a[0]<2020)return null;return new Date(+a[0],+a[1]-1,+a[2]);}
 // Meses entre el período y el pago: con beneficio = ivaDesfase; si el vencimiento original (mes siguiente) cae después del fin del beneficio = 1
 function ivaDesfasePer(mes,anio){var d=ivaBenefDate();if(d&&new Date(anio,mes+1,1)>d)return 1;return ivaDesfase;}
 function ivaDiasBenef(){var d=ivaBenefDate();if(!d)return null;var h=new Date();h=new Date(h.getFullYear(),h.getMonth(),h.getDate());return Math.round((d-h)/86400000);}
 function ivaCargarCfg(){
   apiPost('cfgGet').then(function(r){if(r&&r.ok){ivaBenefHasta=(r.cfg&&r.cfg.ivaBenefHasta)||'';ivaRender();}}).catch(function(){});
+}
+// Lee "20/11/2026" (también 20-11-26) y guarda como 2026-11-20
+function ivaGuardarBenef(){
+  var t=(document.getElementById('ivaBenefIn').value||'').trim();
+  if(!t){ivaSetBenef('');return;}
+  var m=t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2}|\d{4})$/);
+  if(!m){toast('Escribí la fecha así: 20/11/2026');return;}
+  var d=+m[1],mo=+m[2],y=+m[3];if(y<100)y+=2000;
+  var f=new Date(y,mo-1,d);
+  if(f.getMonth()!==mo-1||f.getDate()!==d||y<2020||y>2100){toast('Fecha inválida');return;}
+  ivaSetBenef(y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0'));
 }
 function ivaSetBenef(v){
   ivaBenefHasta=v||'';ivaRender();
@@ -2949,10 +2960,11 @@ function ivaSetBenef(v){
 }
 function ivaBenefHtml(){
   var dias=ivaDiasBenef(),d=ivaBenefDate();
-  var inp='<input type="date" value="'+lpEsc(ivaBenefHasta)+'" onchange="ivaSetBenef(this.value)" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:6px 8px;font-size:13px;color:var(--ink);font-family:var(--sans)">';
+  var d0=ivaBenefDate(),val=d0?String(d0.getDate()).padStart(2,'0')+'/'+String(d0.getMonth()+1).padStart(2,'0')+'/'+d0.getFullYear():'';
+  var inp='<input type="text" id="ivaBenefIn" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" value="'+val+'" onkeydown="if(event.key===\'Enter\')ivaGuardarBenef()" style="width:120px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:6px 8px;font-size:14px;color:var(--ink);font-family:var(--sans)"><button class="bs lp-mini" onclick="ivaGuardarBenef()">Guardar</button>';
   var lbl='<label style="font-size:13px;font-weight:700;color:var(--ink-soft);display:flex;align-items:center;gap:6px;flex-wrap:wrap">Beneficio PyME (IVA a 90 días) vigente hasta '+inp+'</label>';
   if(dias===null)return '<div style="margin:4px 0 10px;padding:10px 12px;border:1.5px dashed rgba(242,169,60,.6);border-radius:var(--r-md)">'+lbl+'<div style="font-size:12.5px;color:var(--amber);margin-top:4px">Cargá la fecha en que vence tu certificado MiPyME (dura 1 año) y la app te avisa 60 días antes.</div></div>';
-  var fecha=fmtFecha(ivaBenefHasta);
+  var fecha=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
   if(dias<0){
     var p=new Date(d.getFullYear(),d.getMonth(),1);
     return '<div style="margin:4px 0 10px;padding:10px 12px;border:1.5px solid rgba(248,113,113,.6);background:rgba(248,113,113,.08);border-radius:var(--r-md)">'+lbl+'<div style="font-size:13.5px;color:var(--red);font-weight:800;margin-top:4px">&#9888; El beneficio venció el '+fecha+'. Las DDJJ que vencían después de esa fecha se pagan el mes siguiente al período (sin los 90 días). Si lo renovaste, cargá la nueva fecha.</div></div>';

@@ -2984,11 +2984,23 @@ function ivaRender(){
   });
   var saldo=t.ventaIva-t.compraIva;
   var mesTxt=NOMBRES_MES[ivaMes]+' '+ivaAnio;
+  // Si hay DDJJ de IVA cargada para el mes, los totales salen de la DDJJ (lo que realmente se declaró)
+  var perDj=ivaAnio+'-'+String(ivaMes+1).padStart(2,'0');
+  var djs=(typeof ddjjData!=='undefined'?ddjjData:[]).filter(function(x){return x.tipo==='IVA'&&x.periodo===perDj;});
+  var dj=null;
+  if(djs.length){dj={deb:0,cre:0,monto:0};djs.forEach(function(x){dj.deb+=x.debito||0;dj.cre+=x.credito||0;dj.monto+=x.monto;});if(!dj.deb&&!dj.cre)dj.sinDet=true;}
+  var appTxt=function(n,tot){return n+' factura'+(n===1?'':'s')+' en la app | total $'+formatARS(tot);};
   var r='';
-  r+='<div class="iva-box"><div class="k">IVA COMPRAS (crédito fiscal)</div><div class="v" style="color:#2dd4bf">$'+formatARS(t.compraIva)+'</div><div class="s">'+t.nc+' factura'+(t.nc===1?'':'s')+' | total $'+formatARS(t.compraTot)+'</div></div>';
-  r+='<div class="iva-box"><div class="k">IVA VENTAS (débito fiscal)</div><div class="v" style="color:var(--amber)">$'+formatARS(t.ventaIva)+'</div><div class="s">'+t.nv+' factura'+(t.nv===1?'':'s')+' | total $'+formatARS(t.ventaTot)+'</div></div>';
+  if(dj&&!dj.sinDet){
+    r+='<div class="iva-box"><div class="k">IVA COMPRAS (crédito fiscal) · DDJJ</div><div class="v" style="color:#2dd4bf">$'+formatARS(dj.cre)+'</div><div class="s">Según la DDJJ presentada · '+appTxt(t.nc,t.compraTot)+(t.nc?' (IVA $'+formatARS(t.compraIva)+')':'')+'</div></div>';
+    r+='<div class="iva-box"><div class="k">IVA VENTAS (débito fiscal) · DDJJ</div><div class="v" style="color:var(--amber)">$'+formatARS(dj.deb)+'</div><div class="s">Según la DDJJ presentada · '+appTxt(t.nv,t.ventaTot)+(t.nv?' (IVA $'+formatARS(t.ventaIva)+')':'')+'</div></div>';
+  }else{
+    r+='<div class="iva-box"><div class="k">IVA COMPRAS (crédito fiscal)</div><div class="v" style="color:#2dd4bf">$'+formatARS(t.compraIva)+'</div><div class="s">'+t.nc+' factura'+(t.nc===1?'':'s')+' | total $'+formatARS(t.compraTot)+'</div></div>';
+    r+='<div class="iva-box"><div class="k">IVA VENTAS (débito fiscal)</div><div class="v" style="color:var(--amber)">$'+formatARS(t.ventaIva)+'</div><div class="s">'+t.nv+' factura'+(t.nv===1?'':'s')+' | total $'+formatARS(t.ventaTot)+'</div></div>';
+  }
+  if(dj)saldo=dj.monto;
   var pagoTxt=ivaTxtPago(ivaMes,ivaAnio);
-  if(saldo>=0)r+='<div class="iva-box" style="border-color:rgba(248,113,113,.45)"><div class="k">IVA DE '+mesTxt.toUpperCase()+' A PAGAR</div><div class="v" style="color:var(--red)">$'+formatARS(saldo)+'</div><div class="s">Se paga en '+pagoTxt+' | IVA ventas − IVA compras</div></div>';
+  if(saldo>=0)r+='<div class="iva-box" style="border-color:rgba(248,113,113,.45)"><div class="k">IVA DE '+mesTxt.toUpperCase()+' A PAGAR'+(dj?' · DDJJ':'')+'</div><div class="v" style="color:var(--red)">$'+formatARS(saldo)+'</div><div class="s">Se paga en '+pagoTxt+' | '+(dj?'saldo de la DDJJ presentada':'IVA ventas − IVA compras')+'</div></div>';
   else r+='<div class="iva-box" style="border-color:rgba(52,211,153,.45)"><div class="k">SALDO A FAVOR EN '+mesTxt.toUpperCase()+'</div><div class="v" style="color:var(--green)">$'+formatARS(-saldo)+'</div><div class="s">Tenés más IVA compras que ventas</div></div>';
   document.getElementById('ivaRes').innerHTML=r;
   ivaRenderPagos();
@@ -3007,7 +3019,7 @@ function ddjjCargar(){
   ddjjCargado=false;ddjjRender();
   apiPost('ddjjGet').then(function(r){
     if(!r.ok){toast('Error: '+r.error);return;}
-    ddjjData=r.data||[];ddjjCargado=true;ddjjRender();
+    ddjjData=r.data||[];ddjjCargado=true;ivaRender();
   }).catch(function(e){toast('Error: '+e.message);});
 }
 function ddjjRender(){
@@ -3027,6 +3039,10 @@ function ddjjRender(){
       h+='<span class="mt" title="Corregir monto" onclick="ddjjEditarMonto(\''+x.id+'\')" style="color:'+(x.monto>=0?'var(--ink)':'var(--green)')+'">'+(x.monto>=0?'$'+formatARS(x.monto):'a favor $'+formatARS(-x.monto))+'</span>';
       h+='<button class="dj-pag'+(x.pagado?' on':'')+'" onclick="ddjjPagado(\''+x.id+'\')">'+(x.pagado?'&#10004; Pagada':'Sin pagar')+'</button>';
       if(x.archivo_id)h+='<a href="https://drive.google.com/file/d/'+x.archivo_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">Ver</a>';
+      if(t==='IVA'){
+        if(x.debito||x.credito)h+='<div style="flex-basis:100%;font-size:12px;color:var(--muted)">Débito $'+formatARS(x.debito)+' · Crédito $'+formatARS(x.credito)+'</div>';
+        else if(x.archivo_id)h+='<div style="flex-basis:100%"><button class="bs lp-mini" id="djRl_'+x.id+'" onclick="ddjjReleer(\''+x.id+'\')">&#8635; Leer débito y crédito de esta DDJJ</button></div>';
+      }
       h+='<div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ddjjEliminar(\''+x.id+'\')">&#10005;</button></div></div>';
     });
     if(t==='IVA'){var _pr=new Date(ivaAnio,ivaMes+1,1);h+='<div style="font-size:12px;color:var(--muted);margin-top:6px">Se presenta en '+NOMBRES_MES[_pr.getMonth()]+' · vence en '+ivaTxtPago(ivaMes,ivaAnio)+'</div>';var s=ivaSaldoMes(ivaMes,ivaAnio);if(s.cant)h+='<div style="font-size:12px;color:var(--muted);margin-top:6px">Según las facturas cargadas en la app: '+(s.saldo>=0?'$'+formatARS(s.saldo)+' a pagar':'$'+formatARS(-s.saldo)+' a favor')+'</div>';}
@@ -3062,6 +3078,14 @@ function ddjjElegido(inp){
       }
     }else toast(r.monto?'DDJJ de '+t+' guardada':'DDJJ guardada. No se pudo leer el monto: tocalo para cargarlo');
   }).catch(function(e){ddjjSubiendo='';ddjjRender();toast('Error: '+e.message);});
+}
+function ddjjReleer(id){
+  var b=document.getElementById('djRl_'+id);if(b){b.disabled=true;b.textContent='Leyendo...';}
+  apiPost('ddjjReleer',{id:id}).then(function(r){
+    if(!r.ok){toast('Error: '+r.error);if(b){b.disabled=false;b.innerHTML='&#8635; Reintentar';}return;}
+    var x=ddjjBuscar(id);if(x){x.debito=r.debito;x.credito=r.credito;if(r.monto)x.monto=r.monto;}
+    ivaRender();toast('DDJJ leída');
+  }).catch(function(e){toast('Error: '+e.message);if(b){b.disabled=false;b.innerHTML='&#8635; Reintentar';}});
 }
 function ddjjBuscar(id){return ddjjData.filter(function(x){return x.id===id;})[0];}
 function ddjjEditarMonto(id){

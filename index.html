@@ -165,6 +165,11 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .gtab.active{background:var(--surface);color:var(--ink);box-shadow:0 1px 0 var(--amber) inset,0 2px 6px rgba(27,35,48,.08)}
 .col-overlay{position:fixed;inset:0;background:rgba(17,21,28,.55);backdrop-filter:blur(2px);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem}
 .col-overlay.hidden{display:none}
+@media (min-width:900px){
+  .col-card{max-width:1180px!important;max-height:92vh!important}
+  .col-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0 14px;align-items:end}
+  .col-grid .wide{grid-column:span 2}
+}
 .tmini{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid var(--border2)}
 .tmini:last-child{border-bottom:none}
 .tmini-left{display:flex;align-items:center;gap:12px;min-width:0}
@@ -627,8 +632,9 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </div>
 </div>
 <div id="colOverlay" class="hidden col-overlay">
-<div style="background:#0c0e33;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;border:1px solid #282b5c">
+<div class="col-card" style="background:#0c0e33;border-radius:20px;padding:1.5rem;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;border:1px solid #282b5c">
 <div style="font-size:19px;font-weight:700;margin-bottom:14px">Datos de la colocación</div>
+<div class="col-grid">
 <div class="gfield"><label>Fecha</label><input type="date" id="colFecha"/></div>
 <div class="gfield"><label>Vehiculo</label><input type="text" id="colVehiculo" placeholder="Ej: Corolla 2018"/></div>
 <div class="gfield"><label>Año vehiculo</label><input type="text" id="colAnio" placeholder="Ej: 2018"/></div>
@@ -639,14 +645,14 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="gfield"><label>Vigencia garantia</label><input type="text" id="colVigencia" value="12 meses"/></div>
 <div class="gfield"><label>Telefono cliente (opcional, para enviar garantia)</label><input type="text" id="colTelefonoCliente" placeholder="Ej: 1123456789"/></div>
 <div class="gfield"><label>Precio</label><input type="text" id="colPrecio" placeholder="Ej: $150.000"/></div>
-<div class="gfield"><label>Forma de pago</label>
+<div class="gfield wide"><label>Forma de pago</label>
 <div style="display:flex;gap:8px" id="colPagoBtns">
 <button type="button" class="bs" onclick="setColPago('Efectivo',this)" style="flex:1">Efectivo</button>
 <button type="button" class="bs" onclick="setColPago('Transferencia',this)" style="flex:1">Transferencia</button>
 <button type="button" class="bs" onclick="setColPago('Tarjeta',this)" style="flex:1">Tarjeta</button>
 </div>
 </div>
-<div class="gfield" id="colCuentaField" style="display:none"><label>Cuenta destino</label>
+<div class="gfield wide" id="colCuentaField" style="display:none"><label>Cuenta destino</label>
 <div style="display:flex;gap:8px;flex-wrap:wrap" id="colCuentaBtns">
 <button type="button" class="bs" onclick="setColCuenta('Mateo',this)" style="flex:1">Mateo</button>
 <button type="button" class="bs" onclick="setColCuenta('Mario',this)" style="flex:1">Mario</button>
@@ -654,10 +660,11 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button type="button" class="bs" onclick="setColCuenta('Emiliano',this)" style="flex:1">Emiliano</button>
 </div>
 </div>
-<div class="gfield"><label>Ubicacion</label>
+<div class="gfield wide"><label>Ubicacion</label>
 <div style="display:flex;gap:8px" id="colUbiBtns">
 <button type="button" class="bs" onclick="setColUbi('Domicilio',this)" style="flex:1">Domicilio</button>
 <button type="button" class="bs" onclick="setColUbi('Deposito',this)" style="flex:1">Deposito</button>
+</div>
 </div>
 </div>
 <div style="display:flex;gap:8px;margin-top:8px">

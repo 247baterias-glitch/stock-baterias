@@ -189,6 +189,12 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .lp-tools{display:flex;gap:8px;margin-bottom:14px}
 .lp-tools .bp,.lp-tools .bs{flex:1}
 .lp-tools button:disabled{opacity:.35;cursor:not-allowed}
+#p4 .ptable th{padding:12px 8px;font-size:15px}
+#p4 .ptable td{padding:12px 8px;font-size:17px}
+#p4 .ptable td b{font-size:17px}
+#p4 .ptable td:first-child,#p4 .ptable th:first-child{padding-left:14px}
+#p4 .stk-info{font-size:13.5px}
+#p4 .lp-desc-tag{font-size:13px}
 .pl-lapiz{background:transparent;border:1px solid var(--border);color:var(--ink-soft);border-radius:6px;padding:1px 6px;font-size:12px;cursor:pointer;text-decoration:none;margin-left:4px}
 .pl-lapiz:hover{border-color:var(--amber);color:var(--amber)}
 .lp-margen{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-soft);flex-wrap:wrap}
@@ -512,6 +518,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div id="tjRes"></div>
 </div>
 <div id="ivVista1">
+<div class="iva-pagos" id="ddjjAviso" style="display:none;border-color:rgba(242,169,60,.6);background:rgba(242,169,60,.07)"></div>
 <div class="iva-pagos" id="ivaPagos"></div>
 <div class="ptabs" id="ivaMeses"></div>
 <div class="iva-res" id="ivaRes"></div>
@@ -1082,6 +1089,15 @@ function plGuardarCtrl(){
   plCfg.marcas[plMarca()]={margen:mg,pct:pct};
   plGuardar('Guardado para '+plMarca());
 }
+function plEditarVenta(i){
+  var x=plLista()[i];if(!x)return;
+  var vk='V:'+plKey(x),act=plCfg.precios[vk];
+  var v=prompt('Precio de venta de '+String(x.m).trim()+' (sin IVA).\nVacío = volver al cálculo automático (costo + margen):',act?formatARS(act):'');
+  if(v===null)return;
+  if(!v.trim()){delete plCfg.precios[vk];plGuardar('Venta automática restaurada');return;}
+  var n=lpNum(v);if(!(n>0)){toast('Precio inválido');return;}
+  plCfg.precios[vk]=n;plGuardar('Precio de venta actualizado');
+}
 function plEditarPrecio(i){
   var x=plLista()[i];if(!x)return;
   var k=plKey(x),orig=plNum(x.l),act=plCfg.precios[k]||orig;
@@ -1118,10 +1134,12 @@ function filtrarPrecios(){
     // Modelos que en la lista original tenían una venta distinta al margen general conservan esa diferencia
     var extra=Math.round(plNum(x.p)-plNum(x.l))-mgDef;if(!(plNum(x.p)>0)||Math.abs(extra)<1)extra=0;
     var costo=Math.round(precio*f*100)/100,venta=costo+mg+extra;
+    var vk='V:'+k,vMan=plCfg.precios[vk]!==undefined;
+    if(vMan){venta=plCfg.precios[vk];extra=0;}
     h+='<tr><td>'+lpEsc(plMarca().toUpperCase())+'</td><td><b>'+lpEsc(x.m)+'</b>'+badge+'</td>';
-    h+='<td style="white-space:nowrap"><span'+(hayDesc?' style="color:var(--muted);text-decoration:line-through"':' style="font-weight:700"')+'>$'+formatARS(precio)+'</span>'+(corr?' <span title="Precio corregido a mano" style="color:var(--amber);text-decoration:none">●</span>':'')+' <button class="pl-lapiz" title="Modificar precio" onclick="plEditarPrecio('+i+')">&#9998;</button></td>';
+    h+='<td style="white-space:nowrap"><span'+(hayDesc?' style="color:var(--muted);text-decoration:line-through"':' style="font-weight:700"')+'>$'+formatARS(precio)+'</span>'+(corr?' <span title="Precio corregido a mano" style="color:var(--amber);text-decoration:none">●</span>':'')+'</td>';
     if(hayDesc)h+='<td><span class="lp-desc-tag">'+lpDescTexto(c.pct)+'</span></td><td style="font-weight:800">$'+formatARS(costo)+'</td>';
-    h+='<td style="font-weight:700;color:#2dd4bf">$'+formatARS(costo*1.21)+'</td><td class="pventa"'+(extra?' title="Este modelo tiene $'+formatARS(extra)+' extra sobre el margen"':'')+'>$'+formatARS(venta)+(extra?' <span style="color:var(--muted);font-size:11px">('+(extra>0?'+':'−')+'$'+formatMoney(Math.abs(extra))+')</span>':'')+'</td><td style="font-weight:700;color:#15803d">$'+formatARS(venta*1.21)+'</td><td class="pnoche">$'+formatARS(venta+8000)+'</td>';
+    h+='<td style="font-weight:700;color:#2dd4bf">$'+formatARS(costo*1.21)+'</td><td class="pventa" style="white-space:nowrap"'+(extra?' title="Este modelo tiene $'+formatARS(extra)+' extra sobre el margen"':'')+'>$'+formatARS(venta)+(vMan?' <span title="Venta puesta a mano" style="color:var(--amber)">●</span>':'')+(extra?' <span style="color:var(--muted);font-size:12px">('+(extra>0?'+':'−')+'$'+formatMoney(Math.abs(extra))+')</span>':'')+' <button class="pl-lapiz" title="Modificar precio de venta" onclick="plEditarVenta('+i+')">&#9998;</button></td><td style="font-weight:700;color:#15803d">$'+formatARS(venta*1.21)+'</td><td class="pnoche">$'+formatARS(venta+8000)+'</td>';
     h+='<td><div class="stk-info '+cls+'" style="margin-top:0">'+stk+'</div></td></tr>';
   });
   document.getElementById('preciosBody').innerHTML=h||'<tr><td colspan="10" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';
@@ -3019,7 +3037,7 @@ function ddjjCargar(){
   ddjjCargado=false;ddjjRender();
   apiPost('ddjjGet').then(function(r){
     if(!r.ok){toast('Error: '+r.error);return;}
-    ddjjData=r.data||[];ddjjCargado=true;ivaRender();
+    ddjjData=r.data||[];ddjjCargado=true;ivaRender();ddjjPreguntar();
   }).catch(function(e){toast('Error: '+e.message);});
 }
 function ddjjRender(){
@@ -3039,11 +3057,13 @@ function ddjjRender(){
       h+='<span class="mt" title="Corregir monto" onclick="ddjjEditarMonto(\''+x.id+'\')" style="color:'+(x.monto>=0?'var(--ink)':'var(--green)')+'">'+(x.monto>=0?'$'+formatARS(x.monto):'a favor $'+formatARS(-x.monto))+'</span>';
       h+='<button class="dj-pag'+(x.pagado?' on':'')+'" onclick="ddjjPagado(\''+x.id+'\')">'+(x.pagado?'&#10004; Pagada':'Sin pagar')+'</button>';
       if(x.archivo_id)h+='<a href="https://drive.google.com/file/d/'+x.archivo_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">Ver</a>';
+      h+='<div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ddjjEliminar(\''+x.id+'\')">&#10005;</button></div>';
       if(t==='IVA'){
         if(x.debito||x.credito)h+='<div style="flex-basis:100%;font-size:12px;color:var(--muted)">Débito $'+formatARS(x.debito)+' · Crédito $'+formatARS(x.credito)+'</div>';
         else if(x.archivo_id)h+='<div style="flex-basis:100%"><button class="bs lp-mini" id="djRl_'+x.id+'" onclick="ddjjReleer(\''+x.id+'\')">&#8635; Leer débito y crédito de esta DDJJ</button></div>';
       }
-      h+='<div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ddjjEliminar(\''+x.id+'\')">&#10005;</button></div></div>';
+      if(ddjjEstadoVence(x)!=='futura')h+='<div style="flex-basis:100%;font-size:12px;color:'+ddjjColorVence(x)+'">'+ddjjTxtVence(x)+'</div>';
+      h+='</div>';
     });
     if(t==='IVA'){var _pr=new Date(ivaAnio,ivaMes+1,1);h+='<div style="font-size:12px;color:var(--muted);margin-top:6px">Se presenta en '+NOMBRES_MES[_pr.getMonth()]+' · vence en '+ivaTxtPago(ivaMes,ivaAnio)+'</div>';var s=ivaSaldoMes(ivaMes,ivaAnio);if(s.cant)h+='<div style="font-size:12px;color:var(--muted);margin-top:6px">Según las facturas cargadas en la app: '+(s.saldo>=0?'$'+formatARS(s.saldo)+' a pagar':'$'+formatARS(-s.saldo)+' a favor')+'</div>';}
     var sub=ddjjSubiendo===t;
@@ -3053,6 +3073,7 @@ function ddjjRender(){
   h+='</div>';
   el.innerHTML=h;
   ivaRenderPagos();
+  ddjjRenderAviso();
 }
 function ddjjElegir(t){
   if(ddjjSubiendo)return;
@@ -3086,6 +3107,54 @@ function ddjjReleer(id){
     var x=ddjjBuscar(id);if(x){x.debito=r.debito;x.credito=r.credito;if(r.monto)x.monto=r.monto;}
     ivaRender();toast('DDJJ leída');
   }).catch(function(e){toast('Error: '+e.message);if(b){b.disabled=false;b.innerHTML='&#8635; Reintentar';}});
+}
+// Vencimiento: IVA = período + meses de diferimiento (beneficio PyME); IIBB = mes siguiente al período
+function ddjjVence(x){var a=String(x.periodo).split('-');return new Date(parseInt(a[0],10),parseInt(a[1],10)-1+(x.tipo==='IVA'?ivaDesfase:1),1);}
+function ddjjEstadoVence(x){
+  if(x.pagado)return 'pagada';
+  var v=ddjjVence(x),h=new Date(),hm=new Date(h.getFullYear(),h.getMonth(),1);
+  return v<hm?'vencida':v.getTime()===hm.getTime()?'este':'futura';
+}
+function ddjjTxtVence(x){
+  var v=ddjjVence(x),n=NOMBRES_MES[v.getMonth()]+' '+v.getFullYear(),e=ddjjEstadoVence(x);
+  return e==='pagada'?'Pagada · vencía en '+n:e==='vencida'?'&#9888; Venció en '+n+' y figura sin pagar':e==='este'?'Vence este mes ('+n+')':'Vence en '+n;
+}
+function ddjjColorVence(x){var e=ddjjEstadoVence(x);return e==='vencida'?'var(--red)':e==='este'?'var(--amber)':'var(--muted)';}
+function ddjjSinPagar(){
+  return ddjjData.filter(function(x){return !x.pagado&&x.monto>0;}).sort(function(a,b){return ddjjVence(a)-ddjjVence(b);});
+}
+function ddjjRenderAviso(){
+  var el=document.getElementById('ddjjAviso');if(!el)return;
+  var l=ddjjCargado?ddjjSinPagar():[];
+  if(!l.length){el.innerHTML='';el.style.display='none';return;}
+  var venc=l.filter(function(x){return ddjjEstadoVence(x)!=='futura';}).length;
+  var h='<div style="font-weight:800;font-size:15px;margin-bottom:6px">&#9888; Tenés '+l.length+(l.length===1?' declaración jurada':' declaraciones juradas')+' sin pagar'+(venc?' · <span style="color:var(--red)">'+venc+' vencida'+(venc===1?'':'s')+' o por vencer este mes</span>':'')+'</div>';
+  l.forEach(function(x){
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 0;border-top:1px solid var(--border2);font-size:13.5px">';
+    h+='<span><b>DDJJ '+x.tipo+' '+lpEsc(ddjjNomPeriodo(x.periodo))+'</b> · $'+formatARS(x.monto)+' · <span style="color:'+ddjjColorVence(x)+'">'+ddjjTxtVence(x)+'</span></span>';
+    h+='<button class="dj-pag" onclick="ddjjPagado(\''+x.id+'\')">Marcar pagada</button></div>';
+  });
+  el.innerHTML=h;el.style.display='block';
+}
+// En los primeros días del mes pregunta si se pagaron las DDJJ ya vencidas (una vez por día)
+function ddjjPreguntar(){
+  var hoy=new Date();if(hoy.getDate()>10)return;
+  var l=ddjjSinPagar().filter(function(x){return ddjjEstadoVence(x)==='vencida';});
+  if(!l.length)return;
+  var k='ddjjPreg_'+hoyStr();
+  try{if(localStorage.getItem(k))return;localStorage.setItem(k,'1');}catch(e){}
+  var ov=document.createElement('div');ov.id='ddjjModal';
+  ov.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(5,8,25,.75);display:flex;align-items:center;justify-content:center;padding:16px';
+  var h='<div class="mc" style="max-width:520px;width:100%;margin:0"><div style="font-weight:800;font-size:18px;margin-bottom:4px">¿Se abonaron las DDJJ de IVA y las declaraciones de IIBB?</div>';
+  h+='<div style="font-size:13px;color:var(--muted);margin-bottom:10px">Estas ya vencieron y figuran sin pagar:</div>';
+  l.forEach(function(x){
+    h+='<div id="djq_'+x.id+'" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border2)"><span><b>DDJJ '+x.tipo+' '+lpEsc(ddjjNomPeriodo(x.periodo))+'</b><br><span style="font-size:13px;color:var(--muted)">$'+formatARS(x.monto)+' · venció en '+NOMBRES_MES[ddjjVence(x).getMonth()]+'</span></span>';
+    h+='<span style="display:flex;gap:6px"><button class="bp lp-mini" style="padding:8px 12px" onclick="ddjjPagado(\''+x.id+'\');this.closest(\'[id^=djq_]\').remove()">Sí, pagada</button><button class="bs lp-mini" onclick="this.closest(\'[id^=djq_]\').remove()">Todavía no</button></span></div>';
+  });
+  h+='<button class="bs" style="width:100%;margin-top:10px" onclick="document.getElementById(\'ddjjModal\').remove()">Cerrar</button></div>';
+  ov.innerHTML=h;
+  ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+  document.body.appendChild(ov);
 }
 function ddjjBuscar(id){return ddjjData.filter(function(x){return x.id===id;})[0];}
 function ddjjEditarMonto(id){

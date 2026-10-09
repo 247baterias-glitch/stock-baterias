@@ -2462,6 +2462,8 @@ function lpNum(v){
 var lpCarrito=[];
 try{lpCarrito=JSON.parse(localStorage.getItem('lpCarrito')||'[]')||[];}catch(e){lpCarrito=[];}
 var LP_SCRAP_VALOR=10500;
+// Compra facturada (en blanco): IVA 21% + percepción IIBB CABA 5%, ambos sobre el neto
+var LP_IVA=0.21,LP_IIBB=0.05,LP_FAC=1+LP_IVA+LP_IIBB;
 var lpSaldo=0,lpSaldoEditando=false;
 try{lpSaldo=Number(localStorage.getItem('lpSaldo'))||0;}catch(e){}
 function lpSaldoHtml(){
@@ -2531,7 +2533,7 @@ function lpCartVaciar(){
 }
 function lpCartTotales(){
   var t={unidades:0,sin:0,con:0};
-  lpCarrito.forEach(function(c){t.unidades+=c.qty;t.sin+=c.precio*c.qty;t.con+=c.precio*1.21*c.qty;});
+  lpCarrito.forEach(function(c){t.unidades+=c.qty;t.sin+=c.precio*c.qty;t.con+=c.precio*LP_FAC*c.qty;});
   t.scrapCant=(lpScrapUsar&&lpScrap)?lpScrap:0;
   t.scrap=t.scrapCant*LP_SCRAP_VALOR;
   t.totSin=t.sin-t.scrap;
@@ -2560,13 +2562,13 @@ function lpRenderCarrito(){
       h+='<div class="lp-cart-row">';
       h+='<div class="lp-cart-mod">'+lpEsc(c.modelo)+'<small>'+lpEsc(c.marca||'')+(c.marca?' | ':'')+'$'+formatARS(c.precio)+' c/u</small></div>';
       h+='<div class="lp-qty"><button onclick="lpCartQty(\''+c.id+'\',-1)">&#8722;</button><span>'+c.qty+'</span><button onclick="lpCartQty(\''+c.id+'\',1)">+</button></div>';
-      h+='<div class="lp-cart-sub">$'+formatARS(c.precio*c.qty)+'<small>c/IVA $'+formatARS(c.precio*1.21*c.qty)+'</small></div>';
+      h+='<div class="lp-cart-sub">$'+formatARS(c.precio*c.qty)+'<small>c/IVA+IIBB $'+formatARS(c.precio*LP_FAC*c.qty)+'</small></div>';
       h+='<button class="lp-cart-x" title="Sacar del carrito" onclick="lpCartQuitar(\''+c.id+'\')">&#10005;</button>';
       h+='</div>';
     });
-    if(dists.length>1)h+='<div style="text-align:right;font-size:13px;color:var(--muted);font-weight:700;padding-top:6px">Subtotal '+lpEsc(d)+': $'+formatARS(sub)+' | c/IVA $'+formatARS(sub*1.21)+'</div>';
+    if(dists.length>1)h+='<div style="text-align:right;font-size:13px;color:var(--muted);font-weight:700;padding-top:6px">Subtotal '+lpEsc(d)+': $'+formatARS(sub)+' | c/IVA+IIBB $'+formatARS(sub*LP_FAC)+'</div>';
   });
-  h+='<div class="lp-subtot">Baterías: $'+formatARS(t.sin)+' | c/IVA $'+formatARS(t.con)+'</div>';
+  h+='<div class="lp-subtot">Baterías: $'+formatARS(t.sin)+' | IVA 21% $'+formatARS(t.sin*LP_IVA)+' | IIBB CABA 5% $'+formatARS(t.sin*LP_IIBB)+' | c/factura $'+formatARS(t.con)+'</div>';
   var cantTxt=lpScrap===null?'cargando...':(lpScrap+' bater'+(lpScrap===1?'ía':'ías'));
   h+='<div class="lp-scrap">';
   h+='<div class="lp-scrap-txt">&#9851; SCRAP BATERÍAS<small>'+cantTxt+' del contador de Resumen × $'+formatARS(LP_SCRAP_VALOR)+' c/u</small></div>';
@@ -2575,7 +2577,7 @@ function lpRenderCarrito(){
   h+='</div>';
   h+='<div class="lp-cart-tot">';
   h+='<div class="lp-tot-box"><div class="k">Total a gastar (sin factura)'+(t.scrap?' − scrap':'')+'</div><div class="v">$'+formatARS(t.totSin)+'</div>'+lpRestoHtml(t.totSin)+'</div>';
-  h+='<div class="lp-tot-box" style="border-color:rgba(45,212,191,.4)"><div class="k">Total a gastar con factura (c/IVA 21%)'+(t.scrap?' − scrap':'')+'</div><div class="v" style="color:#2dd4bf">$'+formatARS(t.totCon)+'</div>'+lpRestoHtml(t.totCon)+'</div>';
+  h+='<div class="lp-tot-box" style="border-color:rgba(45,212,191,.4)"><div class="k">Total a gastar con factura (IVA 21% + IIBB 5%)'+(t.scrap?' − scrap':'')+'</div><div class="v" style="color:#2dd4bf">$'+formatARS(t.totCon)+'</div>'+lpRestoHtml(t.totCon)+'</div>';
   h+='</div>';
   el.innerHTML=h;
 }
@@ -2591,7 +2593,7 @@ function lpCartCopiar(){
   });
   var t=lpCartTotales();
   if(t.scrap)txt+='Scrap: '+t.scrapCant+' baterías x $'+formatARS(LP_SCRAP_VALOR)+' = -$'+formatARS(t.scrap)+'\n';
-  txt+='Total sin factura: $'+formatARS(t.totSin)+'\nTotal con IVA: $'+formatARS(t.totCon);
+  txt+='Total sin factura: $'+formatARS(t.totSin)+'\nTotal con factura (IVA 21% + IIBB CABA 5%): $'+formatARS(t.totCon);
   function ok(){toast('Pedido copiado');}
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok).catch(function(){prompt('Copiá el pedido:',txt);});}
   else prompt('Copiá el pedido:',txt);

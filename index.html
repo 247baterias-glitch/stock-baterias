@@ -37,6 +37,7 @@ h1,h2,h3,p,button,input,a{color:inherit}
 @media (min-width:900px){
   #p4,#p5,#p10,#p11{width:100vw;max-width:calc(100vw - 48px);position:relative;left:50%;transform:translateX(-50%)}
   #p10 .twrap{max-height:82vh}
+  #p12{max-width:min(1400px,calc(100vw - 48px))}
   #resV{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px;align-items:start}
   #resV .bres{margin-bottom:0}
   #resV .no-res{grid-column:1/-1}
@@ -195,6 +196,12 @@ h1,h2,h3,p,button,input,a{color:inherit}
 #p4 .ptable td:first-child,#p4 .ptable th:first-child{padding-left:14px}
 #p4 .stk-info{font-size:13.5px}
 #p4 .lp-desc-tag{font-size:13px}
+#tjRes .ptable th{padding:10px 7px;font-size:12.5px}
+#tjRes .ptable td{padding:10px 7px;font-size:13.5px;white-space:nowrap}
+#tjRes .ptable td b{font-size:13.5px}
+.ptable tr.iva-bat td{background:rgba(242,169,60,.10)!important}
+.ptable tr.iva-bat td:first-child{box-shadow:inset 4px 0 0 #f2a93c}
+.iva-badge-bat{display:inline-block;margin-top:4px;background:#f2a93c;color:#1b2330;font-family:var(--sans);font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:99px;letter-spacing:.03em;white-space:nowrap}
 .pl-lapiz{background:transparent;border:1px solid var(--border);color:var(--ink-soft);border-radius:6px;padding:1px 6px;font-size:12px;cursor:pointer;text-decoration:none;margin-left:4px}
 .pl-lapiz:hover{border-color:var(--amber);color:var(--amber)}
 .lp-margen{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-soft);flex-wrap:wrap}
@@ -511,6 +518,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="gfield"><label>El monto es</label><select id="tjModo" onchange="tjCalc()"><option value="queda">Lo que quiero que me quede</option><option value="cobro">Lo que le cobro al cliente</option></select></div>
 <div class="gfield"><label>Comisión de la tarjeta (%)</label><input type="text" inputmode="decimal" id="tjCom" oninput="tjGuardarCfg()"/></div>
 <div class="gfield"><label>Retenciones (%)</label><input type="text" inputmode="decimal" id="tjRet" oninput="tjGuardarCfg()"/></div>
+<div class="gfield"><label>Costo de la batería con IVA (factura A)</label><input type="text" inputmode="decimal" id="tjCosto" placeholder="Ej: 121.000" oninput="tjCalc()"/></div>
 </div>
 <div style="font-weight:700;font-size:13px;color:var(--muted);margin:14px 0 6px">Costo financiero por plan de cuotas (% que te descuenta el banco emisor)</div>
 <div class="iva-form" id="tjPlanes"></div>
@@ -2786,19 +2794,27 @@ function tjCalc(){
   var m=lpNum(document.getElementById('tjMonto').value);
   if(isNaN(m)||m<=0){el.innerHTML='<div class="no-res">Poné un monto para ver cuánto cobrar en cada plan.</div>';return;}
   var modo=document.getElementById('tjModo').value;
+  var costo=lpNum(document.getElementById('tjCosto').value);if(isNaN(costo)||costo<0)costo=0;
+  var ivaBat=costo*0.21/1.21,costoNeto=costo-ivaBat;
   var ivaParte=0.21/1.21;
-  var h='<div class="twrap" style="max-height:none"><table class="ptable"><thead><tr><th>Plan</th><th style="color:#f2a93c">Le cobrás al cliente</th><th>Valor cuota</th><th>Factura A: neto</th><th style="color:#f87171">IVA a pagar</th><th>Comisión</th><th>Costo cuotas</th><th>Retenciones</th><th>Te deposita</th><th style="color:#34d399">Te queda limpio</th></tr></thead><tbody>';
+  var h='<div class="twrap" style="max-height:none"><table class="ptable"><thead><tr><th>Plan</th><th style="color:#f2a93c">Le cobrás al cliente</th><th>Valor cuota</th><th>Factura A: neto</th><th>IVA venta</th>'+(costo?'<th style="color:#2dd4bf">IVA batería (crédito)</th>':'')+'<th style="color:#f87171">IVA a pagar</th><th>Comisión</th><th>Costo cuotas</th><th>Retenciones</th><th>Te deposita</th><th style="color:#34d399">Te queda limpio</th>'+(costo?'<th style="color:#34d399">Ganancia</th>':'')+'</tr></thead><tbody>';
   tjCfg.planes.forEach(function(p){
     var d=(tjCfg.com+p.t+tjCfg.ret)/100;
     var factor=1-d-ivaParte;
-    var P=modo==='queda'?(factor>0?m/factor:NaN):m;
-    if(!(P>0)){h+='<tr><td><b>'+p.c+' cuota'+(p.c===1?'':'s')+'</b></td><td colspan="9" style="color:var(--red)">Los porcentajes suman demasiado</td></tr>';return;}
+    // queda = P·(1-d) − (IVA venta − IVA batería) = P·factor + IVA batería
+    var P=modo==='queda'?(factor>0?(m-ivaBat)/factor:NaN):m;
+    if(!(P>0)){h+='<tr><td><b>'+p.c+' cuota'+(p.c===1?'':'s')+'</b></td><td colspan="12" style="color:var(--red)">Los porcentajes suman demasiado</td></tr>';return;}
     var neto=P/1.21,iva=P-neto,com=P*tjCfg.com/100,fin=P*p.t/100,ret=P*tjCfg.ret/100;
-    var dep=P-com-fin-ret,queda=dep-iva;
-    h+='<tr><td><b>'+p.c+' cuota'+(p.c===1?'':'s')+'</b></td><td style="color:#f2a93c;font-weight:800">$'+formatARS(P)+'</td><td>'+(p.c>1?p.c+' x $'+formatARS(P/p.c):'—')+'</td><td>$'+formatARS(neto)+'</td><td style="color:#f87171">$'+formatARS(iva)+'</td><td>$'+formatARS(com)+'</td><td>$'+formatARS(fin)+'</td><td>$'+formatARS(ret)+'</td><td>$'+formatARS(dep)+'</td><td style="color:#34d399;font-weight:800">$'+formatARS(queda)+'</td></tr>';
+    var ivaPagar=iva-ivaBat;
+    var dep=P-com-fin-ret,queda=dep-ivaPagar,gan=queda-costo;
+    h+='<tr><td><b>'+p.c+' cuota'+(p.c===1?'':'s')+'</b></td><td style="color:#f2a93c;font-weight:800">$'+formatARS(P)+'</td><td>'+(p.c>1?p.c+' x $'+formatARS(P/p.c):'—')+'</td><td>$'+formatARS(neto)+'</td><td>$'+formatARS(iva)+'</td>';
+    if(costo)h+='<td style="color:#2dd4bf">−$'+formatARS(ivaBat)+'</td>';
+    h+='<td style="color:#f87171;font-weight:700">'+(ivaPagar>=0?'$'+formatARS(ivaPagar):'a favor $'+formatARS(-ivaPagar))+'</td><td>$'+formatARS(com)+'</td><td>$'+formatARS(fin)+'</td><td>$'+formatARS(ret)+'</td><td>$'+formatARS(dep)+'</td><td style="color:#34d399;font-weight:800">$'+formatARS(queda)+'</td>';
+    if(costo)h+='<td style="color:'+(gan>=0?'#34d399':'var(--red)')+';font-weight:800">$'+formatARS(gan)+'</td>';
+    h+='</tr>';
   });
   h+='</tbody></table></div>';
-  h+='<div style="font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.5">"Te queda limpio" = lo que te deposita el banco menos el IVA que vas a pagar en la DDJJ. La comisión de la tarjeta suele venir con IVA, que es crédito fiscal y podés descontar en la DDJJ. Las retenciones de IVA/IIBB que te hacen se recuperan después a cuenta de impuestos. Los % por cuotas son de ejemplo: cargá los de tu banco o procesadora; quedan guardados en este dispositivo.</div>';
+  h+='<div style="font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.5">"IVA a pagar" = IVA de la venta − IVA de la batería que compraste con factura A (crédito fiscal). "Te queda limpio" = lo que te deposita el banco menos ese IVA a pagar. '+(costo?'"Ganancia" = te queda limpio − lo que pagaste la batería ($'+formatARS(costo)+' con IVA; neto $'+formatARS(costoNeto)+'). ':'Cargá el costo de la batería para descontar su IVA y ver la ganancia. ')+'La comisión de la tarjeta suele venir con IVA, que también es crédito fiscal. Las retenciones de IVA/IIBB se recuperan después a cuenta de impuestos. Los % por cuotas quedan guardados en este dispositivo.</div>';
   el.innerHTML=h;
 }
 var ivaData=[],ivaTipo='compra',ivaMes=null,ivaAnio=null,ivaLeidoDatos=null,ivaFotoId='';
@@ -3024,6 +3040,9 @@ function ivaRenderPagos(){
   h+='<div style="font-size:12px;color:var(--muted);margin-top:6px">La DDJJ de cada mes se presenta el mes siguiente y se paga al contado '+ivaDesfase+' mes'+(ivaDesfase===1?'':'es')+' después del período. Si cargaste la DDJJ, se usa su monto real (DDJJ); si no, se calcula con las facturas.</div>';
   document.getElementById('ivaPagos').innerHTML=h;
 }
+// Compras de baterías: facturas de los distribuidores (4K, Telmo, Bari, Dimac, etc.) o de razones sociales con "BATER"
+var IVA_BAT_RE=/\b(4\s?K|CUATRO\s?K|TELMO|BARI|DIMAC|OCEAN\s?BAT|RONCONI|VARTA|MOURA|WILLARD)\b|BATER/i;
+function ivaEsBateria(x){return x.tipo!=='venta'&&IVA_BAT_RE.test(String(x.detalle||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''));}
 function ivaRender(){
   var hoy=new Date(),h='';
   for(var i=0;i<6;i++){
@@ -3047,13 +3066,15 @@ function ivaRender(){
   var djs=(typeof ddjjData!=='undefined'?ddjjData:[]).filter(function(x){return x.tipo==='IVA'&&x.periodo===perDj;});
   var dj=null;
   if(djs.length){dj={deb:0,cre:0,monto:0};djs.forEach(function(x){dj.deb+=x.debito||0;dj.cre+=x.credito||0;dj.monto+=x.monto;});if(!dj.deb&&!dj.cre)dj.sinDet=true;}
+  var bat={n:0,iva:0,tot:0};lista.forEach(function(x){if(ivaEsBateria(x)){bat.n++;bat.iva+=x.iva;bat.tot+=x.total;}});
+  var batTxt=bat.n?'<div class="s" style="color:#f2a93c;margin-top:4px">&#128267; Baterías: '+bat.n+' factura'+(bat.n===1?'':'s')+' · IVA $'+formatARS(bat.iva)+' · total $'+formatARS(bat.tot)+'</div>':'';
   var appTxt=function(n,tot){return n+' factura'+(n===1?'':'s')+' en la app | total $'+formatARS(tot);};
   var r='';
   if(dj&&!dj.sinDet){
-    r+='<div class="iva-box"><div class="k">IVA COMPRAS (crédito fiscal) · DDJJ</div><div class="v" style="color:#2dd4bf">$'+formatARS(dj.cre)+'</div><div class="s">Según la DDJJ presentada · '+appTxt(t.nc,t.compraTot)+(t.nc?' (IVA $'+formatARS(t.compraIva)+')':'')+'</div></div>';
+    r+='<div class="iva-box"><div class="k">IVA COMPRAS (crédito fiscal) · DDJJ</div><div class="v" style="color:#2dd4bf">$'+formatARS(dj.cre)+'</div><div class="s">Según la DDJJ presentada · '+appTxt(t.nc,t.compraTot)+(t.nc?' (IVA $'+formatARS(t.compraIva)+')':'')+'</div>'+batTxt+'</div>';
     r+='<div class="iva-box"><div class="k">IVA VENTAS (débito fiscal) · DDJJ</div><div class="v" style="color:var(--amber)">$'+formatARS(dj.deb)+'</div><div class="s">Según la DDJJ presentada · '+appTxt(t.nv,t.ventaTot)+(t.nv?' (IVA $'+formatARS(t.ventaIva)+')':'')+'</div></div>';
   }else{
-    r+='<div class="iva-box"><div class="k">IVA COMPRAS (crédito fiscal)</div><div class="v" style="color:#2dd4bf">$'+formatARS(t.compraIva)+'</div><div class="s">'+t.nc+' factura'+(t.nc===1?'':'s')+' | total $'+formatARS(t.compraTot)+'</div></div>';
+    r+='<div class="iva-box"><div class="k">IVA COMPRAS (crédito fiscal)</div><div class="v" style="color:#2dd4bf">$'+formatARS(t.compraIva)+'</div><div class="s">'+t.nc+' factura'+(t.nc===1?'':'s')+' | total $'+formatARS(t.compraTot)+'</div>'+batTxt+'</div>';
     r+='<div class="iva-box"><div class="k">IVA VENTAS (débito fiscal)</div><div class="v" style="color:var(--amber)">$'+formatARS(t.ventaIva)+'</div><div class="s">'+t.nv+' factura'+(t.nv===1?'':'s')+' | total $'+formatARS(t.ventaTot)+'</div></div>';
   }
   if(dj)saldo=dj.monto;
@@ -3064,7 +3085,8 @@ function ivaRender(){
   ivaRenderPagos();
   var b='';
   lista.forEach(function(x){
-    b+='<tr><td>'+fmtFecha(x.fecha)+'</td><td><span class="iva-badge '+x.tipo+'">'+(x.tipo==='venta'?'VENTA':'COMPRA')+'</span></td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td>$'+formatARS(x.neto)+'</td><td style="font-weight:700">$'+formatARS(x.iva)+'</td><td>$'+formatARS(x.total)+'</td><td>'+(x.foto_id?'<a href="https://drive.google.com/file/d/'+x.foto_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">&#128247; Ver</a>':'<span style="color:var(--muted2)">—</span>')+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ivaEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';
+    var bat=ivaEsBateria(x);
+    b+='<tr'+(bat?' class="iva-bat"':'')+'><td>'+fmtFecha(x.fecha)+'</td><td><span class="iva-badge '+x.tipo+'">'+(x.tipo==='venta'?'VENTA':'COMPRA')+'</span>'+(bat?'<br><span class="iva-badge-bat">&#128267; BATERÍAS</span>':'')+'</td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td>$'+formatARS(x.neto)+'</td><td style="font-weight:700">$'+formatARS(x.iva)+'</td><td>$'+formatARS(x.total)+'</td><td>'+(x.foto_id?'<a href="https://drive.google.com/file/d/'+x.foto_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">&#128247; Ver</a>':'<span style="color:var(--muted2)">—</span>')+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ivaEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';
   });
   document.getElementById('ivaBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin facturas en '+mesTxt+'</td></tr>';
   ddjjRender();

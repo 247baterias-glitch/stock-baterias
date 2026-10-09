@@ -277,6 +277,11 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .lp-ren{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;font-size:12px;line-height:1;padding:3px 6px;margin-left:6px;cursor:pointer;vertical-align:middle}
 .lp-ren:hover{color:var(--amber);border-color:var(--amber)}
 .rm-box{margin-top:16px}
+.bm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0 12px}.bm-grid .bm-wide{grid-column:1/-1}
+@media (min-width:900px){.bm-grid{grid-template-columns:repeat(4,1fr)}.bm-grid .bm-wide{grid-column:span 2}}
+.bm-bat{margin-top:4px;font-size:15px}.bm-bat b{color:var(--amber)}.bm-eq{color:var(--muted);font-size:13px;margin-left:10px}
+.bm-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.bm-tag{background:var(--border2);border-radius:99px;padding:3px 10px;font-size:12.5px;font-weight:700;color:var(--ink)}
+.bm-nota{margin-top:6px;font-size:13px;color:var(--muted);font-style:italic}.bm-cuenta{font-size:13px;color:var(--muted);margin:0 2px 8px}
 .mb-lupa{display:flex;align-items:center;gap:8px}.mb-lupa span{font-size:20px;opacity:.8}.mb-lupa input{flex:1}
 .cm-mes{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}.cm-mes>b{font-size:16px;min-width:140px;text-align:center}.cm-mes span{margin-left:auto;color:var(--muted);font-size:14px}.cm-mes span b{color:var(--ink)}
 #mvCompras .lp-ib{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;text-decoration:none}
@@ -502,17 +507,17 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button class="ptab" id="mtab5" onclick="cambiarMotoTab(5)">&#128230; Compras MOTO</button>
 </div>
 <div id="mvPrecios">
+<div class="mc" id="mvCtrl" style="margin-bottom:12px"></div>
 <div class="sbox"><input type="text" id="busM" placeholder="Buscar modelo..." oninput="filtrarMoto()"/></div>
 <div class="twrap"><table class="ptable">
-<thead><tr><th>Modelo</th><th>Costo</th><th>Venta (envio)</th><th style="color:#15803d">Venta c/IVA</th><th style="color:#0e7490">Retiro</th></tr></thead><tbody id="motoBody"></tbody>
+<thead id="motoHead"></thead><tbody id="motoBody"></tbody>
 </table></div>
 </div>
 <div id="mvBusc" class="hidden">
 <div class="sbox mb-lupa"><span>&#128269;</span><input type="text" id="busMM" placeholder="Buscar moto: Wave 110, Titan 150, YBR 125..." oninput="bmBuscar()"/></div>
 <button class="aviso-add" onclick="bmNuevoToggle(true)">+ Agregar moto</button>
 <div id="bmNuevo" class="bres hidden">
-<div class="gfield"><label>Moto</label><input type="text" id="bmNuevoV" placeholder="Ej: Honda Wave 110"/></div>
-<div class="gfield"><label>Baterías que lleva</label><input type="text" id="bmNuevoB" placeholder="Ej: YTX5L-BS (BTX5L) / 12N5-3B"/></div>
+<div id="bmNuevoCampos"></div>
 <div style="display:flex;gap:8px"><button class="bp" id="bmNuevoBtn" onclick="bmAgregar()">Guardar</button><button class="bs" onclick="bmNuevoToggle(false)">Cancelar</button></div>
 </div>
 <div id="resMM"><div class="no-res">Escribí el modelo de la moto</div></div>
@@ -757,7 +762,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div style="font-size:19px;font-weight:700;margin-bottom:14px" id="smTitulo">Colocación batería de moto</div>
 <div class="col-grid">
 <div class="gfield"><label>Fecha</label><input type="date" id="smFecha"/></div>
-<div class="gfield"><label>Moto</label><input type="text" id="smMoto" placeholder="Ej: Honda Wave 110"/></div>
+<div class="gfield"><label>Moto</label><input type="text" id="smMoto" placeholder="Ej: Honda Wave 110" list="smMotoList" oninput="smSugerirMoto()"/><datalist id="smMotoList"></datalist></div>
 <div class="gfield"><label>Año moto</label><input type="text" id="smAnio" placeholder="Ej: 2019"/></div>
 <div class="gfield"><label>Cilindrada</label><input type="text" id="smCil" placeholder="Ej: 110cc"/></div>
 <div class="gfield"><label>Dominio (patente)</label><input type="text" id="smDominio" placeholder="Ej: A123BCD"/></div>
@@ -1138,75 +1143,108 @@ function cambiarMotoTab(n){
   else if(n===4)bmCargar();
   else cmCargar();
 }
-// ---- Buscador de baterías MOTO (hoja "Buscador Moto") ----
+// ---- Buscador de baterías MOTO (hoja "Buscador Moto": moto, batería, equivalente, amperaje, borne, nota) ----
 var BUSC_MOTO=[],bmCargado=false,bmEditFila=null;
+var BM_CAMPOS=[['v','Moto','Ej: Honda Wave 110'],['b','Batería','Ej: YTX5L-BS'],['eq','Equivalente','Ej: BTX5L / MA5D'],['ah','Amperaje','Ej: 5 Ah'],['borne','Borne','Ej: Derecho / Izquierdo +'],['nota','Nota (opcional)','Ej: la HP es un toque más baja']];
+function bmCamposHtml(pref,x){
+  x=x||{};
+  return '<div class="bm-grid">'+BM_CAMPOS.map(function(c){
+    return '<div class="gfield'+(c[0]==='v'||c[0]==='nota'?' bm-wide':'')+'"><label>'+c[1]+'</label><input type="text" id="'+pref+c[0]+'" value="'+lpEsc(x[c[0]]||'')+'" placeholder="'+c[2]+'"/></div>';
+  }).join('')+'</div>';
+}
+function bmLeerCampos(pref){var o={};BM_CAMPOS.forEach(function(c){o[c[0]]=document.getElementById(pref+c[0]).value.trim();});return o;}
 function bmCargar(){
   bmEditFila=null;bmNuevoToggle(false);
-  if(bmCargado){bmBuscar();return;}
+  if(bmCargado){bmBuscar();return Promise.resolve();}
   document.getElementById('resMM').innerHTML='<div class="no-res">Cargando...</div>';
-  apiPost('buscadorGet',{moto:true}).then(function(r){
+  return apiPost('buscadorGet',{moto:true}).then(function(r){
     if(!r.ok){document.getElementById('resMM').innerHTML='<div class="no-res">Error: '+lpEsc(r.error)+'</div>';return;}
-    BUSC_MOTO=(r.data||[]).map(function(x){return [x.v,x.b,x.fila];});bmCargado=true;bmBuscar();
-    setTimeout(function(){var i=document.getElementById('busMM');if(i)i.focus();},50);
+    BUSC_MOTO=r.data||[];bmCargado=true;bmBuscar();
+    setTimeout(function(){var i=document.getElementById('busMM');if(i&&motoTabActual===4)i.focus();},50);
   }).catch(function(e){document.getElementById('resMM').innerHTML='<div class="no-res">Error: '+lpEsc(e.message)+'</div>';});
 }
+function bmTexto(x){return [x.v,x.b,x.eq,x.ah,x.borne,x.nota].join(' ').toLowerCase();}
 function bmBuscar(){
   var b=document.getElementById('busMM').value.toLowerCase().trim();
   var el=document.getElementById('resMM');
-  if(b.length<2){el.innerHTML='<div class="no-res">Escribí el modelo de la moto'+(BUSC_MOTO.length?' ('+BUSC_MOTO.length+' cargadas)':'')+'</div>';return;}
-  var palabras=b.split(/\s+/);
-  var res=BUSC_MOTO.filter(function(x){var t=(String(x[0])+' '+String(x[1])).toLowerCase();return palabras.every(function(p){return t.indexOf(p)!==-1;});});
+  var res;
+  if(b.length<2){
+    if(!BUSC_MOTO.length){el.innerHTML='<div class="no-res">Escribí el modelo de la moto</div>';return;}
+    res=BUSC_MOTO.slice().sort(function(a,c){return String(a.v).localeCompare(String(c.v),'es');});
+  }else{
+    var palabras=b.split(/\s+/);
+    res=BUSC_MOTO.filter(function(x){var t=bmTexto(x);return palabras.every(function(p){return t.indexOf(p)!==-1;});});
+  }
   if(!res.length){el.innerHTML='<div class="no-res">No se encontraron resultados. Tocá "+ Agregar moto" para cargarla.</div>';return;}
-  var h='';
+  var h=b.length<2?'<div class="bm-cuenta">'+BUSC_MOTO.length+' motos cargadas</div>':'';
   res.forEach(function(x){
-    if(bmEditFila===x[2]){
-      h+='<div class="bres"><div class="gfield"><label>Moto</label><input type="text" id="bmEdV" value="'+lpEsc(x[0])+'"/></div>';
-      h+='<div class="gfield"><label>Baterías que lleva</label><input type="text" id="bmEdB" value="'+lpEsc(x[1])+'"/></div>';
-      h+='<div style="display:flex;gap:8px"><button class="bp" id="bmEdBtn" onclick="bmGuardar('+x[2]+')">Guardar cambios</button><button class="bs" onclick="bmEditFila=null;bmBuscar()">Cancelar</button></div></div>';
+    if(bmEditFila===x.fila){
+      h+='<div class="bres">'+bmCamposHtml('bmEd',x);
+      h+='<div style="display:flex;gap:8px"><button class="bp" id="bmEdBtn" onclick="bmGuardar('+x.fila+')">Guardar cambios</button><button class="bs" onclick="bmEditFila=null;bmBuscar()">Cancelar</button></div></div>';
       return;
     }
-    h+='<div class="bres bres-flex"><div style="flex:1;min-width:0"><div class="bres-v">'+lpEsc(x[0])+'</div><div class="bres-b">'+lpEsc(x[1])+'</div></div>';
-    h+='<div class="lp-row-act"><button title="Modificar" onclick="bmEditar('+x[2]+')">&#9998;</button><button title="Eliminar" style="color:#f87171" onclick="bmEliminar('+x[2]+')">&#10005;</button></div></div>';
+    h+='<div class="bres bres-flex"><div style="flex:1;min-width:0"><div class="bres-v">'+lpEsc(x.v)+'</div>';
+    h+='<div class="bm-bat"><b>'+lpEsc(x.b||'—')+'</b>'+(x.eq?'<span class="bm-eq">equivale: '+lpEsc(x.eq)+'</span>':'')+'</div>';
+    var tags=[];
+    if(x.ah)tags.push('<span class="bm-tag">&#9889; '+lpEsc(x.ah)+'</span>');
+    if(x.borne)tags.push('<span class="bm-tag">&#10133; Borne '+lpEsc(x.borne)+'</span>');
+    if(tags.length)h+='<div class="bm-tags">'+tags.join('')+'</div>';
+    if(x.nota)h+='<div class="bm-nota">'+lpEsc(x.nota)+'</div>';
+    h+='</div><div class="lp-row-act"><button title="Modificar" onclick="bmEditar('+x.fila+')">&#9998;</button><button title="Eliminar" style="color:#f87171" onclick="bmEliminar('+x.fila+')">&#10005;</button></div></div>';
   });
   el.innerHTML=h;
 }
-function bmFila(f){return BUSC_MOTO.filter(function(x){return x[2]===f;})[0];}
-function bmEditar(f){bmEditFila=f;bmBuscar();var i=document.getElementById('bmEdV');if(i)i.focus();}
+function bmFila(f){return BUSC_MOTO.filter(function(x){return x.fila===f;})[0];}
+function bmEditar(f){bmEditFila=f;bmBuscar();var i=document.getElementById('bmEdv');if(i)i.focus();}
 function bmGuardar(f){
   var x=bmFila(f);if(!x)return;
-  var v=document.getElementById('bmEdV').value.trim(),bat=document.getElementById('bmEdB').value.trim();
-  if(!v)return toast('Completá la moto');
+  var d=bmLeerCampos('bmEd');
+  if(!d.v)return toast('Completá la moto');
   var btn=document.getElementById('bmEdBtn');btn.disabled=true;btn.textContent='Guardando...';
-  apiPost('buscadorEditar',{moto:true,fila:f,v0:x[0],v:v,b:bat}).then(function(r){
-    if(r.ok){x[0]=v;x[1]=bat;bmEditFila=null;bmBuscar();toast('Moto actualizada');}
+  apiPost('buscadorEditar',Object.assign({moto:true,fila:f,v0:x.v},d)).then(function(r){
+    if(r.ok){Object.assign(x,d);bmEditFila=null;bmBuscar();toast('Moto actualizada');}
     else{toast('Error: '+r.error);btn.disabled=false;btn.textContent='Guardar cambios';}
   }).catch(function(e){toast('Error: '+e.message);btn.disabled=false;btn.textContent='Guardar cambios';});
 }
 function bmEliminar(f){
   var x=bmFila(f);if(!x)return;
-  if(!confirm('¿Eliminar "'+x[0]+'" del buscador de motos?'))return;
-  apiPost('buscadorEliminar',{moto:true,fila:f,v0:x[0]}).then(function(r){
+  if(!confirm('¿Eliminar "'+x.v+'" del buscador de motos?'))return;
+  apiPost('buscadorEliminar',{moto:true,fila:f,v0:x.v}).then(function(r){
     if(!r.ok)return toast('Error: '+r.error);
-    BUSC_MOTO=BUSC_MOTO.filter(function(y){return y[2]!==f;});
-    BUSC_MOTO.forEach(function(y){if(y[2]>f)y[2]--;});
+    BUSC_MOTO=BUSC_MOTO.filter(function(y){return y.fila!==f;});
+    BUSC_MOTO.forEach(function(y){if(y.fila>f)y.fila--;});
     bmBuscar();toast('Moto eliminada');
   }).catch(function(e){toast('Error: '+e.message);});
 }
-function bmNuevoToggle(m){
+function bmNuevoToggle(m,pre){
   var el=document.getElementById('bmNuevo');if(!el)return;
   el.classList.toggle('hidden',!m);
-  if(m){document.getElementById('bmNuevoV').value=document.getElementById('busMM').value;document.getElementById('bmNuevoB').value='';document.getElementById('bmNuevoV').focus();}
+  if(m){
+    var bus=document.getElementById('busMM');
+    document.getElementById('bmNuevoCampos').innerHTML=bmCamposHtml('bmN',pre||{v:bus?bus.value:''});
+    document.getElementById('bmNv').focus();
+  }
 }
 function bmAgregar(){
-  var v=document.getElementById('bmNuevoV').value.trim(),bat=document.getElementById('bmNuevoB').value.trim();
-  if(!v)return toast('Completá la moto');
+  var d=bmLeerCampos('bmN');
+  if(!d.v)return toast('Completá la moto');
   var btn=document.getElementById('bmNuevoBtn');btn.disabled=true;btn.textContent='Guardando...';
-  apiPost('buscadorAgregar',{moto:true,v:v,b:bat}).then(function(r){
+  apiPost('buscadorAgregar',Object.assign({moto:true},d)).then(function(r){
     btn.disabled=false;btn.textContent='Guardar';
     if(!r.ok)return toast('Error: '+r.error);
-    BUSC_MOTO.push([v,bat,r.fila]);bmNuevoToggle(false);
-    document.getElementById('busMM').value=v;bmBuscar();toast('Moto agregada');
+    d.fila=r.fila;BUSC_MOTO.push(d);bmNuevoToggle(false);
+    document.getElementById('busMM').value=d.v;bmBuscar();toast('Moto agregada');
   }).catch(function(e){btn.disabled=false;btn.textContent='Guardar';toast('Error: '+e.message);});
+}
+// Al registrar un servicio de moto: si esa moto no está en el buscador, se agrega con la batería colocada
+function bmRegistrarColocada(moto,bat){
+  var p=bmCargado?Promise.resolve():apiPost('buscadorGet',{moto:true}).then(function(r){if(r.ok){BUSC_MOTO=r.data||[];bmCargado=true;}});
+  return p.then(function(){
+    var k=String(moto).trim().toLowerCase();
+    if(!k||BUSC_MOTO.some(function(x){return String(x.v).trim().toLowerCase()===k;}))return;
+    var d={v:moto,b:bat,eq:'',ah:'',borne:'',nota:'Colocada el '+fmtFecha(hoyStr())};
+    return apiPost('buscadorAgregar',Object.assign({moto:true},d)).then(function(r){if(r.ok){d.fila=r.fila;BUSC_MOTO.push(d);toast('Se agregó '+moto+' al buscador de motos');}});
+  }).catch(function(){});
 }
 // ---- Compras MOTO (tickets) ----
 var cmData=[],cmArch={id:'',mime:''},cmMes=null,cmAnio=null,cmCargado=false;
@@ -1301,18 +1339,44 @@ function cmEliminar(id){
   }).catch(function(e){toast('Error: '+e.message);});
 }
 function formatARS(n){return n.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
+// Moto: venta con envío = costo + margen de la marca (editable). Retirando por depósito = venta − $12.000
+var RETIRO_DESC=12000;
+var MOTO_TABS=['Bosch','High Power','Yuasa'];
+function motoLista(){return motoTabActual===1?PBOSCH_MOTO:motoTabActual===2?PHIGHPOWER_MOTO:PYUASA_MOTO;}
+function motoKey(){return 'MOTO '+MOTO_TABS[motoTabActual-1];}
+function motoMargenDef(lista){
+  var c={},best=48000,max=0;
+  lista.forEach(function(x){if(x.pendiente)return;var d=Math.round(plNum(x.v)-plNum(x.c));if(d>0){c[d]=(c[d]||0)+1;if(c[d]>max){max=c[d];best=d;}}});
+  return best;
+}
+function motoMargen(){var m=(plCfg.marcas||{})[motoKey()]||{};return m.margen!==undefined?Number(m.margen):motoMargenDef(motoLista());}
+function motoGuardarMargen(){
+  var mg=lpNum(document.getElementById('mvMargen').value);
+  if(isNaN(mg)||mg<0)return toast('Margen inválido');
+  plCfg.marcas[motoKey()]={margen:mg};
+  apiPost('plSet',{cfg:plCfg}).then(function(r){
+    if(!r.ok)return toast('Error: '+r.error);
+    plCfg=r.cfg||plCfg;filtrarMoto();toast('Margen guardado para '+MOTO_TABS[motoTabActual-1]);
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+var motoCfgCargado=false;
 function filtrarMoto(){
+  if(!motoCfgCargado){motoCfgCargado=true;apiPost('plGet').then(function(r){if(r&&r.ok&&r.cfg){plCfg={marcas:r.cfg.marcas||{},precios:r.cfg.precios||{}};plCargado=true;if(motoTabActual<=3)filtrarMoto();}}).catch(function(){});}
   var b=document.getElementById('busM').value.toLowerCase();
-  var lista=motoTabActual===1?PBOSCH_MOTO:motoTabActual===2?PHIGHPOWER_MOTO:PYUASA_MOTO;
+  var lista=motoLista(),mg=motoMargen(),mgDef=motoMargenDef(lista);
+  document.getElementById('mvCtrl').innerHTML='<div class="lp-margen"><span>Venta de '+MOTO_TABS[motoTabActual-1]+' = costo + $</span><input type="text" inputmode="numeric" id="mvMargen" value="'+formatMoney(mg)+'" onkeydown="if(event.key===\'Enter\')motoGuardarMargen()"/><button class="bs" onclick="motoGuardarMargen()">Guardar</button><span style="font-size:12.5px;color:var(--muted)">Retirando por depósito = venta con envío − $'+formatMoney(RETIRO_DESC)+'</span></div>';
+  document.getElementById('motoHead').innerHTML='<tr><th>Modelo</th><th>Costo</th><th>Venta con envío (+$'+formatMoney(mg)+')</th><th style="color:#15803d">Venta c/IVA</th><th style="color:#0e7490">Retirando por depósito</th></tr>';
   var h='';
   lista.filter(function(x){return x.m.toLowerCase().indexOf(b)!==-1;}).forEach(function(x){
     if(x.pendiente){
       h+='<tr><td><b>'+x.m+'</b><div class="stk-info" style="color:#c2540c">A confirmar (precio: '+x.c+')</div></td><td>-</td><td>-</td><td>-</td><td>-</td></tr>';
-    }else{
-      var vNum=parseFloat(String(x.v).replace(/\./g,'').replace(',','.'))||0;
-      var vIva='$'+formatARS(vNum*1.21);
-      h+='<tr><td><b>'+x.m+'</b></td><td>$'+x.c+'</td><td class="pventa">$'+x.v+'</td><td style="font-weight:700;color:#15803d">'+vIva+'</td><td style="color:#0e7490;font-weight:700">$'+x.r+'</td></tr>';
+      return;
     }
+    var costo=plNum(x.c);
+    // Modelos que en la lista original tenían una diferencia distinta al margen general la conservan
+    var extra=Math.round(plNum(x.v)-costo)-mgDef;if(!(plNum(x.v)>0)||Math.abs(extra)<1)extra=0;
+    var venta=costo+mg+extra;
+    h+='<tr><td><b>'+x.m+'</b></td><td>$'+x.c+'</td><td class="pventa">$'+formatMoney(venta)+(extra?' <span style="color:var(--muted);font-size:12px">('+(extra>0?'+':'−')+'$'+formatMoney(Math.abs(extra))+')</span>':'')+'</td><td style="font-weight:700;color:#15803d">$'+formatARS(venta*1.21)+'</td><td style="color:#0e7490;font-weight:700">$'+formatMoney(venta-RETIRO_DESC)+'</td></tr>';
   });
   document.getElementById('motoBody').innerHTML=h||'<tr><td colspan="5" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';
 }
@@ -1423,7 +1487,7 @@ function filtrarPrecios(){
   var lista=plLista(),c=plCfgMarca(),f=lpFactorDesc(c.pct),hayDesc=f!==1,mg=c.margen;
   var mgDef=plMargenDefault(lista);
   plRenderCtrl();
-  document.getElementById('preciosHead').innerHTML='<tr><th>Marca</th><th>Modelo</th><th>Precio</th>'+(hayDesc?'<th>Desc.</th><th>Costo c/desc.</th>':'')+'<th style="color:#2dd4bf">Costo c/IVA (21%)</th><th style="color:#15803d">Venta (+$'+formatMoney(mg)+')</th><th style="color:#15803d">Venta c/IVA (21%)</th><th style="color:#dc2626">Si llama decidido</th><th>Stock</th></tr>';
+  document.getElementById('preciosHead').innerHTML='<tr><th>Marca</th><th>Modelo</th><th>Precio</th>'+(hayDesc?'<th>Desc.</th><th>Costo c/desc.</th>':'')+'<th style="color:#2dd4bf">Costo c/IVA (21%)</th><th style="color:#15803d">Venta con envío (+$'+formatMoney(mg)+')</th><th style="color:#15803d">Venta c/IVA (21%)</th><th style="color:#0e7490" title="Venta con envío − $'+formatMoney(RETIRO_DESC)+'">Retirando por depósito</th><th style="color:#dc2626">Si llama decidido</th><th>Stock</th></tr>';
   var h='';
   lista.forEach(function(x,i){
     if(x.m.toLowerCase().indexOf(b)===-1)return;
@@ -1442,10 +1506,10 @@ function filtrarPrecios(){
     h+='<tr><td>'+lpEsc(plMarca().toUpperCase())+'</td><td><b>'+lpEsc(x.m)+'</b>'+badge+'</td>';
     h+='<td style="white-space:nowrap"><span'+(hayDesc?' style="color:var(--muted);text-decoration:line-through"':' style="font-weight:700"')+'>$'+formatARS(precio)+'</span>'+(corr?' <span title="Precio corregido a mano" style="color:var(--amber);text-decoration:none">●</span>':'')+'</td>';
     if(hayDesc)h+='<td><span class="lp-desc-tag">'+lpDescTexto(c.pct)+'</span></td><td style="font-weight:800">$'+formatARS(costo)+'</td>';
-    h+='<td style="font-weight:700;color:#2dd4bf">$'+formatARS(costo*1.21)+'</td><td class="pventa" style="white-space:nowrap"'+(extra?' title="Este modelo tiene $'+formatARS(extra)+' extra sobre el margen"':'')+'>$'+formatARS(venta)+(vMan?' <span title="Venta puesta a mano" style="color:var(--amber)">●</span>':'')+(extra?' <span style="color:var(--muted);font-size:12px">('+(extra>0?'+':'−')+'$'+formatMoney(Math.abs(extra))+')</span>':'')+' <button class="pl-lapiz" title="Modificar precio de venta" onclick="plEditarVenta('+i+')">&#9998;</button></td><td style="font-weight:700;color:#15803d">$'+formatARS(venta*1.21)+'</td><td class="pnoche">$'+formatARS(venta+8000)+'</td>';
+    h+='<td style="font-weight:700;color:#2dd4bf">$'+formatARS(costo*1.21)+'</td><td class="pventa" style="white-space:nowrap"'+(extra?' title="Este modelo tiene $'+formatARS(extra)+' extra sobre el margen"':'')+'>$'+formatARS(venta)+(vMan?' <span title="Venta puesta a mano" style="color:var(--amber)">●</span>':'')+(extra?' <span style="color:var(--muted);font-size:12px">('+(extra>0?'+':'−')+'$'+formatMoney(Math.abs(extra))+')</span>':'')+' <button class="pl-lapiz" title="Modificar precio de venta" onclick="plEditarVenta('+i+')">&#9998;</button></td><td style="font-weight:700;color:#15803d">$'+formatARS(venta*1.21)+'</td><td style="font-weight:700;color:#0e7490">$'+formatARS(venta-RETIRO_DESC)+'</td><td class="pnoche">$'+formatARS(venta+8000)+'</td>';
     h+='<td><div class="stk-info '+cls+'" style="margin-top:0">'+stk+'</div></td></tr>';
   });
-  document.getElementById('preciosBody').innerHTML=h||'<tr><td colspan="10" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';
+  document.getElementById('preciosBody').innerHTML=h||'<tr><td colspan="11" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';
 }
 function buscarVehiculo(){
   var b=document.getElementById('busV').value.toLowerCase().trim();
@@ -1916,6 +1980,8 @@ function abrirMotoOverlay(){
   document.getElementById('smFecha').value=hoyStr();
   ['smMoto','smAnio','smCil','smDominio','smBat','smCarga','smTel','smPrecio'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('smVigencia').value='12 meses';
+  var llenarMotos=function(){document.getElementById('smMotoList').innerHTML=BUSC_MOTO.map(function(x){return '<option value="'+lpEsc(x.v)+'">'+lpEsc(x.b||'')+'</option>';}).join('');};
+  if(bmCargado)llenarMotos();else apiPost('buscadorGet',{moto:true}).then(function(r){if(r.ok){BUSC_MOTO=r.data||[];bmCargado=true;llenarMotos();}}).catch(function(){});
   document.getElementById('smBatList').innerHTML=smListaMotos().map(function(x){return '<option value="'+lpEsc(x.m)+'">'+lpEsc(x.marca)+'</option>';}).join('');
   document.querySelectorAll('#motoOverlay .gfield .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
   document.getElementById('smCuentaField').style.display='none';
@@ -1931,6 +1997,12 @@ function smSet(k,v,btn){
     document.getElementById('smCuentaField').style.display=v==='Transferencia'?'block':'none';
     if(v!=='Transferencia'){smVal.cuenta='';document.querySelectorAll('#smCuentaBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});}
   }
+}
+function smSugerirMoto(){
+  var v=document.getElementById('smMoto').value.trim().toLowerCase();
+  var x=BUSC_MOTO.filter(function(y){return String(y.v).trim().toLowerCase()===v;})[0];
+  var b=document.getElementById('smBat');
+  if(x&&x.b&&!b.value){b.value=x.b;smSugerirPrecio();toast('Batería del buscador: '+x.b+(x.borne?' · borne '+x.borne:''));}
 }
 function smBuscarBat(t){t=String(t||'').trim().toUpperCase();return smListaMotos().filter(function(x){return x.m.toUpperCase()===t;})[0];}
 function smSugerirPrecio(){
@@ -1965,6 +2037,7 @@ function confirmarServicioMoto(){
     sync('Sincronizado');
     apiPost('smAgregar',{fecha:fecha,moto:moto,anio:anio,cilindrada:cil,dominio:d.dominio,bateria:bat,marca:marca,precio:precio,forma_pago:smVal.pago,cuenta:smVal.cuenta,ubicacion:smVal.ubi,tecnico:camExtra.n,telefono:d.tel,vigencia:d.vigencia,carga:d.carga}).catch(function(){});
     cerrarMotoOverlay();toast('Servicio de moto guardado');volverInicio();
+    bmRegistrarColocada(moto,bat);
     generarGarantiaClick({fecha:fecha,vehiculo:moto,anio_vehiculo:anio,dominio:d.dominio,bateria:marca||'Moto',modelo_bateria:bat,vigencia:d.vigencia,combustible:'Nafta',carga_alternador:d.carga,telefono_cliente:d.tel});
   }).catch(function(e){confirmandoMoto=false;btn.disabled=false;btn.textContent='Confirmar';sync('Error');toast('Error: '+e.message);});
 }

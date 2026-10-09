@@ -202,19 +202,6 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .ptable tr.iva-bat td{background:rgba(242,169,60,.10)!important}
 .ptable tr.iva-bat td:first-child{box-shadow:inset 4px 0 0 #f2a93c}
 .iva-badge-bat{display:inline-block;margin-top:4px;background:#f2a93c;color:#1b2330;font-family:var(--sans);font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:99px;letter-spacing:.03em;white-space:nowrap}
-.ct-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.ct-cal-h{text-align:center;font-size:11px;font-weight:800;color:var(--muted)}
-.ct-cal-d{min-height:46px;border:1px solid var(--border2);border-radius:8px;padding:4px 5px;font-size:12px;display:flex;flex-direction:column;justify-content:space-between;background:var(--bg)}
-.ct-cal-d span{font-weight:700;color:var(--ink-soft)}
-.ct-cal-d small{font-size:11px;font-weight:800;text-align:right}
-.ct-cal-d.pas{opacity:.45}
-.ct-cal-d.hoy{border-color:#2dd4bf}
-.ct-cal-d.plan{background:rgba(242,169,60,.14);border-color:rgba(242,169,60,.7);opacity:1}
-.ct-cal-d.plan small{color:#f2a93c}
-.ct-cal-d.hecha{background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.6);opacity:1}
-.ct-cal-d.hecha small{color:#34d399}
-.ct-dot{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:middle}
-.ct-dot.plan{background:#f2a93c}.ct-dot.hecha{background:#34d399}
 .pl-lapiz{background:transparent;border:1px solid var(--border);color:var(--ink-soft);border-radius:6px;padding:1px 6px;font-size:12px;cursor:pointer;text-decoration:none;margin-left:4px}
 .pl-lapiz:hover{border-color:var(--amber);color:var(--amber)}
 .lp-margen{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-soft);flex-wrap:wrap}
@@ -543,9 +530,6 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="iva-pagos" id="ivaPagos"></div>
 <div class="ptabs" id="ivaMeses"></div>
 <div class="iva-res" id="ivaRes"></div>
-<div class="mc" id="ddjjBox"></div>
-<div class="mc" id="ctPlan1"></div>
-<input type="file" id="ddjjInput" accept="image/*,application/pdf" style="display:none" onchange="ddjjElegido(this)"/>
 <div class="mc">
 <div style="font-weight:800;font-size:16px;margin-bottom:12px">Cargar factura</div>
 <button type="button" class="iva-foto" id="ivaFotoBtn" onclick="document.getElementById('ivaFotoInput').click()">&#128247; Sacar foto o adjuntar factura<small>o arrastrá el archivo acá desde la PC</small></button>
@@ -562,6 +546,8 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="iva-calc" id="ivaPreview"></div>
 <button class="bp" id="ivaGuardarBtn" style="width:100%;margin-top:12px" onclick="ivaGuardar()">Guardar factura</button>
 </div>
+<div class="mc" id="ddjjBox"></div>
+<input type="file" id="ddjjInput" accept="image/*,application/pdf" style="display:none" onchange="ddjjElegido(this)"/>
 <div class="twrap" style="margin-top:12px;max-height:none"><table class="ptable">
 <thead><tr><th>Fecha</th><th>Tipo</th><th>Proveedor / cliente</th><th>Neto</th><th>IVA</th><th>Total</th><th>Foto</th><th></th></tr></thead><tbody id="ivaBody"></tbody>
 </table></div>
@@ -2687,7 +2673,6 @@ function ctCalc(){
     r+='<div style="font-size:12px;color:var(--muted);margin-top:4px">Toma el precio cargado como total con IVA. Estas ventas no las cargues también en Facturas IVA, porque se contarían dos veces.</div>';
   }
   r+='</div>';
-  ctPendiente=falta>0?falta/0.21*1.21:0;
   r+='<div class="mc" style="border:1.5px solid rgba(242,169,60,.5)">';
   if(falta>0){
     var neto=falta/0.21,total=neto*1.21;
@@ -2707,50 +2692,7 @@ function ctCalc(){
     r+='</div></div>';
   }
   r+='<div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:4px">Para que el crédito valga: factura A a tu nombre, de mercadería o gastos reales de la actividad, y con la compra pagada desde tu cuenta. Es una estimación: no incluye percepciones, retenciones ni la reducción por pase de monotributo; el número final lo confirma el contador.</div>';
-  r+='<div class="mc" id="ctPlan0">'+ctPlanHtml()+'</div>';
   el.innerHTML=r;
-  var p1=document.getElementById('ctPlan1');if(p1)p1.innerHTML=ctPlanHtml();
-}
-// ---- Mini calendario: cada cuánto comprar mercadería facturada y cuánto ----
-var ctPendiente=0,ctFreq=7;
-try{var _f=parseInt(localStorage.getItem('ctFreq'),10);if([7,10,15].indexOf(_f)!==-1)ctFreq=_f;}catch(e){}
-function ctSetFreq(v){ctFreq=parseInt(v,10)||7;try{localStorage.setItem('ctFreq',String(ctFreq));}catch(e){}ctCalc();}
-function ctPlanHtml(){
-  if(ivaMes===null)return '';
-  var hoy=new Date(),hoy0=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate());
-  var ini=new Date(ivaAnio,ivaMes,1),fin=new Date(ivaAnio,ivaMes+1,0);
-  var pasado=fin<hoy0;
-  var desde=hoy0>ini?hoy0:ini;
-  // fechas planificadas
-  var fechas=[];
-  if(!pasado&&ctPendiente>0){for(var d=new Date(desde);d<=fin;d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+ctFreq))fechas.push(d.getDate());}
-  var porCompra=fechas.length?ctPendiente/fechas.length:0;
-  // compras de baterías ya hechas este mes
-  var pref=ivaAnio+'-'+String(ivaMes+1).padStart(2,'0')+'-',hechas={},totHecho=0;
-  ivaData.forEach(function(x){if(String(x.fecha).indexOf(pref)===0&&ivaEsBateria(x)){var dd=parseInt(String(x.fecha).slice(8,10),10);hechas[dd]=(hechas[dd]||0)+x.total;totHecho+=x.total;}});
-  var h='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px"><div style="font-weight:800;font-size:15px">&#128197; Plan de compras facturadas · '+NOMBRES_MES[ivaMes]+'</div>';
-  h+='<label style="font-size:13px;font-weight:700;color:var(--ink-soft)">Comprar <select onchange="ctSetFreq(this.value)" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:6px 8px;font-size:13px;color:var(--ink);font-family:var(--sans)">';
-  [[7,'cada semana'],[10,'cada 10 días'],[15,'cada 15 días']].forEach(function(o){h+='<option value="'+o[0]+'"'+(o[0]===ctFreq?' selected':'')+'>'+o[1]+'</option>';});
-  h+='</select></label></div>';
-  if(pasado)h+='<div style="font-size:13px;color:var(--muted);margin-bottom:8px">Mes cerrado. Compras de baterías hechas: $'+formatARS(totHecho)+'</div>';
-  else if(ctPendiente>0)h+='<div style="font-size:14px;margin-bottom:8px">Te falta comprar <b style="color:var(--amber)">$'+formatARS(ctPendiente)+'</b> con IVA → <b>'+fechas.length+' compra'+(fechas.length===1?'':'s')+' de $'+formatARS(porCompra)+'</b></div>';
-  else h+='<div style="font-size:14px;color:var(--green);font-weight:700;margin-bottom:8px">&#10004; No hace falta comprar más facturado este mes.'+(totHecho?' Ya compraste $'+formatARS(totHecho)+' en baterías.':'')+'</div>';
-  // grilla L-D
-  h+='<div class="ct-cal">';
-  ['L','M','M','J','V','S','D'].forEach(function(x){h+='<div class="ct-cal-h">'+x+'</div>';});
-  var off=(ini.getDay()+6)%7;for(var i=0;i<off;i++)h+='<div></div>';
-  for(var dia=1;dia<=fin.getDate();dia++){
-    var esHoy=ivaAnio===hoy.getFullYear()&&ivaMes===hoy.getMonth()&&dia===hoy.getDate();
-    var plan=fechas.indexOf(dia)!==-1,hecha=hechas[dia];
-    var cls='ct-cal-d'+(esHoy?' hoy':'')+(plan?' plan':'')+(hecha?' hecha':'')+(new Date(ivaAnio,ivaMes,dia)<hoy0?' pas':'');
-    h+='<div class="'+cls+'"><span>'+dia+'</span>';
-    if(hecha)h+='<small>&#10004; $'+formatMoney(Math.round(hecha/1000))+'k</small>';
-    else if(plan)h+='<small>$'+formatMoney(Math.round(porCompra/1000))+'k</small>';
-    h+='</div>';
-  }
-  h+='</div>';
-  h+='<div style="font-size:12px;color:var(--muted);margin-top:8px"><span class="ct-dot plan"></span> compra sugerida &nbsp; <span class="ct-dot hecha"></span> compra de baterías ya cargada &nbsp;·&nbsp; El monto sale del Calculador de IVA (lo que falta para pagar el saldo objetivo) y se recalcula al cargar facturas.</div>';
-  return h;
 }
 // ---- Preguntas para el contador ----
 var pregData=[];
@@ -3148,7 +3090,6 @@ function ivaRender(){
   });
   document.getElementById('ivaBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin facturas en '+mesTxt+'</td></tr>';
   ddjjRender();
-  if(document.getElementById('ctRes'))ctCalc();
 }
 // ---- Declaraciones juradas IVA / IIBB por mes ----
 var ddjjData=[],ddjjCargado=false,ddjjSubiendo='',ddjjTipoSubir='IVA';

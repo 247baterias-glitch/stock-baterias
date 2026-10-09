@@ -23,6 +23,7 @@ html{color-scheme:dark}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:17px;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
 h1,h2,h3,p,button,input,a{color:inherit}
 .header,.section{max-width:600px;margin:0 auto}
+#p4{padding:1.25rem 1rem}
 #p4,#p9,#p10,#p11,#p12,#p13{width:100vw;max-width:1040px;position:relative;left:50%;transform:translateX(-50%)}
 #p10,#p11,#p12,#p13{padding:1.25rem 1rem}
 @media (max-width:760px){
@@ -34,7 +35,7 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .ped-chips button{padding:10px 14px;font-size:14px;flex:0 0 auto}
 .ped-sel{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:6px 8px;font-size:13.5px;font-weight:700;color:var(--amber);font-family:var(--sans)}
 @media (min-width:900px){
-  #p5,#p10,#p11{width:100vw;max-width:calc(100vw - 48px);position:relative;left:50%;transform:translateX(-50%)}
+  #p4,#p5,#p10,#p11{width:100vw;max-width:calc(100vw - 48px);position:relative;left:50%;transform:translateX(-50%)}
   #p10 .twrap{max-height:82vh}
   #resV{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px;align-items:start}
   #resV .bres{margin-bottom:0}
@@ -188,6 +189,8 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .lp-tools{display:flex;gap:8px;margin-bottom:14px}
 .lp-tools .bp,.lp-tools .bs{flex:1}
 .lp-tools button:disabled{opacity:.35;cursor:not-allowed}
+.pl-lapiz{background:transparent;border:1px solid var(--border);color:var(--ink-soft);border-radius:6px;padding:1px 6px;font-size:12px;cursor:pointer;text-decoration:none;margin-left:4px}
+.pl-lapiz:hover{border-color:var(--amber);color:var(--amber)}
 .lp-margen{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-soft);flex-wrap:wrap}
 .lp-margen input{width:120px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 10px;font-size:15px;color:var(--ink);font-family:var(--sans);outline:none}
 .lp-margen input:focus{border-color:var(--amber)}
@@ -353,9 +356,10 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button class="ptab" id="tab6" onclick="cambiarTab(6)">Volta</button>
 <button class="ptab" id="tab7" onclick="cambiarTab(7)">Bosch</button>
 </div>
+<div class="mc" id="plCtrl" style="margin-bottom:12px"></div>
 <div class="sbox"><input type="text" id="busP" placeholder="Buscar modelo..." oninput="filtrarPrecios()"/></div>
 <div class="twrap"><table class="ptable">
-<thead><tr><th>Modelo</th><th>P. Lista</th><th>P. Venta</th><th style="color:#15803d">Venta c/IVA</th><th style="color:#dc2626">Si llama decidido, cobrar este precio</th><th>Stock</th></tr></thead><tbody id="preciosBody"></tbody></table></div>
+<thead id="preciosHead"></thead><tbody id="preciosBody"></tbody></table></div>
 </div>
 <div id="p5" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
@@ -979,7 +983,7 @@ function getStockInfo(codigo){
   return {total:parts.length,txt:parts.length===0?'Sin stock':parts.join(' | ')};
 }
 function mostrarStock(){document.getElementById('p0').classList.add('hidden');document.getElementById('p1').classList.remove('hidden');rCams();}
-function mostrarPrecios(){document.getElementById('p0').classList.add('hidden');document.getElementById('p4').classList.remove('hidden');titulo('Lista de Precios');filtrarPrecios();}
+function mostrarPrecios(){document.getElementById('p0').classList.add('hidden');document.getElementById('p4').classList.remove('hidden');titulo('Lista de Precios');filtrarPrecios();plCargar();}
 var motoTabActual=1;
 function mostrarMoto(){document.getElementById('p0').classList.add('hidden');document.getElementById('p9').classList.remove('hidden');titulo('Baterias Moto');document.getElementById('busM').value='';filtrarMoto();}
 function cambiarMotoTab(n){
@@ -1043,24 +1047,84 @@ function cambiarGTab(n){
   document.getElementById('gvista2').classList.toggle('hidden',n!==2);
   if(n===1)cargarGarantias();
 }
+// ---- Lista de Precios: margen ($) y % por marca, precio corregible por modelo ----
+var PL_TABS=['Moura','Willard / UB','Sermat','Herbo','Bari','Volta','Bosch'];
+var plCfg={marcas:{},precios:{}},plCargado=false;
+function plLista(){return tabActual===1?PMOURA:tabActual===2?PUB:tabActual===3?PSERMAT:tabActual===4?PHERBO:tabActual===5?PBARI:tabActual===6?PVOLTA:PBOSCH;}
+function plMarca(){return PL_TABS[tabActual-1];}
+function plNum(t){return parseFloat(String(t||'').replace(/\$/g,'').replace(/\./g,'').replace(',','.'))||0;}
+// Margen por defecto = la diferencia venta-lista más repetida de la lista original
+function plMargenDefault(lista){
+  var c={},best=55000,max=0;
+  lista.forEach(function(x){var d=Math.round(plNum(x.p)-plNum(x.l));if(d>0){c[d]=(c[d]||0)+1;if(c[d]>max){max=c[d];best=d;}}});
+  return best;
+}
+function plCfgMarca(){
+  var m=plCfg.marcas[plMarca()]||{};
+  return {margen:(m.margen!==undefined?Number(m.margen):plMargenDefault(plLista())),pct:m.pct||''};
+}
+function plKey(x){return plMarca()+'|'+String(x.m).trim();}
+function plCargar(){
+  apiPost('plGet').then(function(r){
+    if(r&&r.ok&&r.cfg){plCfg={marcas:r.cfg.marcas||{},precios:r.cfg.precios||{}};plCargado=true;filtrarPrecios();}
+  }).catch(function(){});
+}
+function plGuardar(msg){
+  return apiPost('plSet',{cfg:plCfg}).then(function(r){
+    if(!r.ok){toast('Error: '+r.error);return;}
+    plCfg=r.cfg||plCfg;filtrarPrecios();if(msg)toast(msg);
+  }).catch(function(e){toast('Error: '+e.message);});
+}
+function plGuardarCtrl(){
+  var mg=lpNum(document.getElementById('plMargen').value);
+  if(isNaN(mg)||mg<0){toast('Margen inválido');return;}
+  var pct=document.getElementById('plPct').value.trim();
+  plCfg.marcas[plMarca()]={margen:mg,pct:pct};
+  plGuardar('Guardado para '+plMarca());
+}
+function plEditarPrecio(i){
+  var x=plLista()[i];if(!x)return;
+  var k=plKey(x),orig=plNum(x.l),act=plCfg.precios[k]||orig;
+  var v=prompt('Precio de '+String(x.m).trim()+' (vacío = volver al original $'+formatARS(orig)+'):',formatARS(act));
+  if(v===null)return;
+  if(!v.trim()){delete plCfg.precios[k];plGuardar('Precio original restaurado');return;}
+  var n=lpNum(v);if(!(n>0)){toast('Precio inválido');return;}
+  plCfg.precios[k]=n;plGuardar('Precio actualizado');
+}
+function plRenderCtrl(){
+  var c=plCfgMarca(),f=lpFactorDesc(c.pct),m=plMarca();
+  var h='<div class="lp-margen" style="margin-bottom:10px"><span>Venta de '+lpEsc(m)+' = costo + $</span><input type="text" inputmode="numeric" id="plMargen" value="'+formatMoney(c.margen)+'" onkeydown="if(event.key===\'Enter\')plGuardarCtrl()"/></div>';
+  h+='<div class="lp-margen"><span>% sobre el precio de cada batería</span><input type="text" id="plPct" value="'+lpEsc(c.pct)+'" placeholder="Ej: +4 -3" style="width:140px" onkeydown="if(event.key===\'Enter\')plGuardarCtrl()"/><button class="bs" onclick="plGuardarCtrl()">Guardar</button>';
+  h+='<span style="font-size:12.5px;color:var(--muted)">'+(f!==1?'<b style="color:#a78bfa">'+lpDescTexto(c.pct)+'</b> → pagás el '+(f*100).toLocaleString('es-AR',{maximumFractionDigits:2})+'% del precio':'+4 = aumento · -14 = descuento · +4 -3 = aumento y después descuento')+'</span></div>';
+  if(!plCargado)h+='<div style="font-size:12px;color:var(--muted);margin-top:6px">Cargando ajustes guardados...</div>';
+  document.getElementById('plCtrl').innerHTML=h;
+}
 function filtrarPrecios(){
   var b=document.getElementById('busP').value.toLowerCase();
-  var lista=tabActual===1?PMOURA:tabActual===2?PUB:tabActual===3?PSERMAT:tabActual===4?PHERBO:tabActual===5?PBARI:tabActual===6?PVOLTA:PBOSCH;
+  var lista=plLista(),c=plCfgMarca(),f=lpFactorDesc(c.pct),hayDesc=f!==1,mg=c.margen;
+  var mgDef=plMargenDefault(lista);
+  plRenderCtrl();
+  document.getElementById('preciosHead').innerHTML='<tr><th>Marca</th><th>Modelo</th><th>Precio</th>'+(hayDesc?'<th>Desc.</th><th>Costo c/desc.</th>':'')+'<th style="color:#2dd4bf">Costo c/IVA (21%)</th><th style="color:#15803d">Venta (+$'+formatMoney(mg)+')</th><th style="color:#15803d">Venta c/IVA (21%)</th><th style="color:#dc2626">Si llama decidido</th><th>Stock</th></tr>';
   var h='';
-  lista.filter(function(x){return x.m.toLowerCase().indexOf(b)!==-1;}).forEach(function(x){
+  lista.forEach(function(x,i){
+    if(x.m.toLowerCase().indexOf(b)===-1)return;
     var si=getStockInfo(x.m);
     var stk=si?si.txt:'Sin stock';
     var cls=si&&si.total>0?'stk-ok':'stk-no';
-    var pv=parseFloat(x.p.replace(/\./g,'').replace(',','.').replace('$',''))||0;
-    var pIva=x.p==='—'?'—':'$'+formatARS(pv*1.21);
-    var pn=x.p==='—'?'—':'$'+(pv+8000).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
-    var esEFB=x.m.indexOf('EFB')!==-1;
-    var esStartStop=x.m.indexOf('72LD')!==-1;
-    var badgeEFB=esEFB?'<span style="background:#e1f5ea;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
-    var badgeSS=esStartStop?'<span style="background:#e1f5ea;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
-    h+='<tr><td><b>'+x.m+'</b>'+badgeEFB+badgeSS+'</td><td>'+x.l+'</td><td class="pventa">'+x.p+'</td><td style="font-weight:700;color:#15803d">'+pIva+'</td><td class="pnoche">'+pn+'</td><td><div class="stk-info '+cls+'" style="margin-top:0">'+stk+'</div></td></tr>';
+    var esEFB=x.m.indexOf('EFB')!==-1||x.m.indexOf('72LD')!==-1;
+    var badge=esEFB?'<span style="background:#e1f5ea;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px">EFB (START STOP)</span>':'';
+    var k=plKey(x),corr=plCfg.precios[k]!==undefined;
+    var precio=corr?plCfg.precios[k]:plNum(x.l);
+    // Modelos que en la lista original tenían una venta distinta al margen general conservan esa diferencia
+    var extra=Math.round(plNum(x.p)-plNum(x.l))-mgDef;if(!(plNum(x.p)>0)||Math.abs(extra)<1)extra=0;
+    var costo=Math.round(precio*f*100)/100,venta=costo+mg+extra;
+    h+='<tr><td>'+lpEsc(plMarca().toUpperCase())+'</td><td><b>'+lpEsc(x.m)+'</b>'+badge+'</td>';
+    h+='<td style="white-space:nowrap"><span'+(hayDesc?' style="color:var(--muted);text-decoration:line-through"':' style="font-weight:700"')+'>$'+formatARS(precio)+'</span>'+(corr?' <span title="Precio corregido a mano" style="color:var(--amber);text-decoration:none">●</span>':'')+' <button class="pl-lapiz" title="Modificar precio" onclick="plEditarPrecio('+i+')">&#9998;</button></td>';
+    if(hayDesc)h+='<td><span class="lp-desc-tag">'+lpDescTexto(c.pct)+'</span></td><td style="font-weight:800">$'+formatARS(costo)+'</td>';
+    h+='<td style="font-weight:700;color:#2dd4bf">$'+formatARS(costo*1.21)+'</td><td class="pventa"'+(extra?' title="Este modelo tiene $'+formatARS(extra)+' extra sobre el margen"':'')+'>$'+formatARS(venta)+(extra?' <span style="color:var(--muted);font-size:11px">('+(extra>0?'+':'−')+'$'+formatMoney(Math.abs(extra))+')</span>':'')+'</td><td style="font-weight:700;color:#15803d">$'+formatARS(venta*1.21)+'</td><td class="pnoche">$'+formatARS(venta+8000)+'</td>';
+    h+='<td><div class="stk-info '+cls+'" style="margin-top:0">'+stk+'</div></td></tr>';
   });
-  document.getElementById('preciosBody').innerHTML=h||'<tr><td colspan="6" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';
+  document.getElementById('preciosBody').innerHTML=h||'<tr><td colspan="10" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';
 }
 function buscarVehiculo(){
   var b=document.getElementById('busV').value.toLowerCase().trim();
@@ -2565,11 +2629,10 @@ function ctCalc(){
   var saldoHoy=debTot-cre-aFavor;
   var falta=saldoHoy-obj;
   var mesTxt=NOMBRES_MES[ivaMes]+' '+ivaAnio;
-  var pagoD=new Date(ivaAnio,ivaMes+ivaDesfase,1);
   var r='<div class="iva-res">';
   r+='<div class="iva-box"><div class="k">IVA VENTAS (débito)</div><div class="v" style="color:var(--amber)">$'+formatARS(debTot)+'</div><div class="s">'+nv+' factura'+(nv===1?'':'s')+' cargada'+(nv===1?'':'s')+(debServ?' + $'+formatARS(debServ)+' de servicios':'')+(debPrev?' + $'+formatARS(debPrev)+' previsto':'')+'</div></div>';
   r+='<div class="iva-box"><div class="k">IVA COMPRAS (crédito)</div><div class="v" style="color:#2dd4bf">$'+formatARS(cre)+'</div><div class="s">'+nc+' factura'+(nc===1?'':'s')+(aFavor?' | + $'+formatARS(aFavor)+' a favor de meses anteriores':'')+'</div></div>';
-  if(saldoHoy>=0)r+='<div class="iva-box" style="border-color:rgba(248,113,113,.45)"><div class="k">HOY PAGARÍAS</div><div class="v" style="color:var(--red)">$'+formatARS(saldoHoy)+'</div><div class="s">IVA de '+mesTxt+', se paga en '+NOMBRES_MES[pagoD.getMonth()]+'</div></div>';
+  if(saldoHoy>=0)r+='<div class="iva-box" style="border-color:rgba(248,113,113,.45)"><div class="k">HOY PAGARÍAS</div><div class="v" style="color:var(--red)">$'+formatARS(saldoHoy)+'</div><div class="s">IVA de '+mesTxt+', se paga en '+ivaTxtPago(ivaMes,ivaAnio)+'</div></div>';
   else r+='<div class="iva-box" style="border-color:rgba(52,211,153,.45)"><div class="k">QUEDÁS A FAVOR</div><div class="v" style="color:var(--green)">$'+formatARS(-saldoHoy)+'</div><div class="s">Pasa al mes siguiente</div></div>';
   r+='</div>';
   r+='<div class="mc">';
@@ -2849,9 +2912,24 @@ function ivaEliminar(id){
   }).catch(function(e){toast('Error: '+e.message);});
 }
 function ivaCambiarMes(m,a){ivaMes=m;ivaAnio=a;ivaRender();}
-var ivaDesfase=3;
-try{var _d=parseInt(localStorage.getItem('ivaDesfase'),10);if(_d>=0&&_d<=12)ivaDesfase=_d;}catch(e){}
-function ivaSetDesfase(v){ivaDesfase=parseInt(v,10)||0;try{localStorage.setItem('ivaDesfase',String(ivaDesfase));}catch(e){}ivaRender();}
+// La DDJJ de IVA de un mes se presenta el mes siguiente y se paga al contado a los 3 meses
+// (ej: período Septiembre -> se presenta en Octubre -> vence en Diciembre)
+var ivaDesfase=3,ivaCuotas=1;
+try{var _d=parseInt(localStorage.getItem('ivaDesfase3'),10);if(_d>=1&&_d<=12)ivaDesfase=_d;}catch(e){}
+function ivaSetDesfase(v){ivaDesfase=parseInt(v,10)||3;try{localStorage.setItem('ivaDesfase3',String(ivaDesfase));}catch(e){}ivaRender();if(typeof ctCalc==='function')ctCalc();}
+function ivaSetCuotas(v){ivaCuotas=parseInt(v,10)===1?1:3;try{localStorage.setItem('ivaCuotas',String(ivaCuotas));}catch(e){}ivaRender();if(typeof ctCalc==='function')ctCalc();}
+// "Octubre 2026" o "Octubre, Noviembre y Diciembre 2026 (3 cuotas)"
+function ivaTxtPago(mes,anio){
+  var n=[];for(var k=0;k<ivaCuotas;k++){var d=new Date(anio,mes+ivaDesfase+k,1);n.push(NOMBRES_MES[d.getMonth()]+(k===ivaCuotas-1?' '+d.getFullYear():''));}
+  return n.length===1?n[0]:n.slice(0,-1).join(', ')+' y '+n[n.length-1]+' ('+ivaCuotas+' cuotas)';
+}
+// Saldo a pagar del período: si cargaste la DDJJ de IVA usa ese monto, si no lo calcula con las facturas
+function ivaSaldoPeriodo(mes,anio){
+  var per=anio+'-'+String(mes+1).padStart(2,'0');
+  var dj=(typeof ddjjData!=='undefined'?ddjjData:[]).filter(function(x){return x.tipo==='IVA'&&x.periodo===per;});
+  if(dj.length)return {saldo:dj.reduce(function(a,x){return a+x.monto;},0),cant:dj.length,ddjj:true};
+  var s=ivaSaldoMes(mes,anio);s.ddjj=false;return s;
+}
 // Saldo de IVA (ventas - compras) de un mes
 function ivaSaldoMes(mes,anio){
   var pref=anio+'-'+String(mes+1).padStart(2,'0')+'-';
@@ -2865,21 +2943,27 @@ function ivaSaldoMes(mes,anio){
 function ivaRenderPagos(){
   var hoy=new Date();
   var h='<div class="iva-pagos-head"><div class="iva-pagos-tit">&#128197; Calendario de pagos de IVA</div>';
-  h+='<label style="font-size:13px;color:var(--ink-soft);font-weight:700">Se paga con <select onchange="ivaSetDesfase(this.value)">';
-  [1,2,3,4].forEach(function(n){h+='<option value="'+n+'"'+(n===ivaDesfase?' selected':'')+'>'+n+' mes'+(n===1?'':'es')+'</option>';});
-  h+='</select> de atraso</label></div>';
+  h+='<label style="font-size:13px;color:var(--ink-soft);font-weight:700">Vence <select onchange="ivaSetDesfase(this.value)">';
+  [1,2,3,4].forEach(function(n){h+='<option value="'+n+'"'+(n===ivaDesfase?' selected':'')+'>'+n+' mes'+(n===1?'':'es')+' después del período</option>';});
+  h+='</select></label></div>';
   for(var i=0;i<4;i++){
     var pago=new Date(hoy.getFullYear(),hoy.getMonth()+i,1);
-    var corr=new Date(pago.getFullYear(),pago.getMonth()-ivaDesfase,1);
-    var s=ivaSaldoMes(corr.getMonth(),corr.getFullYear());
     var nomPago=NOMBRES_MES[pago.getMonth()]+(pago.getFullYear()!==hoy.getFullYear()?' '+pago.getFullYear():'');
-    var nomCorr=NOMBRES_MES[corr.getMonth()]+(corr.getFullYear()!==pago.getFullYear()?' '+corr.getFullYear():'');
-    var monto;
-    if(!s.cant)monto='<span style="color:var(--muted2);font-weight:600">sin facturas cargadas</span>';
-    else if(s.saldo>=0)monto='<b style="color:var(--red)">$'+formatARS(s.saldo)+'</b>';
-    else monto='<b style="color:var(--green)">a favor $'+formatARS(-s.saldo)+'</b>';
-    h+='<div class="iva-pago-row'+(i===0?' ahora':'')+'"><span>'+(i===0?'&#128073; Este mes ('+nomPago+')':'En '+nomPago)+' pagás el IVA de <b style="font-size:14px">'+nomCorr+'</b></span>'+monto+'</div>';
+    var tot=0,partes=[],sinDatos=[];
+    for(var k=0;k<ivaCuotas;k++){
+      var corr=new Date(pago.getFullYear(),pago.getMonth()-ivaDesfase-k,1);
+      var nomCorr=NOMBRES_MES[corr.getMonth()]+(corr.getFullYear()!==pago.getFullYear()?' '+corr.getFullYear():'');
+      var sp=ivaSaldoPeriodo(corr.getMonth(),corr.getFullYear());
+      if(!sp.cant){sinDatos.push(nomCorr);continue;}
+      if(sp.saldo<=0){partes.push('<span style="color:var(--green)">'+nomCorr+': a favor</span>');continue;}
+      var c=sp.saldo/ivaCuotas;tot+=c;
+      partes.push((ivaCuotas>1?'cuota '+(k+1)+'/'+ivaCuotas+' de ':'IVA de ')+'<b style="font-size:inherit">'+nomCorr+'</b> $'+formatARS(c)+(sp.ddjj?' <span title="Monto de la DDJJ cargada" style="color:#2dd4bf">(DDJJ)</span>':''));
+    }
+    if(sinDatos.length)partes.push('<span style="color:var(--muted2)">'+sinDatos.join(', ')+': sin datos</span>');
+    var monto=tot>0?'<b style="color:var(--red)">$'+formatARS(tot)+'</b>':(partes.length>(sinDatos.length?1:0)?'<b style="color:var(--green)">$0</b>':'<span style="color:var(--muted2);font-weight:600">sin datos</span>');
+    h+='<div class="iva-pago-row'+(i===0?' ahora':'')+'"><span>'+(i===0?'&#128073; Este mes ('+nomPago+')':'En '+nomPago)+' pagás:<br><span style="font-size:12.5px;color:var(--ink-soft)">'+partes.join(' · ')+'</span></span>'+monto+'</div>';
   }
+  h+='<div style="font-size:12px;color:var(--muted);margin-top:6px">La DDJJ de cada mes se presenta el mes siguiente y se paga al contado '+ivaDesfase+' mes'+(ivaDesfase===1?'':'es')+' después del período. Si cargaste la DDJJ, se usa su monto real (DDJJ); si no, se calcula con las facturas.</div>';
   document.getElementById('ivaPagos').innerHTML=h;
 }
 function ivaRender(){
@@ -2903,8 +2987,7 @@ function ivaRender(){
   var r='';
   r+='<div class="iva-box"><div class="k">IVA COMPRAS (crédito fiscal)</div><div class="v" style="color:#2dd4bf">$'+formatARS(t.compraIva)+'</div><div class="s">'+t.nc+' factura'+(t.nc===1?'':'s')+' | total $'+formatARS(t.compraTot)+'</div></div>';
   r+='<div class="iva-box"><div class="k">IVA VENTAS (débito fiscal)</div><div class="v" style="color:var(--amber)">$'+formatARS(t.ventaIva)+'</div><div class="s">'+t.nv+' factura'+(t.nv===1?'':'s')+' | total $'+formatARS(t.ventaTot)+'</div></div>';
-  var pagoD=new Date(ivaAnio,ivaMes+ivaDesfase,1);
-  var pagoTxt=NOMBRES_MES[pagoD.getMonth()]+' '+pagoD.getFullYear();
+  var pagoTxt=ivaTxtPago(ivaMes,ivaAnio);
   if(saldo>=0)r+='<div class="iva-box" style="border-color:rgba(248,113,113,.45)"><div class="k">IVA DE '+mesTxt.toUpperCase()+' A PAGAR</div><div class="v" style="color:var(--red)">$'+formatARS(saldo)+'</div><div class="s">Se paga en '+pagoTxt+' | IVA ventas − IVA compras</div></div>';
   else r+='<div class="iva-box" style="border-color:rgba(52,211,153,.45)"><div class="k">SALDO A FAVOR EN '+mesTxt.toUpperCase()+'</div><div class="v" style="color:var(--green)">$'+formatARS(-saldo)+'</div><div class="s">Tenés más IVA compras que ventas</div></div>';
   document.getElementById('ivaRes').innerHTML=r;
@@ -2946,13 +3029,14 @@ function ddjjRender(){
       if(x.archivo_id)h+='<a href="https://drive.google.com/file/d/'+x.archivo_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">Ver</a>';
       h+='<div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ddjjEliminar(\''+x.id+'\')">&#10005;</button></div></div>';
     });
-    if(t==='IVA'){var s=ivaSaldoMes(ivaMes,ivaAnio);if(s.cant)h+='<div style="font-size:12px;color:var(--muted);margin-top:6px">Según las facturas cargadas en la app: '+(s.saldo>=0?'$'+formatARS(s.saldo)+' a pagar':'$'+formatARS(-s.saldo)+' a favor')+'</div>';}
+    if(t==='IVA'){var _pr=new Date(ivaAnio,ivaMes+1,1);h+='<div style="font-size:12px;color:var(--muted);margin-top:6px">Se presenta en '+NOMBRES_MES[_pr.getMonth()]+' · vence en '+ivaTxtPago(ivaMes,ivaAnio)+'</div>';var s=ivaSaldoMes(ivaMes,ivaAnio);if(s.cant)h+='<div style="font-size:12px;color:var(--muted);margin-top:6px">Según las facturas cargadas en la app: '+(s.saldo>=0?'$'+formatARS(s.saldo)+' a pagar':'$'+formatARS(-s.saldo)+' a favor')+'</div>';}
     var sub=ddjjSubiendo===t;
     h+='<button class="iva-foto dj-up" data-ddjj="'+t+'" '+(ddjjSubiendo?'disabled':'')+' onclick="ddjjElegir(\''+t+'\')">'+(sub?'Subiendo y leyendo...':'&#128206; Subir DDJJ de '+t+'<small>PDF o foto · o arrastrala acá</small>')+'</button>';
     h+='</div>';
   });
   h+='</div>';
   el.innerHTML=h;
+  ivaRenderPagos();
 }
 function ddjjElegir(t){
   if(ddjjSubiendo)return;

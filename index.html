@@ -277,6 +277,17 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .lp-ren{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;font-size:12px;line-height:1;padding:3px 6px;margin-left:6px;cursor:pointer;vertical-align:middle}
 .lp-ren:hover{color:var(--amber);border-color:var(--amber)}
 .rm-box{margin-top:16px}
+.eq-ayuda{font-size:13px;color:var(--muted);margin:0 2px 12px}
+.eq-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow-card)}
+.eq-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.eq-head b{font-size:16px;margin-right:4px}
+.eq-tab th,.eq-tab td{text-align:center}
+.eq-cod{display:inline-block;background:rgba(242,169,60,.14);color:var(--amber);border-radius:6px;padding:2px 8px;font-weight:800;font-size:13px;margin:1px}
+.eq-no{color:#f87171;font-size:12.5px;font-weight:700}
+.eq-motos{display:flex;flex-wrap:wrap;gap:6px}.eq-moto{background:var(--border2);border-radius:99px;padding:4px 11px;font-size:13px;font-weight:600}.eq-moto small{color:var(--muted);font-weight:500}
+.eq-mini{margin-top:8px;border:1px dashed rgba(124,108,255,.45);border-radius:10px;padding:8px 10px}
+.eq-mini-t{font-size:12.5px;font-weight:800;color:#a78bfa;margin-bottom:6px}
+.eq-mini-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px 10px}.eq-mini-g small{display:block;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.eq-origen{font-size:11px;font-weight:700;color:#a78bfa;background:rgba(124,108,255,.15);border-radius:99px;padding:2px 8px;margin-left:6px;vertical-align:middle}
 .bm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0 12px}.bm-grid .bm-wide{grid-column:1/-1}
 @media (min-width:900px){.bm-grid{grid-template-columns:repeat(4,1fr)}.bm-grid .bm-wide{grid-column:span 2}}
 .bm-bat{margin-top:4px;font-size:15px}.bm-bat b{color:var(--amber)}.bm-eq{color:var(--muted);font-size:13px;margin-left:10px}
@@ -504,6 +515,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button class="ptab" id="mtab2" onclick="cambiarMotoTab(2)">High Power</button>
 <button class="ptab" id="mtab3" onclick="cambiarMotoTab(3)">Yuasa</button>
 <button class="ptab" id="mtab4" onclick="cambiarMotoTab(4)">&#128269; Buscador</button>
+<button class="ptab" id="mtab6" onclick="cambiarMotoTab(6)">&#128257; Equivalencias</button>
 <button class="ptab" id="mtab5" onclick="cambiarMotoTab(5)">&#128230; Compras MOTO</button>
 </div>
 <div id="mvPrecios">
@@ -521,6 +533,11 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div style="display:flex;gap:8px"><button class="bp" id="bmNuevoBtn" onclick="bmAgregar()">Guardar</button><button class="bs" onclick="bmNuevoToggle(false)">Cancelar</button></div>
 </div>
 <div id="resMM"><div class="no-res">Escribí el modelo de la moto</div></div>
+</div>
+<div id="mvEq" class="hidden">
+<div class="sbox mb-lupa"><span>&#128269;</span><input type="text" id="busEq" placeholder="Buscar moto o código: Dominar, MA8I, YTX7A, BTX9..." oninput="eqRender()"/></div>
+<div class="eq-ayuda">Cada marca usa su propio código para la misma batería. Buscá la moto o cualquier código y te muestra el equivalente en todas las marcas.</div>
+<div id="eqLista"></div>
 </div>
 <div id="mvCompras" class="hidden">
 <input type="file" id="cmInput" accept="image/*,application/pdf" style="display:none" onchange="cmArchivo(this)">
@@ -762,11 +779,12 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div style="font-size:19px;font-weight:700;margin-bottom:14px" id="smTitulo">Colocación batería de moto</div>
 <div class="col-grid">
 <div class="gfield"><label>Fecha</label><input type="date" id="smFecha"/></div>
-<div class="gfield"><label>Moto</label><input type="text" id="smMoto" placeholder="Ej: Honda Wave 110" list="smMotoList" oninput="smSugerirMoto()"/><datalist id="smMotoList"></datalist></div>
+<div class="gfield"><label>Moto</label><input type="text" id="smMoto" placeholder="Ej: Honda Wave 110" list="smMotoList" oninput="smSugerirMoto();smEqRender()"/><datalist id="smMotoList"></datalist></div>
 <div class="gfield"><label>Año moto</label><input type="text" id="smAnio" placeholder="Ej: 2019"/></div>
 <div class="gfield"><label>Cilindrada</label><input type="text" id="smCil" placeholder="Ej: 110cc"/></div>
 <div class="gfield"><label>Dominio (patente)</label><input type="text" id="smDominio" placeholder="Ej: A123BCD"/></div>
-<div class="gfield"><label>Batería colocada</label><input type="text" id="smBat" list="smBatList" placeholder="Ej: YTX5L-BS (BTX5L)" oninput="smSugerirPrecio()"/><datalist id="smBatList"></datalist></div>
+<div class="gfield"><label>Batería colocada</label><input type="text" id="smBat" list="smBatList" placeholder="Ej: YTX5L-BS (BTX5L)" oninput="smSugerirPrecio();smEqRender()"/><datalist id="smBatList"></datalist></div>
+<div class="gfield wide" id="smEqBox" style="grid-column:1/-1"></div>
 <div class="gfield"><label>Carga regulador (opcional)</label><input type="text" id="smCarga" placeholder="Ej: 14.2"/></div>
 <div class="gfield"><label>Vigencia garantia</label><input type="text" id="smVigencia" value="12 meses"/></div>
 <div class="gfield"><label>Telefono cliente (opcional, para enviar garantia)</label><input type="text" id="smTel" placeholder="Ej: 1123456789"/></div>
@@ -1135,12 +1153,14 @@ function mostrarPrecios(){document.getElementById('p0').classList.add('hidden');
 var motoTabActual=1;
 function mostrarMoto(){document.getElementById('p0').classList.add('hidden');document.getElementById('p9').classList.remove('hidden');titulo('Baterias Moto');cambiarMotoTab(motoTabActual);}
 function cambiarMotoTab(n){
-  motoTabActual=n;[1,2,3,4,5].forEach(function(i){document.getElementById('mtab'+i).classList.toggle('active',i===n);});
+  motoTabActual=n;[1,2,3,4,5,6].forEach(function(i){document.getElementById('mtab'+i).classList.toggle('active',i===n);});
   document.getElementById('mvPrecios').classList.toggle('hidden',n>3);
   document.getElementById('mvBusc').classList.toggle('hidden',n!==4);
   document.getElementById('mvCompras').classList.toggle('hidden',n!==5);
+  document.getElementById('mvEq').classList.toggle('hidden',n!==6);
   if(n<=3){document.getElementById('busM').value='';filtrarMoto();}
   else if(n===4)bmCargar();
+  else if(n===6)eqRender();
   else cmCargar();
 }
 // ---- Buscador de baterías MOTO (hoja "Buscador Moto": moto, batería, equivalente, amperaje, borne, nota) ----
@@ -1175,8 +1195,17 @@ function bmBuscar(){
     var palabras=b.split(/\s+/);
     res=BUSC_MOTO.filter(function(x){var t=bmTexto(x);return palabras.every(function(p){return t.indexOf(p)!==-1;});});
   }
-  if(!res.length){el.innerHTML='<div class="no-res">No se encontraron resultados. Tocá "+ Agregar moto" para cargarla.</div>';return;}
-  var h=b.length<2?'<div class="bm-cuenta">'+BUSC_MOTO.length+' motos cargadas</div>':'';
+  var extras=b.length>=2?eqMotosNoCargadas(b):[];
+  if(!res.length&&!extras.length){el.innerHTML='<div class="no-res">No se encontraron resultados. Tocá "+ Agregar moto" para cargarla.</div>';return;}
+  var h=b.length<2?'<div class="bm-cuenta">'+BUSC_MOTO.length+' motos cargadas · '+EQ_MOTO.reduce(function(t,g){return t+g.motos.length;},0)+' en la tabla de equivalencias</div>':'';
+  extras.forEach(function(e){
+    h+='<div class="bres bres-flex eq-virtual"><div style="flex:1;min-width:0"><div class="bres-v">'+lpEsc(e.moto)+' <span class="eq-origen">tabla de equivalencias</span></div>';
+    h+='<div class="bm-bat"><b>'+lpEsc(e.g.cod.gen.join(' / ')||'—')+'</b></div>';
+    h+='<div class="bm-tags"><span class="bm-tag">&#9889; '+lpEsc(e.g.ah)+'</span><span class="bm-tag">&#10133; Borne '+lpEsc(e.g.borne)+'</span></div>';
+    if(e.nota)h+='<div class="bm-nota">'+lpEsc(e.nota)+'</div>';
+    h+=eqBloqueMini([e.g]);
+    h+='</div></div>';
+  });
   res.forEach(function(x){
     if(bmEditFila===x.fila){
       h+='<div class="bres">'+bmCamposHtml('bmEd',x);
@@ -1190,9 +1219,106 @@ function bmBuscar(){
     if(x.borne)tags.push('<span class="bm-tag">&#10133; Borne '+lpEsc(x.borne)+'</span>');
     if(tags.length)h+='<div class="bm-tags">'+tags.join('')+'</div>';
     if(x.nota)h+='<div class="bm-nota">'+lpEsc(x.nota)+'</div>';
+    h+=eqBloqueMini(eqGruposDe(x.v,[x.b,x.eq]));
     h+='</div><div class="lp-row-act"><button title="Modificar" onclick="bmEditar('+x.fila+')">&#9998;</button><button title="Eliminar" style="color:#f87171" onclick="bmEliminar('+x.fila+')">&#10005;</button></div></div>';
   });
   el.innerHTML=h;
+}
+// ---- Tabla de EQUIVALENCIAS de baterías de moto (planilla "Baterías Nano", hoja PLANILLA MOTOS) ----
+// Cada grupo es la misma batería: cada marca le pone su propio código.
+var EQ_MARCAS=[['gen','Genérico'],['yuasa','Yuasa'],['moura','Moura'],['hp','High Power'],['bosch','Bosch'],['otras','Otras marcas']];
+var EQ_MOTO=[
+ {titulo:'5 Ah · borne derecho',ah:'5 Ah',borne:'Derecho',
+  cod:{gen:['YTX5L-BS'],yuasa:['YTZ6V'],moura:['MA5D'],hp:['YB5LB'],bosch:['BTX5L'],otras:['Duramax: MTX5L-RS']},
+  motos:[['Vespa 150'],['Yamaha NMX'],['Rouser NS 125'],['Rouser 135'],['Rouser 160'],['Honda NF 100 Wave'],['Honda GN 125','En Bosch también va la BB7A'],['Honda XR 150','En Bosch también va la BB7A'],['Honda CG 150'],['Yamaha FZ'],['Honda CR 150','Duramax: MTX5L-RS']]},
+ {titulo:'5 Ah · borne derecho · cajón YB5L-B / 12N5-3B',ah:'5 Ah',borne:'Derecho',
+  cod:{gen:['YB5L-B','12N5-3B'],yuasa:['YT5A'],moura:['MA5AD'],hp:['YB5A'],bosch:['BB5L-B','YB5A'],otras:['Freedom: consultar']},
+  motos:[['Vespa SXL 150','También va la 12N5-3B'],['Rouser NS 125']]},
+ {titulo:'6-7 Ah · borne derecho',ah:'6 Ah',borne:'Derecho',
+  cod:{gen:['YTX7L-BS'],yuasa:['YT7A'],moura:['MA6D'],hp:['YT7A'],bosch:['BTX7L'],otras:['Duramax: YTX7L-BS']},
+  motos:[['Rouser NS 125'],['Honda GLH 150'],['Honda Tornado 250'],['Honda Twister 250'],['Yamaha XTZ 250'],['Yamaha YS 250'],['Honda Falcon 400'],['Yamaha MT 03'],['Honda CB 650']]},
+ {titulo:'6-7 Ah · borne izquierdo · cajón bajo',ah:'6 Ah',borne:'Izquierdo',
+  cod:{gen:['YTX7A-BS'],yuasa:['YTX7A'],moura:['MA6I'],hp:['BTX7A'],bosch:['BTX7A'],otras:['Duramax: consultar']},
+  motos:[['Corven Expert 80 2016'],['Beta Tempo 150cc'],['Voge 300cc AC'],['Voge 300cc RR'],['Voge 300cc DS']]},
+ {titulo:'8 Ah · borne izquierdo · cajón alto',ah:'8 Ah',borne:'Izquierdo',
+  cod:{gen:['12N7-4A'],yuasa:['YB7A','12N7-4A'],moura:[],hp:['YB7A'],bosch:['BB7A'],otras:['Kromwell: 12N9-4B-1 / YB9B']},
+  nota:'Moura no fabrica esta batería.',
+  motos:[['Suzuki GN 125'],['Suzuki GS 400']]},
+ {titulo:'8-9-10 Ah · borne izquierdo · cajón bajo',ah:'9 Ah',borne:'Izquierdo',
+  cod:{gen:['YTX9-BS'],yuasa:['YT9A'],moura:['MA8I'],hp:['YT9A','YTX9BS'],bosch:['BTX9'],otras:['Duramax: YTX9-BS']},
+  motos:[['Rouser NS 200'],['Dominar 250'],['Dominar 400'],['Beta Arrow 150cc'],['Kymco 200cc'],['Benelli TRK 502'],['Scooter Benelli Zafferano 2018'],['Skua Adventure 250'],['Trident 660']]},
+ {titulo:'12 Ah · borne izquierdo',ah:'12 Ah',borne:'Izquierdo',
+  cod:{gen:['YTX12-BS'],yuasa:['YT12A-BS','YT12A'],moura:[],hp:['YTX12-BS'],bosch:['YTZ12S','BTX12'],otras:[]},
+  nota:'Moura no la hace.',
+  motos:[['Kymco 250cc','10 Ah, borne izquierdo +'],['Ducati Scrambler 400','Solo High Power'],['CF Moto 700','Bosch 12 Ah izquierdo (BTX12)']]}
+];
+function eqNorm(t){return String(t||'').toUpperCase().replace(/[^A-Z0-9]/g,'');}
+function eqCodigos(g){var o=[];EQ_MARCAS.forEach(function(m){(g.cod[m[0]]||[]).forEach(function(c){o.push(eqNorm(c.replace(/^[^:]*:\s*/,'')));});});return o.filter(function(c){return c.length>=4;});}
+function eqMismaMoto(a,b){a=eqNorm(a);b=eqNorm(b);return a.length>=4&&b.length>=4&&(a===b||a.indexOf(b)===0||b.indexOf(a)===0);}
+// Grupos que corresponden a una moto (por nombre) o a alguno de sus códigos de batería
+function eqGruposDe(moto,codigos){
+  var cods=[];(codigos||[]).forEach(function(c){String(c||'').split(/[\/,]|\s-\s|\(|\)|\s+o\s+|:/).forEach(function(p){p=eqNorm(p);if(p.length>=4)cods.push(p);});});
+  return EQ_MOTO.filter(function(g){
+    if(moto&&g.motos.some(function(m){return eqMismaMoto(m[0],moto);}))return true;
+    var gc=eqCodigos(g);
+    return cods.some(function(c){return gc.indexOf(c)!==-1;});
+  });
+}
+function eqCodHtml(g,k){
+  var c=g.cod[k]||[];
+  if(!c.length)return '<span class="eq-no">'+(k==='moura'?'No fabrica':'—')+'</span>';
+  return c.map(function(x){return '<span class="eq-cod">'+lpEsc(x)+'</span>';}).join(' ');
+}
+function eqBloqueMini(gs){
+  if(!gs.length)return '';
+  return gs.map(function(g){
+    var h='<div class="eq-mini"><div class="eq-mini-t">&#128257; Equivalencias · '+lpEsc(g.titulo)+'</div><div class="eq-mini-g">';
+    EQ_MARCAS.forEach(function(m){h+='<div><small>'+m[1]+'</small>'+eqCodHtml(g,m[0])+'</div>';});
+    return h+'</div></div>';
+  }).join('');
+}
+function eqMotosNoCargadas(b){
+  var out=[],pal=b.toLowerCase().split(/\s+/);
+  EQ_MOTO.forEach(function(g){
+    g.motos.forEach(function(m){
+      var t=(m[0]+' '+(m[1]||'')).toLowerCase();
+      if(!pal.every(function(p){return t.indexOf(p)!==-1;}))return;
+      if(BUSC_MOTO.some(function(x){return eqMismaMoto(x.v,m[0]);}))return;
+      out.push({moto:m[0],nota:m[1]||'',g:g});
+    });
+  });
+  return out;
+}
+function eqRender(){
+  var b=(document.getElementById('busEq').value||'').trim(),bn=eqNorm(b),bl=b.toLowerCase();
+  var h='';
+  EQ_MOTO.forEach(function(g){
+    var motos=g.motos;
+    if(b.length>=2){
+      var porCod=bn.length>=3&&eqCodigos(g).some(function(c){return c.indexOf(bn)!==-1;});
+      var porTit=g.titulo.toLowerCase().indexOf(bl)!==-1;
+      var mm=motos.filter(function(m){return (m[0]+' '+(m[1]||'')).toLowerCase().indexOf(bl)!==-1;});
+      if(!porCod&&!porTit&&!mm.length)return;
+      if(!porCod&&!porTit)motos=mm;
+    }
+    h+='<div class="eq-card"><div class="eq-head"><b>'+lpEsc(g.titulo)+'</b><span class="bm-tag">&#9889; '+lpEsc(g.ah)+'</span><span class="bm-tag">&#10133; Borne '+lpEsc(g.borne)+'</span></div>';
+    h+='<div class="twrap" style="max-height:none;margin:10px 0"><table class="ptable eq-tab"><thead><tr>';
+    EQ_MARCAS.forEach(function(m){h+='<th>'+m[1]+'</th>';});
+    h+='</tr></thead><tbody><tr>';
+    EQ_MARCAS.forEach(function(m){h+='<td>'+eqCodHtml(g,m[0])+'</td>';});
+    h+='</tr></tbody></table></div>';
+    if(g.nota)h+='<div class="bm-nota" style="margin-bottom:8px">'+lpEsc(g.nota)+'</div>';
+    h+='<div class="eq-motos">'+motos.map(function(m){return '<span class="eq-moto"'+(m[1]?' title="'+lpEsc(m[1])+'"':'')+'>&#127949; '+lpEsc(m[0])+(m[1]?' <small>('+lpEsc(m[1])+')</small>':'')+'</span>';}).join('')+'</div></div>';
+  });
+  document.getElementById('eqLista').innerHTML=h||'<div class="no-res">No se encontró esa moto ni ese código en la tabla de equivalencias.</div>';
+}
+// Formulario de colocación de moto: muestra los códigos equivalentes de la moto o batería elegida
+function smEqRender(){
+  var box=document.getElementById('smEqBox');if(!box)return;
+  var moto=document.getElementById('smMoto').value.trim(),bat=document.getElementById('smBat').value.trim();
+  var bx=BUSC_MOTO.filter(function(x){return String(x.v).trim().toLowerCase()===moto.toLowerCase();})[0];
+  var gs=(moto.length>=3||bat.length>=3)?eqGruposDe(moto,[bat,bx&&bx.b,bx&&bx.eq]):[];
+  box.innerHTML=gs.length?eqBloqueMini(gs):'';
 }
 function bmFila(f){return BUSC_MOTO.filter(function(x){return x.fila===f;})[0];}
 function bmEditar(f){bmEditFila=f;bmBuscar();var i=document.getElementById('bmEdv');if(i)i.focus();}
@@ -1986,6 +2112,7 @@ function abrirMotoOverlay(){
   document.querySelectorAll('#motoOverlay .gfield .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
   document.getElementById('smCuentaField').style.display='none';
   var b=document.getElementById('smConfirmar');b.disabled=false;b.textContent='Confirmar';
+  document.getElementById('smEqBox').innerHTML='';
   document.getElementById('motoOverlay').classList.remove('hidden');
 }
 function cerrarMotoOverlay(){document.getElementById('motoOverlay').classList.add('hidden');}

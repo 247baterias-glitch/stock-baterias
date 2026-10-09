@@ -90,6 +90,7 @@ function lpRouter_(b) {
     case 'buscadorEditar': return lpBuscadorEditar_(b);
     case 'buscadorEliminar': return lpBuscadorEliminar_(b);
     case 'buscadorAgregar': return lpBuscadorAgregar_(b);
+    case 'smAgregar': return smAgregar_(b);
     case 'cmGet': return cmGet_();
     case 'cmLeer': return cmLeer_(b);
     case 'cmAgregar': return cmAgregar_(b);
@@ -471,6 +472,21 @@ function remitoLeer_(b) {
   } catch (err) {
     return { ok: false, error: 'No se pudo leer el remito: ' + String((err && err.message) || err).slice(0, 150), archivo_id: archivoId };
   }
+}
+
+// ---------- Servicios MOTO (copia completa de cada servicio de bateria de moto) ----------
+var SM_HOJA = 'Servicios Moto';
+var SM_COLS = ['id', 'fecha', 'moto', 'anio', 'cilindrada', 'dominio', 'bateria', 'marca', 'precio', 'forma_pago', 'cuenta', 'ubicacion', 'tecnico', 'telefono', 'vigencia', 'carga'];
+function smAgregar_(b) {
+  var fecha = String(b.fecha || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return { ok: false, error: 'Fecha invalida' };
+  var id = 'sm-' + new Date().getTime();
+  lpConLock_(function () {
+    var sh = lpHoja_(SM_HOJA, SM_COLS);
+    var row = SM_COLS.map(function (c) { return c === 'id' ? id : String(b[c] == null ? '' : b[c]).trim(); });
+    sh.getRange(sh.getLastRow() + 1, 1, 1, SM_COLS.length).setValues([row]);
+  });
+  return { ok: true, id: id };
 }
 
 // ---------- Compras MOTO (tickets de compra de baterias de moto) ----------

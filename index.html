@@ -117,12 +117,13 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .stk-filtros button{border:0;background:transparent;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:14.5px;padding:9px 14px;border-radius:var(--r-sm);cursor:pointer}
 .stk-filtros button.act{background:var(--surface);color:var(--ink);box-shadow:0 1px 0 var(--amber) inset}
 .stk-filtros small{opacity:.7;margin-left:3px}
-.stk-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.stk-grid{display:grid;grid-template-columns:1fr;gap:12px;align-items:start}
 .stk-card{margin-bottom:0;border-left:5px solid var(--border);padding:1.3rem 1.4rem}
 .stk-card.stkc-ok{border-left-color:var(--green)}.stk-card.stkc-low{border-left-color:var(--warn)}.stk-card.stkc-out{border-left-color:var(--red)}
 .stk-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.stk-cod{font-size:24px;font-weight:800;letter-spacing:-.01em;line-height:1.15}
-.stk-det{font-size:15.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+.stk-cod{font-size:28px;font-weight:900;letter-spacing:-.01em;line-height:1.15}
+.stk-det{font-size:18px;font-weight:600;color:#c7cde0;margin-top:5px;line-height:1.35}
+.stk-edit{background:var(--bg);border:1px solid var(--amber);border-radius:var(--r-md);padding:12px;margin-bottom:12px}.stk-edit label{display:block;font-size:12.5px;color:var(--muted);font-weight:700;margin:6px 0 4px}.stk-edit input{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px;font-size:16px;color:var(--ink);font-family:var(--sans)}.stk-edit input#stkEdT{font-size:20px;font-weight:800}
 .stk-efb{display:inline-block;background:var(--green-bg);color:var(--green);font-size:11px;font-weight:800;padding:3px 8px;border-radius:99px;margin-left:8px;vertical-align:middle}
 .stk-num{text-align:right;flex-shrink:0}.stk-num .sn{font-size:46px;line-height:1;display:block}.stk-num small{font-size:12.5px;color:var(--muted)}
 .stkc-out .stk-num .sn{color:var(--red)}.stkc-low .stk-num .sn{color:var(--warn)}.stkc-ok .stk-num .sn{color:var(--green)}
@@ -2034,19 +2035,21 @@ function rMarcas(){
   claves.forEach(function(k){h+='<button class="card" onclick="vMarca(\''+k+'\')"><div class="ci"><h2>'+k+'</h2><p>'+ms[k].mod+' modelos</p></div><div class="mstat"><div class="mtot">'+ms[k].uni+'</div><div class="mlab">baterías</div></div><span class="arr">&#8250;</span></button>';});
   h+='</div>';document.getElementById('l2').innerHTML=h;
 }
-function vMarca(m){marca=m;stkFiltro='todos';document.getElementById('p2').classList.add('hidden');document.getElementById('p3').classList.remove('hidden');titulo(m);document.getElementById('bus').value='';rMod();}
+function vMarca(m){marca=m;stkFiltro='todos';stkEditId=null;document.getElementById('p2').classList.add('hidden');document.getElementById('p3').classList.remove('hidden');titulo(m);document.getElementById('bus').value='';rMod();}
 function vM(){document.getElementById('p3').classList.add('hidden');document.getElementById('p2').classList.remove('hidden');titulo(nombreCam(cam));rMarcas();}
 var stkFiltro='todos';
-function stkEditarNombre(id){
+var stkEditId=null;
+function stkEditarNombre(id){stkEditId=String(id);rMod();var i=document.getElementById('stkEdT');if(i){i.focus();i.select();}}
+function stkGuardarNombre(id){
   var m=datos.filter(function(x){return String(x.id)===String(id);})[0];if(!m)return;
-  var n=prompt('Nombre de la batería',m.nombre);
-  if(n===null)return;n=n.trim();
-  if(!n)return toast('El nombre no puede quedar vacío');
-  if(n===m.nombre)return;
+  var t=document.getElementById('stkEdT').value.replace(/\|/g,'/').trim(),d=document.getElementById('stkEdD').value.replace(/\|/g,'/').trim();
+  if(!t)return toast('El título no puede quedar vacío');
+  var n=d?t+' | '+d:t+' | ';
+  if(n===m.nombre){stkEditId=null;rMod();return;}
   sync('Guardando...');
   apiPost('stockEditarNombre',{id:m.id,codigo:m.codigo,nombre:n}).then(function(r){
     if(!r.ok){sync('Error');return toast('Error: '+r.error);}
-    m.nombre=n;sync('Sincronizado');rMod();toast('Nombre actualizado');
+    m.nombre=n;stkEditId=null;sync('Sincronizado');rMod();toast('Nombre actualizado');
   }).catch(function(e){sync('Error');toast('Error: '+e.message);});
 }
 // ---- URGENTE COMPRAR: se carga desde Lista de Precios y se ve en Listas de Distribuidores ----
@@ -2100,6 +2103,7 @@ function stkSetFiltro(f){stkFiltro=f;rMod();}
 // Separa "MOURA M22ED 12X55 50 ah cajon chico" en código (M22ED) y detalle (12X55 50 ah cajon chico)
 function stkPartes(m){
   var n=String(m.nombre||'').trim(),mk=String(m.marca||'').trim();
+  if(n.indexOf('|')!==-1){var pp=n.split('|');return {cod:pp[0].trim(),det:pp.slice(1).join('|').trim()};}
   if(mk&&n.toUpperCase().indexOf(mk.toUpperCase()+' ')===0)n=n.slice(mk.length+1).trim();
   var i=n.indexOf(' ');
   return i===-1?{cod:n,det:''}:{cod:n.slice(0,i),det:n.slice(i+1)};
@@ -2129,7 +2133,12 @@ function rMod(){
     var s=m[c]||0,pt=stkPartes(m),est=bc(s);
     var esSSmod=(m.codigo&&(m.codigo.indexOf('EFB')!==-1||m.codigo.indexOf('72LD')!==-1));
     h+='<div class="mc stk-card stkc-'+est+'">';
-    h+='<div class="stk-top"><div class="stk-nom"><div class="stk-cod">'+lpEsc(pt.cod)+' <button class="stk-lapiz" title="Editar nombre" onclick="stkEditarNombre(\''+m.id+'\')">&#9998;</button>'+(esSSmod?'<span class="stk-efb">EFB · START STOP</span>':'')+'</div>'+(pt.det?'<div class="stk-det">'+lpEsc(pt.det)+'</div>':'')+'</div>';
+    if(stkEditId===String(m.id)){
+      h+='<div class="stk-edit"><label>Título (en grande)</label><input type="text" id="stkEdT" value="'+lpEsc(pt.cod)+'" placeholder="Ej: VA60DD Blindada" onkeydown="if(event.key===\'Enter\')stkGuardarNombre(\''+m.id+'\')"/>';
+      h+='<label>Subtítulo</label><input type="text" id="stkEdD" value="'+lpEsc(pt.det)+'" placeholder="Ej: 12X65 Ref 60ah" onkeydown="if(event.key===\'Enter\')stkGuardarNombre(\''+m.id+'\')"/>';
+      h+='<div style="display:flex;gap:8px;margin-top:10px"><button class="bp" onclick="stkGuardarNombre(\''+m.id+'\')">Guardar</button><button class="bs" onclick="stkEditId=null;rMod()">Cancelar</button></div></div>';
+    }
+    h+='<div class="stk-top"><div class="stk-nom"><div class="stk-cod">'+lpEsc(pt.cod)+' <button class="stk-lapiz" title="Editar título y subtítulo" onclick="stkEditarNombre(\''+m.id+'\')">&#9998;</button>'+(esSSmod?'<span class="stk-efb">EFB · START STOP</span>':'')+'</div>'+(pt.det?'<div class="stk-det">'+lpEsc(pt.det)+'</div>':'')+'</div>';
     h+='<div class="stk-num"><span class="sn">'+s+'</span><small>en stock</small></div></div>';
     h+='<div class="stk-estado '+est+'">'+bl(s)+'</div>';
     h+='<div class="acts"><button class="bp" onclick="abrirColocacion(\''+m.id+'\',\''+m.codigo+'\')"'+(s===0?' disabled':'')+'>&#8722; RESTAR UNA</button><button class="bs" onclick="tRep(\''+m.id+'\')">+ SUMAR</button></div>';
@@ -2140,7 +2149,7 @@ function rMod(){
   });
   el.innerHTML=h+'</div>';
 }
-function restar(id){var m=datos.filter(function(x){return x.id===id;})[0];if(!m||m[cam.c]===0)return;m[cam.c]--;guardar(id,cam.c,m[cam.c]);rMod();toast('- '+m.nombre+' quedan '+m[cam.c]);}
+function restar(id){var m=datos.filter(function(x){return x.id===id;})[0];if(!m||m[cam.c]===0)return;m[cam.c]--;guardar(id,cam.c,m[cam.c]);rMod();toast('- '+String(m.nombre).replace(/\s*\|\s*/g,' ').trim()+' quedan '+m[cam.c]);}
 function restarSinRegistrar(id){
   var m=datos.filter(function(x){return x.id===id;})[0];
   if(!m||m[cam.c]===0)return;
@@ -2252,7 +2261,7 @@ function confirmarColocacion(){
       sync('Sincronizado');
       cerrarColOverlay();
       rMod();
-      toast('- '+m.nombre+' quedan '+m[cam.c]);
+      toast('- '+String(m.nombre).replace(/\s*\|\s*/g,' ').trim()+' quedan '+m[cam.c]);
       generarGarantiaClick({
         fecha:fecha,vehiculo:vehiculo,anio_vehiculo:anio,dominio:dominio,
         bateria:marcaParaGarantia,modelo_bateria:modeloParaGarantia,

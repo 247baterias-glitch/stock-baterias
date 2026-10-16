@@ -358,6 +358,10 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .pd-q-f{font-size:13px;color:var(--muted2);margin-top:3px}
 .pd-q-r{font-size:15.5px;color:#34d399;margin-top:6px;font-weight:600}
 .pd-sub{font-size:14px;font-weight:700;color:var(--muted);margin:12px 0 2px;text-transform:uppercase;letter-spacing:.03em}
+.iva-bus{margin-top:14px;padding:12px 16px}.iva-bus input{font-size:17px}
+.iva-bus-x{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px}.iva-bus-x:hover{color:var(--ink)}
+.iva-bus-res{background:rgba(242,169,60,.10);border:1px solid rgba(242,169,60,.40);border-radius:var(--r-md);padding:12px 16px;font-size:15px;color:var(--ink-soft);margin-top:4px;line-height:1.5}
+.iva-bus-res b{color:var(--ink)}
 .eq-x{background:none;border:none;color:#f87171;font-weight:800;font-size:15px;cursor:pointer;margin-left:6px;padding:0 2px;line-height:1}
 .eq-nuevo-tag{font-size:11px;font-weight:800;color:var(--teal);background:rgba(45,212,191,.14);border-radius:99px;padding:2px 8px;margin-left:4px}
 .eq-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -776,6 +780,8 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </div>
 <div class="mc" id="ddjjBox"></div>
 <input type="file" id="ddjjInput" accept="image/*,application/pdf" style="display:none" onchange="ddjjElegido(this)"/>
+<div class="sbox mb-lupa iva-bus"><span>&#128269;</span><input type="text" id="ivaBus" placeholder="Buscar proveedor o cliente: Dimac, Carena, combustible..." oninput="ivaRender()"/><button id="ivaBusX" class="iva-bus-x hidden" title="Borrar búsqueda" onclick="document.getElementById('ivaBus').value='';ivaRender()">&#10005;</button></div>
+<div id="ivaBusRes" class="iva-bus-res hidden"></div>
 <div class="twrap" style="margin-top:12px;max-height:none"><table class="ptable">
 <thead><tr><th>Fecha</th><th>Tipo</th><th>Proveedor / cliente</th><th>Neto</th><th>IVA</th><th>Total</th><th>Foto</th><th></th></tr></thead><tbody id="ivaBody"></tbody>
 </table></div>
@@ -1080,7 +1086,8 @@ var PMOURA=[
 {m:'MF60AD 12X65 EFB',l:'$211.230,00',p:'$281.230,00'},
 {m:'MF72LD EFB START STOP ',l:'$258.579,72',p:'$365.000,00'},
 {m:'MF80CD EFB START STOP ',l:'$326.458,37',p:'$400.000,00'},
-{m:'ME150BD12X180',l:'$235.498,60',p:'$290.498,60'}
+{m:'ME150BD12X180',l:'$235.498,60',p:'$290.498,60'},
+{m:'ME180BD 12X180 180AH',l:'',p:''}
 ];
 var PUB=[
 {m:'UB 325',l:'$82.275,12',p:'$137.275,12'},
@@ -1964,7 +1971,7 @@ function plEditarVenta(i){
 function plEditarPrecio(i){
   var x=plLista()[i];if(!x)return;
   var k=plKey(x),orig=plNum(x.l),act=plCfg.precios[k]||orig;
-  var v=prompt('Precio de '+String(x.m).trim()+' (vacío = volver al original $'+formatARS(orig)+'):',formatARS(act));
+  var v=prompt('Precio de lista de '+String(x.m).trim()+(orig>0?' (vacío = volver al original $'+formatARS(orig)+')':'')+':',act>0?formatARS(act):'');
   if(v===null)return;
   if(!v.trim()){delete plCfg.precios[k];plGuardar('Precio original restaurado');return;}
   var n=lpNum(v);if(!(n>0)){toast('Precio inválido');return;}
@@ -2000,11 +2007,15 @@ function filtrarPrecios(){
     var precio=corr?plCfg.precios[k]:plNum(x.l);
     // Modelos que en la lista original tenían una venta distinta al margen general conservan esa diferencia
     var extra=Math.round(plNum(x.p)-plNum(x.l))-mgDef;if(!(plNum(x.p)>0)||Math.abs(extra)<1)extra=0;
+    if(!(precio>0)){
+      h+='<tr><td>'+lpEsc(plMarca().toUpperCase())+'</td><td><b>'+lpEsc(x.m)+'</b>'+badge+'</td><td colspan="'+(hayDesc?8:6)+'"><button class="bs" style="padding:8px 14px;font-size:14px" onclick="plEditarPrecio('+i+')">&#9998; Cargar precio de lista</button> <span style="color:var(--muted);font-size:13px">Falta el precio de este modelo</span></td><td><div class="stk-info '+cls+'" style="margin-top:0">'+stk+'</div></td></tr>';
+      return;
+    }
     var costo=Math.round(precio*f*100)/100,venta=(fac?Math.round(costo*1.21*100)/100:costo)+mg+extra;
     var vk='V:'+k,vMan=plCfg.precios[vk]!==undefined;
     if(vMan){venta=plCfg.precios[vk];extra=0;}
     h+='<tr><td>'+lpEsc(plMarca().toUpperCase())+'</td><td><b>'+lpEsc(x.m)+'</b>'+badge+'</td>';
-    h+='<td style="white-space:nowrap"><span'+(hayDesc?' style="color:var(--muted);text-decoration:line-through"':' style="font-weight:700"')+'>$'+formatARS(precio)+'</span>'+(corr?' <span title="Precio corregido a mano" style="color:var(--amber);text-decoration:none">●</span>':'')+'</td>';
+    h+='<td style="white-space:nowrap"><span'+(hayDesc?' style="color:var(--muted);text-decoration:line-through"':' style="font-weight:700"')+'>$'+formatARS(precio)+'</span>'+(corr?' <span title="Precio corregido a mano" style="color:var(--amber);text-decoration:none">●</span>':'')+' <button class="pl-lapiz" title="Corregir precio de lista" onclick="plEditarPrecio('+i+')">&#9998;</button></td>';
     if(hayDesc)h+='<td><span class="lp-desc-tag">'+lpDescTexto(c.pct)+'</span></td><td style="font-weight:800">$'+formatARS(costo)+'</td>';
     h+='<td style="font-weight:700;color:#2dd4bf">$'+formatARS(costo*1.21)+'</td><td class="pventa" style="white-space:nowrap"'+(extra?' title="Este modelo tiene $'+formatARS(extra)+' extra sobre el margen"':'')+'>$'+formatARS(venta)+(vMan?' <span title="Venta puesta a mano" style="color:var(--amber)">●</span>':'')+(extra?' <span style="color:var(--muted);font-size:12px">('+(extra>0?'+':'−')+'$'+formatMoney(Math.abs(extra))+')</span>':'')+' <button class="pl-lapiz" title="Modificar precio de venta" onclick="plEditarVenta('+i+')">&#9998;</button></td><td style="font-weight:700;color:#15803d">$'+formatARS(venta*1.21)+'</td><td style="font-weight:700;color:#0e7490">$'+formatARS(venta-RETIRO_DESC)+'</td><td class="pnoche">$'+formatARS(venta+8000)+'</td>';
     h+='<td><div class="stk-info '+cls+'" style="margin-top:0">'+stk+'</div></td></tr>';
@@ -4189,6 +4200,7 @@ function ivaRenderPagos(){
 // Compras de baterías: facturas de los distribuidores (4K, Telmo, Bari, Dimac, etc.) o de razones sociales con "BATER"
 var IVA_BAT_RE=/\b(4\s?K|CUATRO\s?K|TELMO|BARI|DIMAC|OCEAN\s?BAT|RONCONI|VARTA|MOURA|WILLARD)\b|BATER/i;
 function ivaEsBateria(x){return x.tipo!=='venta'&&IVA_BAT_RE.test(String(x.detalle||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''));}
+function ivaBusNorm(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
 function ivaRender(){
   var hoy=new Date(),h='';
   for(var i=0;i<6;i++){
@@ -4229,12 +4241,25 @@ function ivaRender(){
   else r+='<div class="iva-box" style="border-color:rgba(52,211,153,.45)"><div class="k">SALDO A FAVOR EN '+mesTxt.toUpperCase()+'</div><div class="v" style="color:var(--green)">$'+formatARS(-saldo)+'</div><div class="s">Tenés más IVA compras que ventas</div></div>';
   document.getElementById('ivaRes').innerHTML=r;
   ivaRenderPagos();
-  var b='';
-  lista.forEach(function(x){
+  var b='',bq=ivaBusNorm((document.getElementById('ivaBus')||{}).value||''),tabla=lista;
+  var busRes=document.getElementById('ivaBusRes');
+  document.getElementById('ivaBusX').classList.toggle('hidden',!bq);
+  if(bq.length>=2){
+    var pal=bq.split(' ').filter(Boolean);
+    tabla=ivaData.filter(function(x){var d=ivaBusNorm(x.detalle);return pal.every(function(p){return d.indexOf(p)!==-1;});});
+    tabla.sort(function(a,b){return a.fecha<b.fecha?1:a.fecha>b.fecha?-1:0;});
+    var sc={n:0,tot:0,iva:0},sv={n:0,tot:0,iva:0};
+    tabla.forEach(function(x){var o=x.tipo==='venta'?sv:sc;o.n++;o.tot+=x.total;o.iva+=x.iva;});
+    busRes.innerHTML=tabla.length?'<b>'+tabla.length+' factura'+(tabla.length===1?'':'s')+'</b> en todos los meses'+
+      (sc.n?' · Compras: '+sc.n+' · total <b>$'+formatARS(sc.tot)+'</b> (IVA $'+formatARS(sc.iva)+')':'')+
+      (sv.n?' · Ventas: '+sv.n+' · total <b>$'+formatARS(sv.tot)+'</b> (IVA $'+formatARS(sv.iva)+')':''):'No hay facturas de ese proveedor o cliente en ningún mes.';
+    busRes.classList.remove('hidden');
+  }else busRes.classList.add('hidden');
+  tabla.forEach(function(x){
     var bat=ivaEsBateria(x);
     b+='<tr'+(bat?' class="iva-bat"':'')+'><td>'+fmtFecha(x.fecha)+'</td><td><span class="iva-badge '+x.tipo+'">'+(x.tipo==='venta'?'VENTA':'COMPRA')+'</span>'+(bat?'<br><span class="iva-badge-bat">&#128267; BATERÍAS</span>':'')+'</td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td>$'+formatARS(x.neto)+'</td><td style="font-weight:700">$'+formatARS(x.iva)+'</td><td>$'+formatARS(x.total)+'</td><td>'+(x.foto_id?'<a href="https://drive.google.com/file/d/'+x.foto_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">&#128247; Ver</a>':'<span style="color:var(--muted2)">—</span>')+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ivaEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';
   });
-  document.getElementById('ivaBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin facturas en '+mesTxt+'</td></tr>';
+  document.getElementById('ivaBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">'+(bq.length>=2?'Sin resultados':'Sin facturas en '+mesTxt)+'</td></tr>';
   ddjjRender();
 }
 // ---- Declaraciones juradas IVA / IIBB por mes ----

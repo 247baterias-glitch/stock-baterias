@@ -362,6 +362,11 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .iva-bus-x{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px}.iva-bus-x:hover{color:var(--ink)}
 .iva-bus-res{background:rgba(242,169,60,.10);border:1px solid rgba(242,169,60,.40);border-radius:var(--r-md);padding:12px 16px;font-size:15px;color:var(--ink-soft);margin-top:4px;line-height:1.5}
 .iva-bus-res b{color:var(--ink)}
+.ptable tr.iva-dup td{background:rgba(248,113,113,.12)!important}
+.ptable tr.iva-dup td:first-child{box-shadow:inset 4px 0 0 #f87171}
+.iva-badge-dup{display:inline-block;margin-top:4px;background:#f87171;color:#2a0505;font-family:var(--sans);font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:99px;letter-spacing:.03em}
+.iva-dup-box{background:rgba(248,113,113,.12);border:1.5px solid rgba(248,113,113,.55);border-radius:var(--r-md);padding:12px 16px;font-size:15px;color:#fecaca;margin-top:8px}
+.iva-dup-aviso{display:inline-block;color:#fecaca;background:rgba(248,113,113,.16);border:1px solid rgba(248,113,113,.55);border-radius:8px;padding:6px 10px;font-weight:800;margin-bottom:4px}
 .eq-x{background:none;border:none;color:#f87171;font-weight:800;font-size:15px;cursor:pointer;margin-left:6px;padding:0 2px;line-height:1}
 .eq-nuevo-tag{font-size:11px;font-weight:800;color:var(--teal);background:rgba(45,212,191,.14);border-radius:99px;padding:2px 8px;margin-left:4px}
 .eq-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -782,6 +787,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <input type="file" id="ddjjInput" accept="image/*,application/pdf" style="display:none" onchange="ddjjElegido(this)"/>
 <div class="sbox mb-lupa iva-bus"><span>&#128269;</span><input type="text" id="ivaBus" placeholder="Buscar proveedor o cliente: Dimac, Carena, combustible..." oninput="ivaRender()"/><button id="ivaBusX" class="iva-bus-x hidden" title="Borrar búsqueda" onclick="document.getElementById('ivaBus').value='';ivaRender()">&#10005;</button></div>
 <div id="ivaBusRes" class="iva-bus-res hidden"></div>
+<div id="ivaDupBox" class="iva-dup-box hidden"></div>
 <div class="twrap" style="margin-top:12px;max-height:none"><table class="ptable">
 <thead><tr><th>Fecha</th><th>Tipo</th><th>Proveedor / cliente</th><th>Neto</th><th>IVA</th><th>Total</th><th>Foto</th><th></th></tr></thead><tbody id="ivaBody"></tbody>
 </table></div>
@@ -4038,6 +4044,8 @@ function ivaAplicarLectura(d,link){
   avisos.forEach(function(a){h+='<br><span class="warn">'+lpEsc(a)+'</span>';});
   if(autoTipo==='venta')h+='<br><span style="color:#34d399;font-weight:800">&#10004; La emitiste vos (CUIT 20-41474529-7): se marcó como VENTA.</span>';
   else if(autoTipo==='compra')h+='<br><span style="color:#34d399;font-weight:800">&#10004; Está a tu nombre como cliente: se marcó como COMPRA.</span>';
+  var dupL=total?ivaBuscarDup({tipo:ivaTipo,fecha:document.getElementById('ivaFecha').value,detalle:det,total:total}):null;
+  if(dupL)h='<span class="iva-dup-aviso">&#9940; '+(dupL.t==='num'?'ESTA FACTURA YA ESTÁ CARGADA':'Parece repetida')+': '+ivaDupTexto(dupL)+(dupL.t==='num'?'. No se va a poder guardar de nuevo.':'.')+'</span><br>'+h;
   h+='<br><span style="color:var(--muted)">Revisá que esté bien'+(autoTipo?'':', elegí Compra o Venta')+' y tocá Guardar.</span>'+(link||'');
   info.innerHTML=h;
   ivaCalcPreview();
@@ -4079,21 +4087,53 @@ function ivaCalcPreview(){
   var c=ivaCalcular();
   document.getElementById('ivaPreview').textContent=c?('Neto $'+formatARS(c.neto)+'  |  IVA $'+formatARS(c.iva)+'  |  Total $'+formatARS(c.total)):'';
 }
+// ---- Control de facturas duplicadas ----
+// Número de comprobante "0014-00066408" -> "14-66408" (si no tiene, devuelve '')
+function ivaDupNum(det){var m=String(det||'').match(/(\d{1,5})\s*-\s*(\d{4,8})(?!\d)/g);if(!m)return '';var p=m[m.length-1].split('-');return parseInt(p[0],10)+'-'+parseInt(p[1],10);}
+function ivaDupNom(det){return ivaBusNorm(String(det||'').split(' - ')[0]).replace(/[^a-z0-9]/g,'').slice(0,10);}
+// 'num' = mismo número de comprobante (seguro duplicada) · 'prob' = mismo día, importe y proveedor (probable) · '' = distinta
+function ivaDupTipo(a,b){
+  if(a.tipo!==b.tipo)return '';
+  var mismoTot=Math.abs((Number(a.total)||0)-(Number(b.total)||0))<=1;
+  var na=ivaDupNum(a.detalle),nb=ivaDupNum(b.detalle);
+  if(na&&nb)return na===nb&&(mismoTot||ivaDupNom(a.detalle)===ivaDupNom(b.detalle))?'num':'';
+  return a.fecha===b.fecha&&mismoTot&&ivaDupNom(a.detalle)===ivaDupNom(b.detalle)?'prob':'';
+}
+function ivaBuscarDup(f,lista){
+  var r=null;(lista||ivaData).forEach(function(x){if(x===f||(f.id&&x.id===f.id))return;var t=ivaDupTipo(f,x);if(t==='num'||(t&&!r))r={t:t,x:x};});
+  return r;
+}
+function ivaDupTexto(d){return lpEsc(d.x.detalle||'-')+' del '+fmtFecha(String(d.x.fecha||''))+' por $'+formatARS(d.x.total);}
 function ivaGuardar(){
   var c=ivaCalcular();
   if(!c){toast('Completa el importe');return;}
   var fecha=document.getElementById('ivaFecha').value;
   if(!fecha){toast('Completa la fecha');return;}
   var datos={tipo:ivaTipo,fecha:fecha,detalle:document.getElementById('ivaDetalle').value.trim(),neto:c.neto,iva:c.iva,total:c.total,alicuota:c.alicuota,foto_id:ivaFotoId};
-  var btn=document.getElementById('ivaGuardarBtn');btn.disabled=true;btn.textContent='Guardando...';
-  apiPost('ivaAgregar',datos).then(function(r){
-    btn.disabled=false;btn.textContent='Guardar factura';
+  var btn=document.getElementById('ivaGuardarBtn');btn.disabled=true;btn.textContent='Revisando...';
+  var listo=function(){btn.disabled=false;btn.textContent='Guardar factura';};
+  // Antes de guardar trae las facturas actualizadas (por si se cargó desde otro celular) y busca duplicadas
+  apiPost('ivaGet').catch(function(){return null;}).then(function(r0){
+    if(r0&&r0.ok)ivaData=r0.data||ivaData;
+    var dup=ivaBuscarDup(datos);
+    if(dup&&dup.t==='num'){
+      listo();ivaRender();
+      document.getElementById('ivaLeido').innerHTML='<span class="iva-dup-aviso">&#9940; Esta factura ya está cargada: '+ivaDupTexto(dup)+'. No se guardó para no duplicar el IVA.</span>';
+      toast('Factura repetida: no se guardó');
+      return null;
+    }
+    if(dup&&!confirm('Ya hay una factura parecida cargada:\n'+(dup.x.detalle||'-')+' del '+fmtFecha(String(dup.x.fecha||''))+' por $'+formatARS(dup.x.total)+'\n\nMismo día, mismo proveedor y mismo importe. ¿Es otra factura distinta y querés cargarla igual?')){listo();return null;}
+    btn.textContent='Guardando...';
+    return apiPost('ivaAgregar',datos);
+  }).then(function(r){
+    if(r===null)return;
+    listo();
     if(!r.ok){toast('Error: '+r.error);return;}
     datos.id=r.id;ivaData.push(datos);
     var p=fecha.split('-');ivaAnio=parseInt(p[0],10);ivaMes=parseInt(p[1],10)-1;
     document.getElementById('ivaImporte').value='';document.getElementById('ivaDetalle').value='';ivaLeidoDatos=null;ivaFotoId='';document.getElementById('ivaLeido').innerHTML='';ivaCalcPreview();
     ivaRender();toast('Factura de '+datos.tipo+' guardada');
-  }).catch(function(e){btn.disabled=false;btn.textContent='Guardar factura';toast('Error: '+e.message);});
+  }).catch(function(e){listo();toast('Error: '+e.message);});
 }
 function ivaEliminar(id){
   if(!confirm('¿Eliminar esta factura?'))return;
@@ -4255,9 +4295,14 @@ function ivaRender(){
       (sv.n?' · Ventas: '+sv.n+' · total <b>$'+formatARS(sv.tot)+'</b> (IVA $'+formatARS(sv.iva)+')':''):'No hay facturas de ese proveedor o cliente en ningún mes.';
     busRes.classList.remove('hidden');
   }else busRes.classList.add('hidden');
+  var dupIds={},ndup=0;
+  ivaData.forEach(function(x,i){for(var j=0;j<i;j++){if(ivaDupTipo(x,ivaData[j])){dupIds[x.id]=ivaDupTipo(x,ivaData[j]);break;}}});
+  tabla.forEach(function(x){if(dupIds[x.id])ndup++;});
+  var dupBox=document.getElementById('ivaDupBox');
+  if(dupBox){dupBox.innerHTML=ndup?'&#9888; Hay <b>'+ndup+' factura'+(ndup===1?'':'s')+' repetida'+(ndup===1?'':'s')+'</b> en esta lista (marcada'+(ndup===1?'':'s')+' en rojo). Están sumando IVA de más: borrá la copia con la ✕.':'';dupBox.classList.toggle('hidden',!ndup);}
   tabla.forEach(function(x){
     var bat=ivaEsBateria(x);
-    b+='<tr'+(bat?' class="iva-bat"':'')+'><td>'+fmtFecha(x.fecha)+'</td><td><span class="iva-badge '+x.tipo+'">'+(x.tipo==='venta'?'VENTA':'COMPRA')+'</span>'+(bat?'<br><span class="iva-badge-bat">&#128267; BATERÍAS</span>':'')+'</td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td>$'+formatARS(x.neto)+'</td><td style="font-weight:700">$'+formatARS(x.iva)+'</td><td>$'+formatARS(x.total)+'</td><td>'+(x.foto_id?'<a href="https://drive.google.com/file/d/'+x.foto_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">&#128247; Ver</a>':'<span style="color:var(--muted2)">—</span>')+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ivaEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';
+    b+='<tr'+(dupIds[x.id]?' class="iva-dup"':bat?' class="iva-bat"':'')+'><td>'+fmtFecha(x.fecha)+'</td><td><span class="iva-badge '+x.tipo+'">'+(x.tipo==='venta'?'VENTA':'COMPRA')+'</span>'+(bat?'<br><span class="iva-badge-bat">&#128267; BATERÍAS</span>':'')+(dupIds[x.id]?'<br><span class="iva-badge-dup" title="'+(dupIds[x.id]==='num'?'Mismo número de comprobante que otra ya cargada':'Mismo día, proveedor e importe que otra ya cargada')+'">&#9888; REPETIDA</span>':'')+'</td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td>$'+formatARS(x.neto)+'</td><td style="font-weight:700">$'+formatARS(x.iva)+'</td><td>$'+formatARS(x.total)+'</td><td>'+(x.foto_id?'<a href="https://drive.google.com/file/d/'+x.foto_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">&#128247; Ver</a>':'<span style="color:var(--muted2)">—</span>')+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="ivaEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';
   });
   document.getElementById('ivaBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">'+(bq.length>=2?'Sin resultados':'Sin facturas en '+mesTxt)+'</td></tr>';
   ddjjRender();

@@ -392,6 +392,16 @@ a.card{text-decoration:none;color:inherit;box-sizing:border-box}
 .iva-lote-f.prob{border-color:rgba(242,169,60,.6);background:rgba(242,169,60,.08)}
 .iva-rev-acc{display:flex;gap:10px;margin-top:6px}.iva-rev-acc .bp{flex:1;font-size:16px;padding:14px}.iva-rev-acc .bs{flex:0 0 auto;padding:14px 18px}
 .iva-lote-f.err{border-color:rgba(242,169,60,.6);background:rgba(242,169,60,.08)}
+.rs-moto{border-color:rgba(124,108,255,.5)!important;background:linear-gradient(180deg,rgba(124,108,255,.14),var(--surface))!important}
+.rs-moto-h{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.rs-moto-ic{font-size:34px}
+.rs-moto-t{font-size:19px;font-weight:800}
+.rs-moto-s{font-size:13.5px;color:var(--muted);margin-top:2px}
+.rs-moto-n{text-align:center;min-width:80px}.rs-moto-n b{display:block;font-size:30px;font-weight:800;color:#c4b5fd;line-height:1.1}.rs-moto-n small{font-size:12px;color:var(--muted)}
+.rs-moto-l{margin-top:14px;border-top:1px solid var(--border2)}
+.rs-moto-r{display:grid;grid-template-columns:100px 1fr 160px 90px 110px;gap:10px;padding:9px 2px;border-bottom:1px solid var(--border2);font-size:14px;align-items:center}
+.rs-moto-f{color:var(--muted);font-family:var(--mono)}.rs-moto-v{font-weight:700}.rs-moto-b{color:#c4b5fd;font-weight:700}.rs-moto-tc{color:var(--ink-soft)}.rs-moto-p{text-align:right;font-weight:700;color:#34d399}
+@media (max-width:760px){.rs-moto-r{grid-template-columns:80px 1fr 1fr;}.rs-moto-tc,.rs-moto-p{display:none}}
 .eq-x{background:none;border:none;color:#f87171;font-weight:800;font-size:15px;cursor:pointer;margin-left:6px;padding:0 2px;line-height:1}
 .eq-nuevo-tag{font-size:11px;font-weight:800;color:var(--teal);background:rgba(45,212,191,.14);border-radius:99px;padding:2px 8px;margin-left:4px}
 .eq-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -2704,7 +2714,14 @@ function confirmarServicioMoto(){
     generarGarantiaClick({fecha:fecha,vehiculo:moto,anio_vehiculo:anio,dominio:d.dominio,bateria:marca||'Moto',modelo_bateria:bat,vigencia:d.vigencia,combustible:'Nafta',carga_alternador:d.carga,telefono_cliente:d.tel});
   }).catch(function(e){confirmandoMoto=false;btn.disabled=false;btn.textContent='Confirmar';sync('Error');toast('Error: '+e.message);});
 }
-function esServMoto(s){return /^MOTO\s/i.test(String(s&&s.modelo_bateria||''));}
+// Servicio de moto: los nuevos se guardan como "MOTO <batería>". Los cargados antes se reconocen por el código de batería de moto.
+function esServMoto(s){
+  var m=String(s&&s.modelo_bateria||'').trim();
+  if(/^MOTO\s/i.test(m))return true;
+  if(!m||datos.some(function(d){return String(d.codigo||'').trim().toUpperCase()===m.toUpperCase();}))return false;
+  if(/^(YTX|YTZ|YB\d|YB\s|YT\d|12N\d|BTX|BTZ|BB\d|MA\d|MTX|GTX|YB[0-9])/i.test(m))return true;
+  return !!(typeof smBuscarBat==='function'&&smBuscarBat(m));
+}
 function abrirTipoExtra(tipo){
   tipoExtra=tipo;
   camSelectMode='extra';
@@ -2954,7 +2971,7 @@ function mostrarResumen(){
 }
 function calcularStatsMes(lista){
   var porTecnico={}, porMarca={}, porModelo={}, modeloMarca={}, porPago={}, porPagoMonto={}, porCuentaTransferencia={}, porCuentaTransferenciaMonto={};
-  var totalColoc=0, totalArr=0, totalCarga=0, totalVis=0;
+  var totalColoc=0, totalArr=0, totalCarga=0, totalVis=0, motoLista=[];
   var clientesNuevosSet={}, clientesRepetidosSet={};
   lista.forEach(function(s){
     var modelo=s.modelo_bateria||'Sin dato';
@@ -2966,6 +2983,7 @@ function calcularStatsMes(lista){
     else if(esCarga)totalCarga++;
     else if(esVisita)totalVis++;
     else totalColoc++;
+    if(!esExtra&&esServMoto(s))motoLista.push(s);
     var tec=s.tecnico||'Sin dato';
     var pago=s.forma_pago||'Sin dato';
     var marca=modelo;
@@ -2994,7 +3012,7 @@ function calcularStatsMes(lista){
   });
   var totalClientesRepetidos=Object.keys(clientesRepetidosSet).length;
   var totalClientesNuevos=Object.keys(clientesNuevosSet).length;
-  return {totalColoc:totalColoc,totalArr:totalArr,totalCarga:totalCarga,totalVis:totalVis,totalClientesRepetidos:totalClientesRepetidos,totalClientesNuevos:totalClientesNuevos,porTecnico:porTecnico,porMarca:porMarca,porModelo:porModelo,modeloMarca:modeloMarca,porPago:porPago,porPagoMonto:porPagoMonto,porCuentaTransferencia:porCuentaTransferencia,porCuentaTransferenciaMonto:porCuentaTransferenciaMonto};
+  return {motoLista:motoLista,totalColoc:totalColoc,totalArr:totalArr,totalCarga:totalCarga,totalVis:totalVis,totalClientesRepetidos:totalClientesRepetidos,totalClientesNuevos:totalClientesNuevos,porTecnico:porTecnico,porMarca:porMarca,porModelo:porModelo,modeloMarca:modeloMarca,porPago:porPago,porPagoMonto:porPagoMonto,porCuentaTransferencia:porCuentaTransferencia,porCuentaTransferenciaMonto:porCuentaTransferenciaMonto};
 }
 function renderStatsMes(){
   var mesLabel=NOMBRES_MES[mesSeleccionado]+(anioSeleccionado!==(new Date()).getFullYear()?' '+anioSeleccionado:'');
@@ -3025,11 +3043,26 @@ function renderStatsMes(){
   }
   var cardTotal=document.getElementById('mesTotalCard');
   if(cardTotal){
-    cardTotal.innerHTML='<div style="font-size:13px;color:#70798a;margin-bottom:6px">TOTAL SERVICIOS '+mesLabel.toUpperCase()+'</div><div style="font-size:36px;font-weight:700">'+totalGeneral+'</div><div style="font-size:12px;color:#70798a">servicios</div>'+promedioHtml+extraHtml+clientesHtml;
+    var nm=st.motoLista.length;
+    cardTotal.innerHTML='<div style="font-size:13px;color:#70798a;margin-bottom:6px">TOTAL SERVICIOS '+mesLabel.toUpperCase()+'</div><div style="font-size:36px;font-weight:700">'+totalGeneral+'</div><div style="font-size:12px;color:#70798a">servicios'+(nm?' ('+(totalGeneral-nm)+' de auto + '+nm+' de moto)':'')+'</div>'+promedioHtml+extraHtml+clientesHtml;
   }
   var el=document.getElementById('mesStatsBody');
   if(!el)return;
   var h='';
+  // ---- Servicios de moto del mes ----
+  var ml=st.motoLista.slice().sort(function(a,b){return String(a.fecha)<String(b.fecha)?1:-1;});
+  var hoyS=hoyStr(),mHoy=ml.filter(function(x){return String(x.fecha)===hoyS;}).length;
+  var mMonto=ml.reduce(function(t,x){return t+(parseFloat(String(x.precio||'').replace(/[^0-9.-]/g,''))||0);},0);
+  var mTec={};ml.forEach(function(x){var t=x.tecnico||'Sin dato';mTec[t]=(mTec[t]||0)+1;});
+  h+='<div class="mc rs-moto"><div class="rs-moto-h"><span class="rs-moto-ic">&#127949;</span><div style="flex:1"><div class="rs-moto-t">Servicios de moto · '+mesLabel+'</div><div class="rs-moto-s">'+(ml.length?Object.keys(mTec).map(function(k){return k+': '+mTec[k];}).join(' · '):'Todavía no hay servicios de moto este mes')+'</div></div>';
+  h+='<div class="rs-moto-n"><b>'+ml.length+'</b><small>en el mes</small></div>'+(esMesActual?'<div class="rs-moto-n"><b>'+mHoy+'</b><small>hoy</small></div>':'')+(mMonto?'<div class="rs-moto-n"><b>$'+formatMoney(mMonto)+'</b><small>facturado</small></div>':'')+'</div>';
+  if(ml.length){
+    h+='<div class="rs-moto-l">'+ml.map(function(x){
+      var bat=String(x.modelo_bateria||'').replace(/^MOTO\s+/i,'');
+      return '<div class="rs-moto-r"><span class="rs-moto-f">'+fmtFecha(String(x.fecha||''))+'</span><span class="rs-moto-v">'+lpEsc(x.vehiculo||'-')+'</span><span class="rs-moto-b">'+lpEsc(bat)+'</span><span class="rs-moto-tc">'+lpEsc(x.tecnico||'')+'</span><span class="rs-moto-p">'+(x.precio?'$'+formatMoney(parseFloat(String(x.precio).replace(/[^0-9.-]/g,''))||0):'')+'</span></div>';
+    }).join('')+'</div>';
+  }
+  h+='</div>';
   h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por tecnico ('+mesLabel+')</div>';
   Object.keys(st.porTecnico).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porTecnico[k]+'</span></div>';});
   if(!Object.keys(st.porTecnico).length)h+='<div class="gcard-row" style="color:#94a0af">Sin datos</div>';

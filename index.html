@@ -367,6 +367,31 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .iva-badge-dup{display:inline-block;margin-top:4px;background:#f87171;color:#2a0505;font-family:var(--sans);font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:99px;letter-spacing:.03em}
 .iva-dup-box{background:rgba(248,113,113,.12);border:1.5px solid rgba(248,113,113,.55);border-radius:var(--r-md);padding:12px 16px;font-size:15px;color:#fecaca;margin-top:8px}
 .iva-dup-aviso{display:inline-block;color:#fecaca;background:rgba(248,113,113,.16);border:1px solid rgba(248,113,113,.55);border-radius:8px;padding:6px 10px;font-weight:800;margin-bottom:4px}
+a.card{text-decoration:none;color:inherit;box-sizing:border-box}
+.iva-lote{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.iva-lote-t{font-weight:800;font-size:15px;color:var(--ink);margin-bottom:2px}
+.iva-lote-f{display:flex;gap:10px;align-items:flex-start;background:var(--border2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13.5px;color:var(--ink-soft)}
+.iva-lote-f b{color:var(--ink);font-size:14px;word-break:break-all}
+.iva-lote-ic{font-size:17px;line-height:1.2}
+.iva-lote-f.ok{border-color:rgba(52,211,153,.5)}
+.iva-lote-f.rep{border-color:rgba(248,113,113,.6);background:rgba(248,113,113,.10)}
+.iva-rev{align-items:flex-start}
+.iva-rev-chk input{width:22px;height:22px;accent-color:#34d399;cursor:pointer;margin-top:4px}
+.iva-rev-body{flex:1;min-width:0}
+.iva-rev-arch{font-size:12.5px;color:var(--muted);margin-bottom:6px;word-break:break-all}
+.iva-rev-g{display:grid;grid-template-columns:110px 150px 1fr 150px;gap:8px}
+@media (max-width:760px){.iva-rev-g{grid-template-columns:1fr 1fr}.iva-rev-det{grid-column:1/-1}}
+.iva-rev-g select,.iva-rev-g input{background:var(--bg);border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:9px 10px;font-size:15px;font-family:var(--sans);outline:none;min-width:0;width:100%}
+.iva-rev-g input:focus,.iva-rev-g select:focus{border-color:var(--amber)}
+.iva-rev-g .iva-rev-det{font-weight:700}
+.iva-rev-g .iva-rev-tot{text-align:right;font-weight:800}
+.iva-rev-iva{font-size:13.5px;color:var(--ink-soft);margin-top:6px}.iva-rev-iva b{color:#2dd4bf}
+.iva-rev-msg{font-size:13.5px;font-weight:700;color:#fecaca;margin-top:6px}.iva-rev-msg.prob{color:#fcd34d}.iva-rev-msg.okm{color:#34d399}
+.iva-rev-x{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px 6px}.iva-rev-x:hover{color:#f87171}
+.iva-lote-f.off{opacity:.6}
+.iva-lote-f.prob{border-color:rgba(242,169,60,.6);background:rgba(242,169,60,.08)}
+.iva-rev-acc{display:flex;gap:10px;margin-top:6px}.iva-rev-acc .bp{flex:1;font-size:16px;padding:14px}.iva-rev-acc .bs{flex:0 0 auto;padding:14px 18px}
+.iva-lote-f.err{border-color:rgba(242,169,60,.6);background:rgba(242,169,60,.08)}
 .eq-x{background:none;border:none;color:#f87171;font-weight:800;font-size:15px;cursor:pointer;margin-left:6px;padding:0 2px;line-height:1}
 .eq-nuevo-tag{font-size:11px;font-weight:800;color:var(--teal);background:rgba(45,212,191,.14);border-radius:99px;padding:2px 8px;margin-left:4px}
 .eq-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -514,16 +539,16 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="aviso-box" id="avisoBox"></div>
 <button class="aviso-add" onclick="abrirNuevoAviso()">&#128276; + Nuevo aviso</button>
 <div class="grid home-grid">
-<button class="card card-hero" onclick="mostrarResumen()"><div class="icon" style="background:#ece7f7">&#128202;</div><div class="ci"><h2>Resumen</h2><p id="resumenSub">Servicios de hoy y la semana</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="mostrarPrecios()"><div class="icon green">&#128200;</div><div class="ci"><h2>Lista de Precios</h2><p>Precios con disponibilidad</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="mostrarTipoServicio()"><div class="icon" style="background:#fdeed0">&#128295;</div><div class="ci"><h2>Registrar Servicio</h2><p>Cargar un servicio nuevo</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="mostrarStock()"><div class="icon">&#128661;</div><div class="ci"><h2>Stock Camionetas</h2><p>Ver y gestionar stock</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="mostrarBuscador()"><div class="icon orange">&#128269;</div><div class="ci"><h2>Buscador de Baterias</h2><p>Buscar por vehiculo</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="mostrarGarantias()"><div class="icon red">&#128220;</div><div class="ci"><h2>Garantias</h2><p>Registrar y consultar</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="mostrarMoto()"><div class="icon" style="background:#dff1f5">&#127949;</div><div class="ci"><h2>Baterias Moto</h2><p>Lista de precios moto</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="mostrarListasDist()"><div class="icon" style="background:#e6ecff">&#128203;</div><div class="ci"><h2>Listas de Distribuidores</h2><p>Fotos y PDF con precio de venta</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="mostrarIva()"><div class="icon" style="background:#e1f5ea">&#129534;</div><div class="ci"><h2>Contador de IVA</h2><p>Cuánto comprar facturado, DDJJ, crédito y débito fiscal para la DDJJ</p></div><span class="arr">&#8250;</span></button>
-<button class="card" onclick="mostrarPedidos()"><div class="icon" style="background:#fdeed0">&#128230;</div><div class="ci"><h2>Compras</h2><p>Archivos de compras con fecha, monto y % facturado</p></div><span class="arr">&#8250;</span></button>
+<a class="card card-hero" href="#resumen" onclick="return navClick(event,mostrarResumen)"><div class="icon" style="background:#ece7f7">&#128202;</div><div class="ci"><h2>Resumen</h2><p id="resumenSub">Servicios de hoy y la semana</p></div><span class="arr">&#8250;</span></a>
+<a class="card" href="#precios" onclick="return navClick(event,mostrarPrecios)"><div class="icon green">&#128200;</div><div class="ci"><h2>Lista de Precios</h2><p>Precios con disponibilidad</p></div><span class="arr">&#8250;</span></a>
+<a class="card" href="#servicio" onclick="return navClick(event,mostrarTipoServicio)"><div class="icon" style="background:#fdeed0">&#128295;</div><div class="ci"><h2>Registrar Servicio</h2><p>Cargar un servicio nuevo</p></div><span class="arr">&#8250;</span></a>
+<a class="card" href="#stock" onclick="return navClick(event,mostrarStock)"><div class="icon">&#128661;</div><div class="ci"><h2>Stock Camionetas</h2><p>Ver y gestionar stock</p></div><span class="arr">&#8250;</span></a>
+<a class="card" href="#buscador" onclick="return navClick(event,mostrarBuscador)"><div class="icon orange">&#128269;</div><div class="ci"><h2>Buscador de Baterias</h2><p>Buscar por vehiculo</p></div><span class="arr">&#8250;</span></a>
+<a class="card" href="#garantias" onclick="return navClick(event,mostrarGarantias)"><div class="icon red">&#128220;</div><div class="ci"><h2>Garantias</h2><p>Registrar y consultar</p></div><span class="arr">&#8250;</span></a>
+<a class="card" href="#moto" onclick="return navClick(event,mostrarMoto)"><div class="icon" style="background:#dff1f5">&#127949;</div><div class="ci"><h2>Baterias Moto</h2><p>Lista de precios moto</p></div><span class="arr">&#8250;</span></a>
+<a class="card" href="#listas" onclick="return navClick(event,mostrarListasDist)"><div class="icon" style="background:#e6ecff">&#128203;</div><div class="ci"><h2>Listas de Distribuidores</h2><p>Fotos y PDF con precio de venta</p></div><span class="arr">&#8250;</span></a>
+<a class="card" href="#iva" onclick="return navClick(event,mostrarIva)"><div class="icon" style="background:#e1f5ea">&#129534;</div><div class="ci"><h2>Contador de IVA</h2><p>Cuánto comprar facturado, DDJJ, crédito y débito fiscal para la DDJJ</p></div><span class="arr">&#8250;</span></a>
+<a class="card" href="#compras" onclick="return navClick(event,mostrarPedidos)"><div class="icon" style="background:#fdeed0">&#128230;</div><div class="ci"><h2>Compras</h2><p>Archivos de compras con fecha, monto y % facturado</p></div><span class="arr">&#8250;</span></a>
 </div>
 </div>
 <div id="p0load"><div class="loading">Cargando...</div></div>
@@ -769,8 +794,8 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="iva-res" id="ivaRes"></div>
 <div class="mc">
 <div style="font-weight:800;font-size:16px;margin-bottom:12px">Cargar factura</div>
-<button type="button" class="iva-foto" id="ivaFotoBtn" onclick="document.getElementById('ivaFotoInput').click()">&#128247; Sacar foto o adjuntar factura<small>o arrastrá el archivo acá desde la PC</small></button>
-<input type="file" id="ivaFotoInput" accept="image/*,application/pdf" style="display:none" onchange="ivaFotoElegida(this)"/>
+<button type="button" class="iva-foto" id="ivaFotoBtn" onclick="document.getElementById('ivaFotoInput').click()">&#128247; Sacar foto o adjuntar facturas<small>podés elegir o arrastrar varias a la vez</small></button>
+<input type="file" id="ivaFotoInput" accept="image/*,application/pdf" multiple style="display:none" onchange="ivaFotoElegida(this)"/>
 <div class="iva-leido" id="ivaLeido"></div>
 <div class="iva-form">
 <div class="gfield"><label>Tipo</label><div class="iva-tipo" id="ivaTipoBtns"><button type="button" class="bs" onclick="ivaSetTipo('compra')">Compra</button><button type="button" class="bs" onclick="ivaSetTipo('venta')">Venta</button></div></div>
@@ -1906,6 +1931,19 @@ function mostrarBuscador(){
   });
 }
 function mostrarGarantias(){document.getElementById('p0').classList.add('hidden');document.getElementById('p6').classList.remove('hidden');titulo('Garantias');cambiarGTab(1);}
+// ---- Enlaces del menú: clic normal abre la sección acá; clic derecho / Ctrl+clic / rueda abre en pestaña nueva ----
+var NAV_HASH={resumen:'mostrarResumen',precios:'mostrarPrecios',servicio:'mostrarTipoServicio',stock:'mostrarStock',buscador:'mostrarBuscador',garantias:'mostrarGarantias',moto:'mostrarMoto',listas:'mostrarListasDist',iva:'mostrarIva',compras:'mostrarPedidos'};
+function navClick(e,fn){
+  if(e.ctrlKey||e.metaKey||e.shiftKey||e.button!==0)return true; // deja que el navegador la abra en otra pestaña/ventana
+  e.preventDefault();fn();return false;
+}
+var navHashUsado=false;
+function navAbrirHash(){
+  if(navHashUsado)return;navHashUsado=true;
+  var k=(location.hash||'').replace('#','').toLowerCase(),fn=window[NAV_HASH[k]];
+  if(typeof fn==='function'){try{fn();}catch(e){}}
+  if(location.hash)history.replaceState(null,'',location.pathname+location.search);
+}
 function volverInicio(){
   ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
   document.getElementById('p0').classList.remove('hidden');titulo('Stock Baterias');
@@ -2261,6 +2299,7 @@ function cargar(){
       document.getElementById('p0load').classList.add('hidden');
       document.getElementById('p0').classList.remove('hidden');
       cargarAvisos();
+      navAbrirHash();
     }else{errLoad('Error al leer.');}
   }).catch(function(e){errLoad(e.message);});
 }
@@ -3983,8 +4022,10 @@ function tjCalc(){
 var ivaData=[],ivaTipo='compra',ivaMes=null,ivaAnio=null,ivaLeidoDatos=null,ivaFotoId='';
 function ivaManual(){ivaLeidoDatos=null;ivaCalcPreview();}
 function ivaFotoElegida(inp){
-  var f=inp.files&&inp.files[0];
-  inp.value='';
+  var fs=Array.prototype.slice.call(inp.files||[]);
+  try{inp.value='';}catch(e){}
+  if(fs.length>1)return ivaLote(fs);
+  var f=fs[0];
   if(!f)return;
   if(f.size>18*1024*1024){toast('Archivo muy pesado (max 18 MB)');return;}
   var btn=document.getElementById('ivaFotoBtn');
@@ -3994,7 +4035,7 @@ function ivaFotoElegida(inp){
   lpPrepararArchivo(f).then(function(a){
     return apiPost('ivaLeerFactura',{nombre:a.nombre,mime:a.mime,data:a.data});
   }).then(function(r){
-    btn.disabled=false;btn.innerHTML='&#128247; Sacar foto o adjuntar factura<small>o arrastrá el archivo acá desde la PC</small>';
+    ivaBtnReset();
     if(!r.ok){toast('Error: '+r.error);return;}
     ivaFotoId=r.foto_id||'';
     var link=ivaFotoId?' <a href="https://drive.google.com/file/d/'+ivaFotoId+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700">Ver foto</a>':'';
@@ -4004,12 +4045,136 @@ function ivaFotoElegida(inp){
     }
     ivaAplicarLectura(r.datos,link);
   }).catch(function(e){
-    btn.disabled=false;btn.innerHTML='&#128247; Sacar foto o adjuntar factura<small>o arrastrá el archivo acá desde la PC</small>';
+    ivaBtnReset();
     toast('Error: '+e.message);
   });
 }
 // Facturas emitidas por Mateo (CUIT 20-41474529-7) = Venta; recibidas por él = Compra
 var IVA_MI_CUIT='20414745297';
+function ivaBtnReset(){var b=document.getElementById('ivaFotoBtn');b.disabled=false;b.innerHTML='&#128247; Sacar foto o adjuntar facturas<small>podés elegir o arrastrar varias a la vez</small>';}
+// Lee varias facturas con la IA y muestra una lista para revisar. No se guarda nada hasta tocar "Guardar seleccionadas".
+var ivaLoteItems=[],ivaLoteOcupado=false;
+function ivaLote(fs){
+  fs=fs.filter(function(f){return /^image\//.test(f.type)||f.type==='application/pdf'||/\.pdf$/i.test(f.name);});
+  if(!fs.length)return toast('Solo fotos (JPG/PNG) o PDF');
+  if(ivaLoteOcupado)return toast('Esperá que termine el lote anterior');
+  ivaLoteOcupado=true;
+  var btn=document.getElementById('ivaFotoBtn');
+  btn.disabled=true;
+  ivaLoteItems=fs.map(function(f){return {n:f.name,est:'esperando',txt:'En espera'};});
+  ivaLoteRender();
+  var i=0;
+  var limpiar=function(){document.getElementById('ivaImporte').value='';document.getElementById('ivaDetalle').value='';ivaLeidoDatos=null;ivaFotoId='';};
+  var sig=function(){
+    if(i>=fs.length){
+      limpiar();ivaSetTipo('compra');ivaCalcPreview();ivaBtnReset();ivaLoteOcupado=false;ivaLoteChequear();ivaLoteRender();
+      toast('Listo: revisá las facturas y tocá Guardar');
+      var el=document.getElementById('ivaLeido');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+      return;
+    }
+    var f=fs[i],it=ivaLoteItems[i];i++;
+    btn.textContent='Leyendo factura '+i+' de '+fs.length+' con IA...';
+    if(f.size>18*1024*1024){it.est='err';it.txt='Archivo muy pesado (máx 18 MB)';ivaLoteRender();return sig();}
+    it.est='leyendo';it.txt='Leyendo con IA...';ivaLoteRender();
+    lpPrepararArchivo(f).then(function(a){
+      return apiPost('ivaLeerFactura',{nombre:a.nombre,mime:a.mime,data:a.data});
+    }).then(function(r){
+      if(!r.ok)throw new Error(r.error||'no se pudo leer');
+      it.foto=r.foto_id||'';
+      if(r.error_lectura||!r.datos){it.est='err';it.txt='No se pudo leer ('+(r.error_lectura||'sin datos')+'). Cargala a mano.';return;}
+      limpiar();ivaSetTipo('compra');
+      ivaAplicarLectura(r.datos,'');
+      var c=ivaCalcular(),fecha=document.getElementById('ivaFecha').value;
+      if(!c||!fecha){it.est='err';it.txt='La IA no encontró '+(!c?'el importe':'la fecha')+'. Cargala a mano.';return;}
+      it.est='leida';
+      it.d={tipo:ivaTipo,fecha:fecha,detalle:document.getElementById('ivaDetalle').value.trim(),neto:c.neto,iva:c.iva,total:c.total,alicuota:c.alicuota,foto_id:it.foto};
+      it.tc=String(r.datos.tipo_comprobante||'').toUpperCase();
+    }).catch(function(err){it.est='err';it.txt='Error: '+err.message+'. Probá subirla sola.';}).then(function(){ivaLoteRender();sig();});
+  };
+  apiPost('ivaGet').catch(function(){return null;}).then(function(r0){if(r0&&r0.ok)ivaData=r0.data||ivaData;sig();});
+}
+// Marca repetidas contra lo ya cargado y contra las otras del mismo lote. Las repetidas quedan destildadas.
+function ivaLoteChequear(){
+  var previas=[];
+  ivaLoteItems.forEach(function(it){
+    if(it.est!=='leida'&&it.est!=='rep'&&it.est!=='prob')return;
+    var dupYa=ivaBuscarDup(it.d),dup=dupYa||ivaBuscarDup(it.d,previas);
+    it.dup=dup;it.dupLote=!dupYa&&!!dup;
+    if(dup&&dup.t==='num'){it.est='rep';it.sel=false;}
+    else if(dup){it.est='prob';if(it.sel===undefined)it.sel=false;}
+    else{it.est='leida';if(it.sel===undefined)it.sel=true;}
+    previas.push(it.d);
+  });
+}
+function ivaLoteRender(){
+  var info=document.getElementById('ivaLeido');if(!info)return;
+  if(!ivaLoteItems.length){info.innerHTML='';return;}
+  var leyendo=ivaLoteOcupado,selN=0,selTot=0,selIva=0;
+  ivaLoteItems.forEach(function(it){if(it.sel&&it.d&&it.est!=='rep'){selN++;selTot+=it.d.total*(it.d.tipo==='venta'?1:1);selIva+=it.d.iva;}});
+  var h='<div class="iva-lote"><div class="iva-lote-t">'+(leyendo?'Leyendo '+ivaLoteItems.length+' facturas... (todavía no se guarda nada)':'Revisá las '+ivaLoteItems.length+' facturas antes de guardar')+'</div>';
+  ivaLoteItems.forEach(function(it,k){
+    var foto=it.foto?' <a href="https://drive.google.com/file/d/'+it.foto+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700">Ver foto</a>':'';
+    if(it.est==='esperando'||it.est==='leyendo'||it.est==='err'){
+      h+='<div class="iva-lote-f '+(it.est==='err'?'err':'')+'"><span class="iva-lote-ic">'+(it.est==='err'?'&#9888;':it.est==='leyendo'?'&#128269;':'&#9203;')+'</span><div><b>'+lpEsc(it.n)+'</b><div>'+lpEsc(it.txt)+foto+'</div></div></div>';
+      return;
+    }
+    var d=it.d,rep=it.est==='rep';
+    h+='<div class="iva-lote-f iva-rev '+(rep?'rep':it.est==='prob'?'prob':it.sel?'ok':'off')+'">';
+    h+='<label class="iva-rev-chk"><input type="checkbox" '+(it.sel&&!rep?'checked':'')+(rep||leyendo?' disabled':'')+' onchange="ivaLoteSel('+k+',this.checked)"></label>';
+    h+='<div class="iva-rev-body"><div class="iva-rev-arch">'+lpEsc(it.n)+foto+(it.tc==='B'||it.tc==='C'?' <span class="warn">Factura '+it.tc+': sin IVA de crédito</span>':'')+'</div>';
+    h+='<div class="iva-rev-g">';
+    h+='<select onchange="ivaLoteSet('+k+',\'tipo\',this.value)"'+(rep?' disabled':'')+'><option value="compra"'+(d.tipo==='compra'?' selected':'')+'>Compra</option><option value="venta"'+(d.tipo==='venta'?' selected':'')+'>Venta</option></select>';
+    h+='<input type="date" value="'+lpEsc(d.fecha)+'" onchange="ivaLoteSet('+k+',\'fecha\',this.value)"'+(rep?' disabled':'')+'>';
+    h+='<input type="text" class="iva-rev-det" value="'+lpEsc(d.detalle)+'" onchange="ivaLoteSet('+k+',\'detalle\',this.value)"'+(rep?' disabled':'')+'>';
+    h+='<input type="text" inputmode="decimal" class="iva-rev-tot" value="'+formatARS(d.total)+'" title="Total" onchange="ivaLoteSet('+k+',\'total\',this.value)"'+(rep?' disabled':'')+'>';
+    h+='</div><div class="iva-rev-iva">Neto $'+formatARS(d.neto)+' · IVA <b>$'+formatARS(d.iva)+'</b> · Total $'+formatARS(d.total)+'</div>';
+    if(rep)h+='<div class="iva-rev-msg">&#9940; '+(it.dupLote?'Es la misma que otra de esta lista':'Ya está cargada')+': '+ivaDupTexto(it.dup)+'. No se puede guardar de nuevo.</div>';
+    else if(it.est==='prob')h+='<div class="iva-rev-msg prob">&#9888; Parece repetida: '+ivaDupTexto(it.dup)+'. Tildala solo si es otra factura distinta.</div>';
+    if(it.guardada)h+='<div class="iva-rev-msg okm">&#9989; Guardada</div>';
+    if(it.errG)h+='<div class="iva-rev-msg">'+lpEsc(it.errG)+'</div>';
+    h+='</div><button class="iva-rev-x" title="Quitar de la lista" onclick="ivaLoteQuitar('+k+')"'+(leyendo?' disabled':'')+'>&#10005;</button></div>';
+  });
+  if(!leyendo){
+    h+='<div class="iva-rev-acc"><button class="bp" id="ivaLoteBtn" onclick="ivaLoteGuardar()"'+(selN?'':' disabled')+'>Guardar '+selN+' seleccionada'+(selN===1?'':'s')+'</button><button class="bs" onclick="ivaLoteCancelar()">Descartar todo</button></div>';
+  }
+  info.innerHTML=h+'</div>';
+}
+function ivaLoteSel(k,v){var it=ivaLoteItems[k];if(it){it.sel=v;ivaLoteRender();}}
+function ivaLoteQuitar(k){ivaLoteItems.splice(k,1);ivaLoteChequear();ivaLoteRender();}
+function ivaLoteCancelar(){if(ivaLoteItems.some(function(it){return it.sel&&it.d;})&&!confirm('¿Descartar estas facturas sin guardarlas?'))return;ivaLoteItems=[];ivaLoteRender();}
+function ivaLoteSet(k,campo,v){
+  var it=ivaLoteItems[k];if(!it||!it.d)return;var d=it.d;
+  if(campo==='total'){
+    var t=lpNum(v);if(!(t>0)){toast('Importe inválido');ivaLoteRender();return;}
+    var f=d.total>0?t/d.total:1;d.neto=Math.round(d.neto*f*100)/100;d.iva=Math.round((t-d.neto)*100)/100;d.total=Math.round(t*100)/100;
+    if(!(d.iva>0.009)){d.iva=0;d.neto=d.total;}
+  }else d[campo]=String(v).trim();
+  ivaLoteChequear();ivaLoteRender();
+}
+function ivaLoteGuardar(){
+  var aGuardar=ivaLoteItems.filter(function(it){return it.sel&&it.d&&it.est!=='rep'&&!it.guardada;});
+  if(!aGuardar.length)return;
+  var btn=document.getElementById('ivaLoteBtn');btn.disabled=true;btn.textContent='Guardando...';
+  var ok=0,mal=0,i=0;
+  var sig=function(){
+    if(i>=aGuardar.length){
+      ivaLoteItems=ivaLoteItems.filter(function(it){return !it.guardada;});
+      ivaRender();ivaLoteRender();
+      toast(ok+' factura'+(ok===1?'':'s')+' guardada'+(ok===1?'':'s')+(mal?' · '+mal+' con error (quedaron en la lista)':''));
+      return;
+    }
+    var it=aGuardar[i++];
+    // Control final: si mientras tanto alguien cargó la misma desde otro celular, no se guarda
+    var dup=ivaBuscarDup(it.d);
+    if(dup&&dup.t==='num'){it.est='rep';it.sel=false;it.dup=dup;mal++;return sig();}
+    apiPost('ivaAgregar',it.d).then(function(r){
+      if(!r.ok)throw new Error(r.error||'no se pudo guardar');
+      it.d.id=r.id;ivaData.push(it.d);it.guardada=true;ok++;
+      var p=it.d.fecha.split('-');ivaAnio=parseInt(p[0],10);ivaMes=parseInt(p[1],10)-1;
+    }).catch(function(e){it.errG='Error al guardar: '+e.message;mal++;}).then(sig);
+  };
+  apiPost('ivaGet').catch(function(){return null;}).then(function(r0){if(r0&&r0.ok)ivaData=r0.data||ivaData;sig();});
+}
 function ivaEsMio(cuit,nombre){
   if(String(cuit||'').replace(/\D/g,'')===IVA_MI_CUIT)return true;
   var n=String(nombre||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -5325,7 +5490,7 @@ function dzDestino(e){
   if(dj&&dzVisible('ddjjBox'))return {txt:'Soltá para subir la DDJJ de '+dj.getAttribute('data-ddjj'),fn:function(f){if(ddjjSubiendo)return toast('Esperá que termine la anterior');ddjjTipoSubir=dj.getAttribute('data-ddjj');ddjjElegido({files:[f[0]],value:''});}};
   if(dzVisible('cmDrop'))return {txt:'Soltá para subir el ticket de compra moto',fn:function(f){cmArchivo({files:[f[0]]});}};
   if(dzVisible('pedFotoBtn'))return {txt:'Soltá para cargar la compra',fn:function(f){var b=document.getElementById('pedFotoBtn');if(b.disabled)return toast('Esperá que termine la anterior');pedArchivoElegido({files:[f[0]],value:''});}};
-  if(dzVisible('ivaFotoBtn'))return {txt:'Soltá para leer la factura',fn:function(f){var b=document.getElementById('ivaFotoBtn');if(b.disabled)return toast('Esperá que termine la anterior');ivaFotoElegida({files:[f[0]],value:''});}};
+  if(dzVisible('ivaFotoBtn'))return {txt:'Soltá para leer las facturas',fn:function(f){var b=document.getElementById('ivaFotoBtn');if(b.disabled)return toast('Esperá que termine la anterior');ivaFotoElegida({files:f,value:''});}};
   var rmz=e&&e.target&&e.target.closest&&e.target.closest('#rmBox');
   if(rmz&&dzVisible('rmBox'))return {txt:'Soltá para controlar el remito',remito:true,fn:function(f){rmArchivo({files:[f[0]]});}};
   if(dzVisible('lpInput')||(document.getElementById('p10')&&!document.getElementById('p10').classList.contains('hidden')))return {txt:'Soltá para subir la lista a '+DISTRIBUIDORES[lpActual],fn:function(f){if(lpOcupado)return toast('Esperá que termine la subida anterior');lpModo='agregar';lpArchivoElegido({files:f,value:''});}};

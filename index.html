@@ -471,6 +471,8 @@ a.card{text-decoration:none;color:inherit;box-sizing:border-box}
 #p4 #tab7{color:#f43f3f}#p4 #tab7.active{color:#f43f3f;background:rgba(244,63,63,.16);box-shadow:inset 0 -3px 0 #f43f3f}
 #p4 #tab5{color:#4f9dff}#p4 #tab5.active{color:#4f9dff;background:rgba(79,157,255,.16);box-shadow:inset 0 -3px 0 #4f9dff}
 #p4 #tab4{color:#4f9dff}#p4 #tab4.active{color:#4f9dff;background:rgba(79,157,255,.16);box-shadow:inset 0 -3px 0 #4f9dff}
+.iva-dup-aviso.prob{color:#fde68a;background:rgba(242,169,60,.14);border-color:rgba(242,169,60,.55)}
+.iva-ver-dup{background:var(--amber);color:#1b1300;border:none;border-radius:6px;padding:3px 10px;font-weight:800;font-size:12.5px;cursor:pointer;margin-left:6px;font-family:var(--sans)}
 .eq-x{background:none;border:none;color:#f87171;font-weight:800;font-size:15px;cursor:pointer;margin-left:6px;padding:0 2px;line-height:1}
 .eq-nuevo-tag{font-size:11px;font-weight:800;color:var(--teal);background:rgba(45,212,191,.14);border-radius:99px;padding:2px 8px;margin-left:4px}
 .eq-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -4302,6 +4304,7 @@ function ivaLoteRender(){
     h+='<input type="text" class="iva-rev-det" value="'+lpEsc(d.detalle)+'" onchange="ivaLoteSet('+k+',\'detalle\',this.value)"'+(rep?' disabled':'')+'>';
     h+='<input type="text" inputmode="decimal" class="iva-rev-tot" value="'+formatARS(d.total)+'" title="Total" onchange="ivaLoteSet('+k+',\'total\',this.value)"'+(rep?' disabled':'')+'>';
     h+='</div><div class="iva-rev-iva">Neto $'+formatARS(d.neto)+' · IVA <b>$'+formatARS(d.iva)+'</b> · Total $'+formatARS(d.total)+'</div>';
+    var fAvL=ivaFechaAviso(d.fecha);if(fAvL&&!rep)h+='<div class="iva-rev-msg prob">&#9888; '+lpEsc(fAvL)+'</div>';
     if(rep)h+='<div class="iva-rev-msg">&#9940; '+(it.dupLote?'Es la misma que otra de esta lista':'Ya está cargada')+': '+ivaDupTexto(it.dup)+'. No se puede guardar de nuevo.</div>';
     else if(it.est==='prob')h+='<div class="iva-rev-msg prob">&#9888; Parece repetida: '+ivaDupTexto(it.dup)+'. Tildala solo si es otra factura distinta.</div>';
     if(it.guardada)h+='<div class="iva-rev-msg okm">&#9989; Guardada</div>';
@@ -4361,7 +4364,8 @@ function ivaAplicarLectura(d,link){
   if(ivaEsMio(d.emisor_cuit,d.emisor)){ivaSetTipo('venta');autoTipo='venta';}
   else if(ivaEsMio(d.receptor_cuit,d.receptor)){ivaSetTipo('compra');autoTipo='compra';}
   if(/^\d{4}-\d{2}-\d{2}$/.test(d.fecha||''))document.getElementById('ivaFecha').value=d.fecha;
-  var quien=ivaTipo==='venta'?(d.receptor||d.emisor):(d.emisor||d.receptor);
+  var ivaNom=function(n,c){n=String(n||'').trim();if(n==='-'||n==='–')n='';if(n&&!ivaEsMio('',n))return n;return c&&!ivaEsMio(c,'')?'CUIT '+c:'';};
+  var quien=ivaTipo==='venta'?(ivaNom(d.receptor,d.receptor_cuit)||ivaNom(d.emisor,d.emisor_cuit)):(ivaNom(d.emisor,d.emisor_cuit)||ivaNom(d.receptor,d.receptor_cuit));
   var det=[quien,(tc&&tc!=='OTRO'?(tc==='TICKET'?'Ticket':'Factura '+tc):''),d.numero].filter(function(x){return x;}).join(' - ');
   document.getElementById('ivaDetalle').value=det;
   var ali=[21,10.5,27].indexOf(Number(d.alicuota))!==-1?Number(d.alicuota):21;
@@ -4383,6 +4387,8 @@ function ivaAplicarLectura(d,link){
   avisos.forEach(function(a){h+='<br><span class="warn">'+lpEsc(a)+'</span>';});
   if(autoTipo==='venta')h+='<br><span style="color:#34d399;font-weight:800">&#10004; La emitiste vos (CUIT 20-41474529-7): se marcó como VENTA.</span>';
   else if(autoTipo==='compra')h+='<br><span style="color:#34d399;font-weight:800">&#10004; Está a tu nombre como cliente: se marcó como COMPRA.</span>';
+  var fAv=ivaFechaAviso(document.getElementById('ivaFecha').value);
+  if(fAv)h='<span class="iva-dup-aviso prob">&#9888; '+fAv+'</span><br>'+h;
   var dupL=total?ivaBuscarDup({tipo:ivaTipo,fecha:document.getElementById('ivaFecha').value,detalle:det,total:total}):null;
   if(dupL)h='<span class="iva-dup-aviso">&#9940; '+(dupL.t==='num'?'ESTA FACTURA YA ESTÁ CARGADA':'Parece repetida')+': '+ivaDupTexto(dupL)+(dupL.t==='num'?'. No se va a poder guardar de nuevo.':'.')+'</span><br>'+h;
   h+='<br><span style="color:var(--muted)">Revisá que esté bien'+(autoTipo?'':', elegí Compra o Venta')+' y tocá Guardar.</span>'+(link||'');
@@ -4442,12 +4448,36 @@ function ivaBuscarDup(f,lista){
   var r=null;(lista||ivaData).forEach(function(x){if(x===f||(f.id&&x.id===f.id))return;var t=ivaDupTipo(f,x);if(t==='num'||(t&&!r))r={t:t,x:x};});
   return r;
 }
-function ivaDupTexto(d){return lpEsc(d.x.detalle||'-')+' del '+fmtFecha(String(d.x.fecha||''))+' por $'+formatARS(d.x.total);}
+function ivaDupTexto(d){
+  var f=String(d.x.fecha||''),p=f.split('-'),mes=p.length===3?NOMBRES_MES[parseInt(p[1],10)-1]+' '+p[0]:'';
+  var num=ivaDupNum(d.x.detalle)||ivaDupNom(d.x.detalle);
+  return lpEsc(d.x.detalle||'-')+' del '+fmtFecha(f)+' por $'+formatARS(d.x.total)+(mes?' (está guardada en <b>'+lpEsc(mes)+'</b>)':'')+' <button type="button" class="iva-ver-dup" onclick="ivaIrAFactura(\''+eqJs(d.x.id||'')+'\')">Mostrármela</button>';
+}
+// Busca la factura en todos los meses y la muestra en la tabla
+function ivaIrAFactura(id){
+  var x=ivaData.filter(function(f){return String(f.id)===String(id);})[0];if(!x)return;
+  var b=document.getElementById('ivaBus');b.value=String(x.detalle||'').split(' - ').pop()||x.detalle;ivaRender();
+  b.scrollIntoView({behavior:'smooth',block:'start'});
+}
+// Fecha leída sospechosa: más de 4 meses atrás o en el futuro
+function ivaFechaAviso(f){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(f||''))return '';
+  var p=f.split('-'),d=new Date(+p[0],+p[1]-1,+p[2]),h=new Date();h=new Date(h.getFullYear(),h.getMonth(),h.getDate());
+  var dias=Math.round((h-d)/86400000);
+  if(dias<-3)return 'Ojo con la fecha: '+fmtFecha(f)+' es en el futuro. Revisala antes de guardar.';
+  if(dias>120){
+    var mismoDia=d.getDate()===h.getDate()&&d.getMonth()===h.getMonth();
+    return 'Ojo con la fecha: '+fmtFecha(f)+' es de hace '+(dias>=365?Math.floor(dias/365)+' año'+(dias>=730?'s':''):Math.round(dias/30)+' meses')+'.'+(mismoDia?' ¿No será '+fmtFecha(h.getFullYear()+'-'+p[1]+'-'+p[2])+'? Puede que la IA leyó mal el año.':' Revisala antes de guardar.');
+  }
+  return '';
+}
 function ivaGuardar(){
   var c=ivaCalcular();
   if(!c){toast('Completa el importe');return;}
   var fecha=document.getElementById('ivaFecha').value;
   if(!fecha){toast('Completa la fecha');return;}
+  var fAv=ivaFechaAviso(fecha);
+  if(fAv&&!confirm(fAv+'\n\n¿Guardar igual con esa fecha?'))return;
   var datos={tipo:ivaTipo,fecha:fecha,detalle:document.getElementById('ivaDetalle').value.trim(),neto:c.neto,iva:c.iva,total:c.total,alicuota:c.alicuota,foto_id:ivaFotoId};
   var btn=document.getElementById('ivaGuardarBtn');btn.disabled=true;btn.textContent='Revisando...';
   var listo=function(){btn.disabled=false;btn.textContent='Guardar factura';};

@@ -417,6 +417,30 @@ a.card{text-decoration:none;color:inherit;box-sizing:border-box}
 #resV .bres-flex .lp-row-act button{width:40px;height:40px;font-size:16px}
 #resV .no-res{font-size:17px}
 @media (min-width:761px){#resV{grid-template-columns:repeat(auto-fill,minmax(420px,1fr))!important;gap:14px!important}}
+.sv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:14px;align-items:start}
+@media (max-width:860px){.sv-grid{grid-template-columns:1fr}}
+.sv-grid .mc{margin-bottom:0}
+.sv-card{padding:18px 20px}
+.sv-h{margin-bottom:14px}.sv-t{font-size:18px;font-weight:800}.sv-s{font-size:13px;color:var(--muted);margin-top:3px}
+.sv-bars{display:flex;flex-direction:column;gap:12px}
+.sv-bars.sv-cols{display:block;column-count:2;column-gap:32px}
+.sv-bars.sv-cols .sv-bar{break-inside:avoid;margin-bottom:12px}
+@media (max-width:860px){.sv-bars.sv-cols{column-count:1}}
+.sv-bar-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:5px}
+.sv-bar-k{font-size:14.5px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sv-bar-v{display:flex;align-items:baseline;gap:8px;flex-shrink:0}.sv-bar-v b{font-size:17px;color:var(--ink)}
+.sv-pct{font-size:12.5px;font-weight:700;color:var(--ink-soft);background:var(--border2);border-radius:99px;padding:1px 8px}
+.sv-track{height:8px;background:var(--border2);border-radius:4px;overflow:hidden}
+.sv-fill{height:100%;background:#9085e9;border-radius:0 4px 4px 0}
+.sv-bar-x{font-size:12px;color:var(--muted);margin-top:4px}
+.sv-stack{display:flex;gap:2px;height:22px;border-radius:6px;overflow:hidden;margin-bottom:14px}
+.sv-stack div{height:100%;min-width:3px}
+.sv-leg{display:flex;flex-direction:column;gap:9px}
+.sv-leg-r{display:grid;grid-template-columns:12px 1fr auto auto 72px;gap:10px;align-items:center;font-size:14.5px}
+.sv-dot{width:12px;height:12px;border-radius:3px}
+.sv-leg-k{font-weight:700;color:var(--ink)}.sv-leg-m{font-weight:800;color:var(--ink)}.sv-leg-n{font-size:12.5px;color:var(--muted);text-align:right}
+.sv-vacio{font-size:14px;color:var(--muted);padding:6px 0}
+.sv-mas{margin-top:14px}.sv-mas summary{cursor:pointer;font-size:14px;font-weight:700;color:#a78bfa;margin-bottom:12px}
 .eq-x{background:none;border:none;color:#f87171;font-weight:800;font-size:15px;cursor:pointer;margin-left:6px;padding:0 2px;line-height:1}
 .eq-nuevo-tag{font-size:11px;font-weight:800;color:var(--teal);background:rgba(45,212,191,.14);border-radius:99px;padding:2px 8px;margin-left:4px}
 .eq-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -3112,44 +3136,58 @@ function renderStatsMes(){
     }).join('')+'</div>';
   }
   h+='</div>';
-  h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por tecnico ('+mesLabel+')</div>';
-  Object.keys(st.porTecnico).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porTecnico[k]+'</span></div>';});
-  if(!Object.keys(st.porTecnico).length)h+='<div class="gcard-row" style="color:#94a0af">Sin datos</div>';
+  // ---- Estadísticas visuales: barras con cantidad y % del total ----
+  var totServ=serviciosCache.length,pct=function(v,t){return t?Math.round(v*1000/t)/10:0;};
+  var pctTxt=function(v,t){return pct(v,t).toLocaleString('es-AR',{maximumFractionDigits:1})+'%';};
+  var nf1=function(n){return n.toLocaleString('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1});};
+  // filas: [{k:etiqueta,v:cantidad,extra:texto,tip:texto}] · total: base del %
+  var barras=function(filas,total,clase){
+    var max=Math.max.apply(null,filas.map(function(f){return f.v;}).concat([1]));
+    return '<div class="sv-bars '+(clase||'')+'">'+filas.map(function(f){
+      return '<div class="sv-bar" title="'+lpEsc(f.tip||(f.k+': '+f.v+' ('+pctTxt(f.v,total)+')'))+'"><div class="sv-bar-top"><span class="sv-bar-k">'+lpEsc(f.k)+'</span><span class="sv-bar-v"><b>'+f.v+'</b><span class="sv-pct">'+pctTxt(f.v,total)+'</span></span></div>'+
+        '<div class="sv-track"><div class="sv-fill" style="width:'+Math.max(2,f.v/max*100)+'%"></div></div>'+(f.extra?'<div class="sv-bar-x">'+f.extra+'</div>':'')+'</div>';
+    }).join('')+'</div>';
+  };
+  var caja=function(tit,sub,cuerpo,clase){return '<div class="mc sv-card '+(clase||'')+'"><div class="sv-h"><div class="sv-t">'+tit+'</div>'+(sub?'<div class="sv-s">'+sub+'</div>':'')+'</div>'+cuerpo+'</div>';};
+  var vacio='<div class="sv-vacio">Sin datos en '+lpEsc(mesLabel)+'</div>';
+  h+='<div class="sv-grid">';
+  // Por técnico
+  var tecs=Object.keys(st.porTecnico).sort(function(a,b){return st.porTecnico[b]-st.porTecnico[a];});
+  h+=caja('&#128119; Por técnico',totServ+' servicios en '+lpEsc(mesLabel),tecs.length?barras(tecs.map(function(k){return {k:k,v:st.porTecnico[k],extra:nf1(diasContados?st.porTecnico[k]/diasContados:0)+' por día'};}),totServ):vacio);
+  // Por marca
+  var marcas=Object.keys(st.porMarca).sort(function(a,b){return st.porMarca[b]-st.porMarca[a];});
+  var totMarca=marcas.reduce(function(t,k){return t+st.porMarca[k];},0);
+  h+=caja('&#128267; Por marca',totMarca+' baterías colocadas · '+promTxt+' servicios por día',marcas.length?barras(marcas.map(function(k){return {k:k,v:st.porMarca[k],extra:nf1(diasContados?st.porMarca[k]/diasContados:0)+' por día'};}),totMarca):vacio);
+  // Por forma de pago: barra de proporción + detalle
+  var PAGO_COL={'Efectivo':'#199e70','Transferencia':'#c98500','Tarjeta':'#9085e9'};
+  var pagos=['Efectivo','Transferencia','Tarjeta'];
+  Object.keys(st.porPago).forEach(function(k){if(pagos.indexOf(k)===-1)pagos.push(k);});
+  pagos=pagos.filter(function(k){return st.porPago[k];});
+  var totPagoN=pagos.reduce(function(t,k){return t+st.porPago[k];},0),totPagoM=pagos.reduce(function(t,k){return t+(st.porPagoMonto[k]||0);},0);
+  var colPago=function(k,i){return PAGO_COL[k]||['#e66767','#3987e5','#d55181'][i%3];};
+  var pagoHtml=vacio;
+  if(pagos.length){
+    pagoHtml='<div class="sv-stack">'+pagos.map(function(k,i){var w=pct(st.porPagoMonto[k]||0,totPagoM)||pct(st.porPago[k],totPagoN);return '<div style="width:'+w+'%;background:'+colPago(k,i)+'" title="'+lpEsc((k==='Tarjeta'?'Tarjeta de crédito':k)+': $'+formatMoney(st.porPagoMonto[k]||0)+' ('+pctTxt(st.porPagoMonto[k]||0,totPagoM)+')')+'"></div>';}).join('')+'</div>';
+    pagoHtml+='<div class="sv-leg">'+pagos.map(function(k,i){
+      return '<div class="sv-leg-r"><span class="sv-dot" style="background:'+colPago(k,i)+'"></span><span class="sv-leg-k">'+(k==='Tarjeta'?'Tarjeta de crédito':lpEsc(k))+'</span><span class="sv-leg-m">$'+formatMoney(st.porPagoMonto[k]||0)+'</span><span class="sv-pct">'+pctTxt(st.porPagoMonto[k]||0,totPagoM)+'</span><span class="sv-leg-n">'+st.porPago[k]+' serv.</span></div>';
+    }).join('')+'</div>';
+  }
+  h+=caja('&#128176; Por forma de pago','Total cobrado $'+formatMoney(totPagoM)+' · % sobre el monto',pagoHtml);
+  // Por cuenta de transferencia
+  var ctas=Object.keys(st.porCuentaTransferencia||{}).sort(function(a,b){return (st.porCuentaTransferenciaMonto[b]||0)-(st.porCuentaTransferenciaMonto[a]||0);});
+  var totCtaM=ctas.reduce(function(t,k){return t+(st.porCuentaTransferenciaMonto[k]||0);},0);
+  h+=caja('&#127974; Por cuenta de transferencia',ctas.length?'$'+formatMoney(totCtaM)+' transferidos':'',ctas.length?barras(ctas.map(function(k){var m=st.porCuentaTransferenciaMonto[k]||0;return {k:k,v:st.porCuentaTransferencia[k],extra:'$'+formatMoney(m)+' · '+pctTxt(m,totCtaM)+' del monto',tip:k+': '+st.porCuentaTransferencia[k]+' transferencias, $'+formatMoney(m)};}),ctas.reduce(function(t,k){return t+st.porCuentaTransferencia[k];},0)):'<div class="sv-vacio">Sin transferencias en '+lpEsc(mesLabel)+'</div>');
   h+='</div>';
-  h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por marca ('+mesLabel+')</div>';
-  Object.keys(st.porMarca).sort(function(a,b){return st.porMarca[b]-st.porMarca[a];}).forEach(function(k){
-    var pm=diasContados?st.porMarca[k]/diasContados:0;
-    h+='<div class="gcard-row">'+k+': <span>'+st.porMarca[k]+'</span> <span style="color:#a78bfa;font-weight:600">('+pm.toLocaleString('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1})+' por día)</span></div>';
-  });
-  if(Object.keys(st.porMarca).length)h+='<div class="gcard-row" style="margin-top:8px;color:#a78bfa">Promedio total: <span style="color:#a78bfa">'+promTxt+' servicios por día</span> ('+diasContados+' día'+(diasContados===1?'':'s')+')</div>';
-  if(!Object.keys(st.porMarca).length)h+='<div class="gcard-row" style="color:#94a0af">Sin datos</div>';
-  h+='</div>';
-  h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por modelo ('+mesLabel+')</div>';
-  var ordenMarca={'MOURA':0,'WILLARD':1,'SERMAT':2,'HERBO':3,'BARI':4};
-  var modelosOrdenados=Object.keys(st.porModelo).sort(function(ka,kb){
-    var ma=((st.modeloMarca&&st.modeloMarca[ka])||'').toUpperCase();
-    var mb=((st.modeloMarca&&st.modeloMarca[kb])||'').toUpperCase();
-    var oa=ordenMarca.hasOwnProperty(ma)?ordenMarca[ma]:99;
-    var ob=ordenMarca.hasOwnProperty(mb)?ordenMarca[mb]:99;
-    if(oa!==ob)return oa-ob;
-    if(ma!==mb)return ma<mb?-1:1;
-    return ka<kb?-1:ka>kb?1:0;
-  });
-  modelosOrdenados.forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porModelo[k]+'</span></div>';});
-  if(!modelosOrdenados.length)h+='<div class="gcard-row" style="color:#94a0af">Sin datos</div>';
-  h+='</div>';
-  h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por forma de pago ('+mesLabel+')</div>';
-  var pagosOrden=['Efectivo','Transferencia','Tarjeta'];
-  Object.keys(st.porPago).forEach(function(k){if(pagosOrden.indexOf(k)===-1)pagosOrden.push(k);});
-  pagosOrden.forEach(function(k){
-    var etiqueta=k==='Tarjeta'?'Tarjeta de crédito':k;
-    h+='<div class="gcard-row">'+etiqueta+': <span>'+(st.porPago[k]||0)+'</span> — <span>$'+formatMoney(st.porPagoMonto&&st.porPagoMonto[k]||0)+'</span></div>';
-  });
-  h+='</div>';
-  h+='<div class="mc"><div style="font-weight:700;margin-bottom:10px">Por cuenta de transferencia ('+mesLabel+')</div>';
-  Object.keys(st.porCuentaTransferencia||{}).forEach(function(k){h+='<div class="gcard-row">'+k+': <span>'+st.porCuentaTransferencia[k]+'</span> — <span>$'+formatMoney(st.porCuentaTransferenciaMonto&&st.porCuentaTransferenciaMonto[k]||0)+'</span></div>';});
-  if(!Object.keys(st.porCuentaTransferencia||{}).length)h+='<div class="gcard-row" style="color:#94a0af">Sin transferencias</div>';
-  h+='</div>';
+  // Por modelo: ranking (los 10 más colocados + ver todos)
+  var mods=Object.keys(st.porModelo).sort(function(a,b){return st.porModelo[b]-st.porModelo[a]||(a<b?-1:1);});
+  var totMod=mods.reduce(function(t,k){return t+st.porModelo[k];},0);
+  var filaMod=function(k){var mk=(st.modeloMarca&&st.modeloMarca[k])||'';return {k:String(k).replace(/^MOTO\s+/i,'')+(mk&&String(k).toUpperCase().indexOf(String(mk).toUpperCase())===-1?' · '+mk:''),v:st.porModelo[k]};};
+  var modHtml=vacio;
+  if(mods.length){
+    modHtml=barras(mods.slice(0,10).map(filaMod),totMod,'sv-cols');
+    if(mods.length>10)modHtml+='<details class="sv-mas"><summary>Ver los otros '+(mods.length-10)+' modelos</summary>'+barras(mods.slice(10).map(filaMod),totMod,'sv-cols')+'</details>';
+  }
+  h+=caja('&#127942; Modelos más colocados',mods.length+' modelos distintos · '+totMod+' baterías',modHtml,'sv-wide');
   el.innerHTML=h;
 }
 function hoyStr(){var d=new Date();var y=d.getFullYear();var m=String(d.getMonth()+1).padStart(2,'0');var day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day;}

@@ -441,6 +441,19 @@ a.card{text-decoration:none;color:inherit;box-sizing:border-box}
 .sv-leg-k{font-weight:700;color:var(--ink)}.sv-leg-m{font-weight:800;color:var(--ink)}.sv-leg-n{font-size:12.5px;color:var(--muted);text-align:right}
 .sv-vacio{font-size:14px;color:var(--muted);padding:6px 0}
 .sv-mas{margin-top:14px}.sv-mas summary{cursor:pointer;font-size:14px;font-weight:700;color:#a78bfa;margin-bottom:12px}
+.pr-card{border-color:rgba(242,169,60,.45)!important;padding:20px 22px}
+.pr-top{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:760px){.pr-top{grid-template-columns:1fr 1fr}.pr-top .pr-k:nth-child(2){grid-column:1/-1;order:-1}}
+.pr-k{text-align:center}.pr-l{font-size:13px;font-weight:700;color:var(--muted)}
+.pr-v{font-size:32px;font-weight:800;color:var(--ink);line-height:1.15;margin-top:4px}.pr-v.pr-big{font-size:44px;color:var(--amber)}
+.pr-s{font-size:12.5px;color:var(--muted)}
+.pr-bar{height:10px;background:var(--border2);border-radius:5px;overflow:hidden;margin-top:16px}.pr-bar div{height:100%;background:var(--amber);border-radius:0 5px 5px 0}
+.pr-bar-l{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-top:5px}
+.pr-rango{margin-top:14px;font-size:14px;color:var(--ink-soft);text-align:center}.pr-rango b{color:var(--ink)}
+.ptable tr.hoy-head td{background:rgba(242,169,60,.14)!important;border-bottom:1px solid rgba(242,169,60,.4);padding:12px 16px;font-family:var(--sans)}
+.hoy-tag{display:inline-block;background:var(--amber);color:#1b1300;font-weight:800;font-size:12.5px;border-radius:99px;padding:3px 10px;margin-right:12px}
+.hoy-cant{font-size:16px;color:var(--ink)}.hoy-cant b{font-size:19px;color:var(--amber)}
+.hoy-det{font-size:13.5px;color:var(--ink-soft);margin-left:12px}
 .eq-x{background:none;border:none;color:#f87171;font-weight:800;font-size:15px;cursor:pointer;margin-left:6px;padding:0 2px;line-height:1}
 .eq-nuevo-tag{font-size:11px;font-weight:800;color:var(--teal);background:rgba(45,212,191,.14);border-radius:99px;padding:2px 8px;margin-left:4px}
 .eq-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -2971,6 +2984,11 @@ function cargarHistorialMes(){
       var lista=grupos[fecha];
       ordenarPorTecnico(lista);
       if(fecha===hoy){
+        var exH=lista.filter(function(s){return s.modelo_bateria==='Arranque'||s.modelo_bateria==='Carga de bateria'||s.modelo_bateria==='Visita tecnica';});
+        var colH=lista.length-exH.length,motoH=lista.filter(esServMoto).length,detH=[];
+        if(motoH)detH.push(motoH+' de moto');
+        [['Arranque','arranque','arranques'],['Carga de bateria','carga','cargas'],['Visita tecnica','visita tecnica','visitas tecnicas']].forEach(function(t){var n=exH.filter(function(s){return s.modelo_bateria===t[0];}).length;if(n)detH.push(n+' '+(n===1?t[1]:t[2]));});
+        h+='<tr class="hoy-head"><td colspan="14"><span class="hoy-tag">HOY &middot; '+fmtFecha(fecha)+'</span><span class="hoy-cant">Cantidad hoy: <b>'+colH+'</b> servicio'+(colH===1?'':'s')+'</span>'+(detH.length?'<span class="hoy-det">'+detH.join(' &middot; ')+'</span>':'')+'</td></tr>';
         lista.forEach(function(s){h+=filaServicio(s);});
       }else{
         var gid='sum-'+fecha.replace(/-/g,'');
@@ -3122,6 +3140,20 @@ function renderStatsMes(){
   var el=document.getElementById('mesStatsBody');
   if(!el)return;
   var h='';
+  // ---- Proyección del mes ----
+  var desdeTxt='01-'+String(mesSeleccionado+1).padStart(2,'0')+'-'+anioSeleccionado;
+  var hastaTxt=String(diasContados).padStart(2,'0')+'-'+String(mesSeleccionado+1).padStart(2,'0')+'-'+anioSeleccionado;
+  var proy=Math.round(promedio*diasDelMes),avance=proy?Math.min(100,totalGeneral/proy*100):0;
+  h+='<div class="mc pr-card"><div class="pr-top">';
+  h+='<div class="pr-k"><div class="pr-l">Promedio por día</div><div class="pr-v">'+promTxt+'</div><div class="pr-s">servicios por día</div></div>';
+  h+='<div class="pr-k"><div class="pr-l">'+(esMesActual&&diasContados<diasDelMes?'A este ritmo, '+lpEsc(NOMBRES_MES[mesSeleccionado].toLowerCase())+' termina en':'Total del mes')+'</div><div class="pr-v pr-big">'+(esMesActual&&diasContados<diasDelMes?'~'+proy:totalGeneral)+'</div><div class="pr-s">servicios</div></div>';
+  h+='<div class="pr-k"><div class="pr-l">Llevan hasta ahora</div><div class="pr-v">'+totalGeneral+'</div><div class="pr-s">servicios</div></div>';
+  h+='</div>';
+  if(esMesActual&&diasContados<diasDelMes){
+    h+='<div class="pr-bar" title="'+totalGeneral+' de ~'+proy+' servicios proyectados"><div style="width:'+avance+'%"></div></div>';
+    h+='<div class="pr-bar-l"><span>'+totalGeneral+' hechos</span><span>faltan ~'+Math.max(0,proy-totalGeneral)+' en '+(diasDelMes-diasContados)+' día'+(diasDelMes-diasContados===1?'':'s')+'</span></div>';
+  }
+  h+='<div class="pr-rango">&#128197; Datos del <b>'+desdeTxt+'</b> al <b>'+hastaTxt+'</b> &middot; '+diasContados+' día'+(diasContados===1?'':'s')+' computados'+(esMesActual?' (incluye hoy)':'')+'</div></div>';
   // ---- Servicios de moto del mes ----
   var ml=st.motoLista.slice().sort(function(a,b){return String(a.fecha)<String(b.fecha)?1:-1;});
   var hoyS=hoyStr(),mHoy=ml.filter(function(x){return String(x.fecha)===hoyS;}).length;
@@ -3153,7 +3185,7 @@ function renderStatsMes(){
   h+='<div class="sv-grid">';
   // Por técnico
   var tecs=Object.keys(st.porTecnico).sort(function(a,b){return st.porTecnico[b]-st.porTecnico[a];});
-  h+=caja('&#128119; Por técnico',totServ+' servicios en '+lpEsc(mesLabel),tecs.length?barras(tecs.map(function(k){return {k:k,v:st.porTecnico[k],extra:nf1(diasContados?st.porTecnico[k]/diasContados:0)+' por día'};}),totServ):vacio);
+  h+=caja('&#128119; Por técnico',totServ+' servicios · del '+desdeTxt.slice(0,5)+' al '+hastaTxt.slice(0,5),tecs.length?barras(tecs.map(function(k){return {k:k,v:st.porTecnico[k],extra:nf1(diasContados?st.porTecnico[k]/diasContados:0)+' por día'};}),totServ):vacio);
   // Por marca
   var marcas=Object.keys(st.porMarca).sort(function(a,b){return st.porMarca[b]-st.porMarca[a];});
   var totMarca=marcas.reduce(function(t,k){return t+st.porMarca[k];},0);

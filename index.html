@@ -409,6 +409,14 @@ a.card{text-decoration:none;color:inherit;box-sizing:border-box}
 #p4 .ptable tbody tr:last-child td:first-child,#mvPrecios .ptable tbody tr:last-child td:first-child{border-bottom-left-radius:var(--r-lg)}
 #p4 .ptable tbody tr:last-child td:last-child,#mvPrecios .ptable tbody tr:last-child td:last-child{border-bottom-right-radius:var(--r-lg)}
 @media (max-width:999px){#p4 .twrap,#mvPrecios .twrap{overflow-x:auto;overflow-y:hidden}}
+#p5 .sbox{padding:14px 18px}#p5 .sbox input{font-size:20px}
+#p5 .aviso-add{font-size:16px;padding:14px}
+#resV .bres{padding:1.3rem 1.4rem}
+#resV .bres-v{font-size:21px;font-weight:800;margin-bottom:8px;line-height:1.25}
+#resV .bres-b{font-size:17.5px;line-height:1.45;color:var(--ink)}
+#resV .bres-flex .lp-row-act button{width:40px;height:40px;font-size:16px}
+#resV .no-res{font-size:17px}
+@media (min-width:761px){#resV{grid-template-columns:repeat(auto-fill,minmax(420px,1fr))!important;gap:14px!important}}
 .eq-x{background:none;border:none;color:#f87171;font-weight:800;font-size:15px;cursor:pointer;margin-left:6px;padding:0 2px;line-height:1}
 .eq-nuevo-tag{font-size:11px;font-weight:800;color:var(--teal);background:rgba(45,212,191,.14);border-radius:99px;padding:2px 8px;margin-left:4px}
 .eq-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -2050,15 +2058,49 @@ function plRenderCtrl(){
   document.getElementById('plCtrl').innerHTML=h;
   if(urgCargado)urgPintar();else urgCargar();
 }
+// ---- Nombres editables en Lista de Precios ----
+// Solo cambia el nombre que se ve. El stock y los precios siguen atados al código original, así nada se desconecta.
+var plNom={},plNomCargado=false,plNomEdit=null;
+function plNombre(x){return plNom[plKey(x)]||String(x.m).trim();}
+function plNomLeer(r){var v=r&&r.cfg?r.cfg.plNombres:null;if(typeof v==='string'){try{v=JSON.parse(v);}catch(e){v=null;}}return v&&typeof v==='object'?v:{};}
+function plNomCargar(){
+  plNomCargado=true;
+  apiPost('cfgGet').then(function(r){if(r&&r.ok){plNom=plNomLeer(r);filtrarPrecios();}}).catch(function(){plNomCargado=false;});
+}
+function plNomCelda(x,badge){
+  var k=plKey(x),kj=eqJs(k),nom=plNombre(x),orig=String(x.m).trim();
+  if(plNomEdit===k)return '<div class="mn-edit"><input id="plNomIn" value="'+lpEsc(nom)+'" onkeydown="if(event.key===\'Enter\')plNomGuardar(\''+kj+'\',\''+eqJs(orig)+'\');if(event.key===\'Escape\')plNomEditar(null)"/><button class="bp" onclick="plNomGuardar(\''+kj+'\',\''+eqJs(orig)+'\')">&#10003;</button><button class="bs" onclick="plNomEditar(null)">&#10005;</button></div>';
+  return '<b>'+lpEsc(nom)+'</b>'+badge+'<button class="mn-lapiz" title="Editar nombre (el stock y el precio siguen conectados)" onclick="plNomEditar(\''+kj+'\')">&#9998;</button>'+(nom!==orig?'<div class="stk-info" style="color:var(--muted)">Código: '+lpEsc(orig)+'</div>':'');
+}
+function plNomEditar(k){plNomEdit=k;filtrarPrecios();var i=document.getElementById('plNomIn');if(i){i.focus();i.select();}}
+function plNomGuardar(k,orig){
+  var v=document.getElementById('plNomIn').value.trim();
+  if(!v)return toast('El nombre no puede quedar vacío');
+  var btn=document.querySelector('.mn-edit .bp');if(btn){btn.disabled=true;btn.textContent='...';}
+  apiPost('cfgGet').then(function(r){
+    if(!r||!r.ok)throw new Error((r&&r.error)||'no se pudo leer');
+    var cfg=r.cfg||{},nm=plNomLeer(r);
+    if(v===orig)delete nm[k];else nm[k]=v;
+    cfg.plNombres=JSON.stringify(nm);
+    return apiPost('cfgSet',{cfg:cfg}).then(function(r2){
+      if(!r2||!r2.ok)throw new Error((r2&&r2.error)||'no se pudo guardar');
+      return apiPost('cfgGet');
+    }).then(function(r3){
+      if(JSON.stringify(plNomLeer(r3))!==JSON.stringify(nm))throw new Error('el servidor no guardó el nombre');
+      plNom=nm;plNomEdit=null;filtrarPrecios();toast(v===orig?'Nombre original restaurado':'Nombre guardado');
+    });
+  }).catch(function(e){if(btn){btn.disabled=false;btn.innerHTML='&#10003;';}toast('Error: '+e.message);});
+}
 function filtrarPrecios(){
   var b=document.getElementById('busP').value.toLowerCase();
   var lista=plLista(),c=plCfgMarca(),f=lpFactorDesc(c.pct),hayDesc=f!==1,mg=c.margen,fac=!!PL_FACTURADO[plMarca()];
   var mgDef=plMargenDefault(lista);
   plRenderCtrl();
   document.getElementById('preciosHead').innerHTML='<tr><th>Marca</th><th>Modelo</th><th>Precio</th>'+(hayDesc?'<th>Desc.</th><th>Costo c/desc.</th>':'')+'<th style="color:#2dd4bf">Costo c/IVA (21%)</th><th style="color:#15803d">Venta con envío ('+(fac?'costo c/IVA ':'')+'+$'+formatMoney(mg)+')</th><th style="color:#15803d">Venta c/IVA (21%)</th><th style="color:#0e7490" title="Venta con envío − $'+formatMoney(RETIRO_DESC)+'">Retirando por depósito</th><th style="color:#dc2626">Si llama decidido</th><th>Stock</th></tr>';
+  if(!plNomCargado)plNomCargar();
   var h='';
   lista.forEach(function(x,i){
-    if(x.m.toLowerCase().indexOf(b)===-1)return;
+    if(x.m.toLowerCase().indexOf(b)===-1&&plNombre(x).toLowerCase().indexOf(b)===-1)return;
     var si=getStockInfo(x.m);
     var stk=si?si.txt:'Sin stock';
     var cls=si&&si.total>0?'stk-ok':'stk-no';
@@ -2069,13 +2111,13 @@ function filtrarPrecios(){
     // Modelos que en la lista original tenían una venta distinta al margen general conservan esa diferencia
     var extra=Math.round(plNum(x.p)-plNum(x.l))-mgDef;if(!(plNum(x.p)>0)||Math.abs(extra)<1)extra=0;
     if(!(precio>0)){
-      h+='<tr><td>'+lpEsc(plMarca().toUpperCase())+'</td><td><b>'+lpEsc(x.m)+'</b>'+badge+'</td><td colspan="'+(hayDesc?8:6)+'"><button class="bs" style="padding:8px 14px;font-size:14px" onclick="plEditarPrecio('+i+')">&#9998; Cargar precio de lista</button> <span style="color:var(--muted);font-size:13px">Falta el precio de este modelo</span></td><td><div class="stk-info '+cls+'" style="margin-top:0">'+stk+'</div></td></tr>';
+      h+='<tr><td>'+lpEsc(plMarca().toUpperCase())+'</td><td>'+plNomCelda(x,badge)+'</td><td colspan="'+(hayDesc?8:6)+'"><button class="bs" style="padding:8px 14px;font-size:14px" onclick="plEditarPrecio('+i+')">&#9998; Cargar precio de lista</button> <span style="color:var(--muted);font-size:13px">Falta el precio de este modelo</span></td><td><div class="stk-info '+cls+'" style="margin-top:0">'+stk+'</div></td></tr>';
       return;
     }
     var costo=Math.round(precio*f*100)/100,venta=(fac?Math.round(costo*1.21*100)/100:costo)+mg+extra;
     var vk='V:'+k,vMan=plCfg.precios[vk]!==undefined;
     if(vMan){venta=plCfg.precios[vk];extra=0;}
-    h+='<tr><td>'+lpEsc(plMarca().toUpperCase())+'</td><td><b>'+lpEsc(x.m)+'</b>'+badge+'</td>';
+    h+='<tr><td>'+lpEsc(plMarca().toUpperCase())+'</td><td>'+plNomCelda(x,badge)+'</td>';
     h+='<td style="white-space:nowrap"><span'+(hayDesc?' style="color:var(--muted);text-decoration:line-through"':' style="font-weight:700"')+'>$'+formatARS(precio)+'</span>'+(corr?' <span title="Precio corregido a mano" style="color:var(--amber);text-decoration:none">●</span>':'')+' <button class="pl-lapiz" title="Corregir precio de lista" onclick="plEditarPrecio('+i+')">&#9998;</button></td>';
     if(hayDesc)h+='<td><span class="lp-desc-tag">'+lpDescTexto(c.pct)+'</span></td><td style="font-weight:800">$'+formatARS(costo)+'</td>';
     h+='<td style="font-weight:700;color:#2dd4bf">$'+formatARS(costo*1.21)+'</td><td class="pventa" style="white-space:nowrap"'+(extra?' title="Este modelo tiene $'+formatARS(extra)+' extra sobre el margen"':'')+'>$'+formatARS(venta)+(vMan?' <span title="Venta puesta a mano" style="color:var(--amber)">●</span>':'')+(extra?' <span style="color:var(--muted);font-size:12px">('+(extra>0?'+':'−')+'$'+formatMoney(Math.abs(extra))+')</span>':'')+' <button class="pl-lapiz" title="Modificar precio de venta" onclick="plEditarVenta('+i+')">&#9998;</button></td><td style="font-weight:700;color:#15803d">$'+formatARS(venta*1.21)+'</td><td style="font-weight:700;color:#0e7490">$'+formatARS(venta-RETIRO_DESC)+'</td><td class="pnoche">$'+formatARS(venta+8000)+'</td>';

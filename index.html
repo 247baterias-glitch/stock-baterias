@@ -462,6 +462,15 @@ a.card{text-decoration:none;color:inherit;box-sizing:border-box}
 #p4 .ptab{font-size:19px;font-weight:800;padding:16px 12px;letter-spacing:.01em}
 #p4 .ptab.active{font-size:20px}
 @media (max-width:760px){#p4 .ptab{font-size:16px;padding:13px 14px}}
+/* Colores de cada marca en Lista de Precios */
+#p4 #tab1{color:#ffd60a}#p4 #tab1.active{color:#ffd60a;background:rgba(255,214,10,.16);box-shadow:inset 0 -3px 0 #ffd60a}
+#p4 #tab2{color:#ef4444}#p4 #tab2.active{color:#ef4444;background:rgba(239,68,68,.16);box-shadow:inset 0 -3px 0 #ef4444}
+#p4 #tab8{color:#a3a9b0}#p4 #tab8.active{color:#a3a9b0;background:rgba(163,169,176,.16);box-shadow:inset 0 -3px 0 #a3a9b0}
+#p4 #tab3{color:#fb8c1e}#p4 #tab3.active{color:#fb8c1e;background:rgba(251,140,30,.16);box-shadow:inset 0 -3px 0 #fb8c1e}
+#p4 #tab6{color:#fdba74}#p4 #tab6.active{color:#fdba74;background:rgba(253,186,116,.16);box-shadow:inset 0 -3px 0 #fdba74}
+#p4 #tab7{color:#f43f3f}#p4 #tab7.active{color:#f43f3f;background:rgba(244,63,63,.16);box-shadow:inset 0 -3px 0 #f43f3f}
+#p4 #tab5{color:#4f9dff}#p4 #tab5.active{color:#4f9dff;background:rgba(79,157,255,.16);box-shadow:inset 0 -3px 0 #4f9dff}
+#p4 #tab4{color:#4f9dff}#p4 #tab4.active{color:#4f9dff;background:rgba(79,157,255,.16);box-shadow:inset 0 -3px 0 #4f9dff}
 .eq-x{background:none;border:none;color:#f87171;font-weight:800;font-size:15px;cursor:pointer;margin-left:6px;padding:0 2px;line-height:1}
 .eq-nuevo-tag{font-size:11px;font-weight:800;color:var(--teal);background:rgba(45,212,191,.14);border-radius:99px;padding:2px 8px;margin-left:4px}
 .eq-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -711,11 +720,11 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div id="p9" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
 <div class="ptabs">
-<button class="ptab active" id="mtab1" onclick="cambiarMotoTab(1)">Bosch</button>
+<button class="ptab active" id="mtab4" onclick="cambiarMotoTab(4)">&#128269; Buscador</button>
+<button class="ptab" id="mtab6" onclick="cambiarMotoTab(6)">&#128257; Equivalencias</button>
+<button class="ptab" id="mtab1" onclick="cambiarMotoTab(1)">Bosch</button>
 <button class="ptab" id="mtab2" onclick="cambiarMotoTab(2)">High Power</button>
 <button class="ptab" id="mtab3" onclick="cambiarMotoTab(3)">Yuasa</button>
-<button class="ptab" id="mtab4" onclick="cambiarMotoTab(4)">&#128269; Buscador</button>
-<button class="ptab" id="mtab6" onclick="cambiarMotoTab(6)">&#128257; Equivalencias</button>
 <button class="ptab" id="mtab5" onclick="cambiarMotoTab(5)">&#128230; Compras MOTO</button>
 <button class="ptab" id="mtab7" onclick="cambiarMotoTab(7)">&#10067; Preguntas</button>
 </div>
@@ -1407,7 +1416,7 @@ function getStockInfo(codigo){
 }
 function mostrarStock(){document.getElementById('p0').classList.add('hidden');document.getElementById('p1').classList.remove('hidden');rCams();}
 function mostrarPrecios(){document.getElementById('p0').classList.add('hidden');document.getElementById('p4').classList.remove('hidden');titulo('Lista de Precios');filtrarPrecios();plCargar();}
-var motoTabActual=1;
+var motoTabActual=4; // al entrar a Baterías Moto abre el Buscador
 function mostrarMoto(){document.getElementById('p0').classList.add('hidden');document.getElementById('p9').classList.remove('hidden');titulo('Baterias Moto');cambiarMotoTab(motoTabActual);}
 function cambiarMotoTab(n){
   motoTabActual=n;[1,2,3,4,5,6,7].forEach(function(i){document.getElementById('mtab'+i).classList.toggle('active',i===n);});

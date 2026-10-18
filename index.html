@@ -452,6 +452,7 @@ a.card{text-decoration:none;color:inherit;box-sizing:border-box}
 @media (max-width:760px){.pr-bar-l{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 14px;text-align:left}.pr-bar-l span:empty{display:none}}
 .pr-hechos{font-size:24px;color:var(--ink)}
 .pr-faltan{font-size:17px;font-weight:700;color:var(--ink)}.pr-faltan b{font-size:30px;color:var(--amber);font-weight:800}
+.pr-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:12px}.pr-chips span{background:var(--border2);border:1px solid var(--border);border-radius:99px;padding:6px 12px;font-size:13.5px;font-weight:600;color:var(--ink-soft)}
 .pr-rango{margin-top:14px;font-size:14px;color:var(--ink-soft);text-align:center}.pr-rango b{color:var(--ink)}
 .ptable tr.hoy-head td{background:rgba(242,169,60,.14)!important;border-bottom:1px solid rgba(242,169,60,.4);padding:12px 16px;font-family:var(--sans)}
 .hoy-tag{display:inline-block;background:var(--amber);color:#1b1300;font-weight:800;font-size:12.5px;border-radius:99px;padding:3px 10px;margin-right:12px}
@@ -3053,10 +3054,6 @@ function mostrarResumen(){
     var extraHtml30=extraTxt30.length?'<div style="font-size:12px;color:#c2540c;font-weight:600;margin-top:4px">- '+extraTxt30.join(', ')+'</div>':'';
     var h='';
     h+='<div style="display:flex;gap:12px;margin-bottom:16px">';
-    h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#70798a;margin-bottom:6px">HOY</div><div style="font-size:36px;font-weight:700">'+r.hoy+'</div><div style="font-size:12px;color:#70798a">servicios</div>'+extraHtml+gastoHoyHtml+'</div>';
-    h+='<div class="mc" id="mesTotalCard" style="flex:1;text-align:center"><div class="loading" style="padding:0">Cargando...</div></div>';
-    h+='</div>';
-    h+='<div style="display:flex;gap:12px;margin-bottom:16px">';
     h+='<div class="mc" style="flex:1;text-align:center"><div style="font-size:13px;color:#8a90b3;margin-bottom:6px">SCRAP 10 DIAS</div><div style="display:flex;align-items:center;justify-content:center;gap:14px"><button style="width:32px;height:32px;border-radius:8px;border:1px solid #282b5c;background:#14183f;color:#a78bfa;font-size:18px;font-weight:700;cursor:pointer;line-height:1" onclick="ajustarScrapClick(-1)">&#8722;</button><div id="scrapCount" style="font-size:36px;font-weight:700;color:#a78bfa;min-width:44px">'+r.scrap10+'</div><button style="width:32px;height:32px;border-radius:8px;border:1px solid #282b5c;background:#14183f;color:#a78bfa;font-size:18px;font-weight:700;cursor:pointer;line-height:1" onclick="ajustarScrapClick(1)">&#43;</button></div><div style="font-size:12px;color:#8a90b3;margin-top:4px">baterias recibidas</div><button style="margin-top:8px;background:transparent;border:1px solid #282b5c;border-radius:8px;padding:6px 12px;font-size:12px;color:#a78bfa;font-weight:600;cursor:pointer" onclick="reiniciarScrap()">&#8635; Reiniciar contador</button></div>';
     h+='</div>';
     document.getElementById('resumenBody').innerHTML=h;
@@ -3157,7 +3154,15 @@ function renderStatsMes(){
     var faltan=Math.max(0,proy-totalGeneral),diasF=diasDelMes-diasContados;
     h+='<div class="pr-bar-l"><span><b class="pr-hechos">'+totalGeneral+'</b> hechos</span><span></span><span class="pr-faltan">Faltan <b>~'+faltan+'</b> servicios en <b>'+diasF+'</b> día'+(diasF===1?'':'s')+'</span></div>';
   }
-  h+='<div class="pr-rango">&#128197; Datos del <b>'+desdeTxt+'</b> al <b>'+hastaTxt+'</b> &middot; '+diasContados+' día'+(diasContados===1?'':'s')+' computados'+(esMesActual?' (incluye hoy)':'')+'</div></div>';
+  h+='<div class="pr-rango">&#128197; Datos del <b>'+desdeTxt+'</b> al <b>'+hastaTxt+'</b> &middot; '+diasContados+' día'+(diasContados===1?'':'s')+' computados'+(esMesActual?' (incluye hoy)':'')+'</div>';
+  var chips=[],nmC=st.motoLista.length;
+  if(nmC)chips.push('&#128663; '+(totalGeneral-nmC)+' de auto &middot; &#127949; '+nmC+' de moto');
+  if(extraTxt.length)chips.push('&#128295; '+extraTxt.join(', '));
+  if(esMesActual){var gh=GASTO_ADS[hoyStr()];if(gh!==undefined&&gh!==null&&gh!=='')chips.push('Google Ads hoy: $'+formatMoney(gh));}
+  if(gastoMes>0)chips.push('Google Ads del mes: $'+formatMoney(gastoMes)+(totalGeneral?' &middot; costo por servicio $'+formatMoney(gastoMes/totalGeneral):''));
+  if(st.totalClientesRepetidos||st.totalClientesNuevos)chips.push('&#128101; '+st.totalClientesRepetidos+' cliente'+(st.totalClientesRepetidos===1?'':'s')+' repetido'+(st.totalClientesRepetidos===1?'':'s')+' &middot; '+st.totalClientesNuevos+' nuevo'+(st.totalClientesNuevos===1?'':'s'));
+  if(chips.length)h+='<div class="pr-chips">'+chips.map(function(c){return '<span>'+c+'</span>';}).join('')+'</div>';
+  h+='</div>';
   // ---- Servicios de moto del mes ----
   var ml=st.motoLista.slice().sort(function(a,b){return String(a.fecha)<String(b.fecha)?1:-1;});
   var hoyS=hoyStr(),mHoy=ml.filter(function(x){return String(x.fecha)===hoyS;}).length;

@@ -145,7 +145,7 @@ h1,h2,h3,p,button,input,a{color:inherit}
   .home-grid .card h2{font-size:24px}
   .home-grid .card p{font-size:19px;margin-top:6px;line-height:1.35}
   .home-grid .card .arr{font-size:28px}
-  .home-grid .card:hover{transform:translateY(-2px)}
+
   .home-grid .card-hero{grid-column:1/-1;justify-content:center;min-height:max(140px,17vh)}
   .home-grid .card-hero .ci{flex:0 1 auto;text-align:center}
   .home-grid .card-hero h2{font-size:36px}
@@ -154,7 +154,8 @@ h1,h2,h3,p,button,input,a{color:inherit}
   .home-grid .card-hero .arr{display:none}
 }
 /* Filas de colores suaves: 1ra azul-violeta, 2da verde agua, 3ra ámbar */
-.home-grid .card-hero{background:linear-gradient(135deg,rgba(124,108,255,.16),rgba(45,212,191,.08)),var(--surface);border-color:rgba(124,108,255,.35)}
+.home-grid .card-hero{background:linear-gradient(135deg,rgba(150,136,255,.42),rgba(96,140,255,.30) 55%,rgba(45,212,191,.22)),#1c1f52;border-color:rgba(167,139,250,.65)}
+.home-grid .card-hero p{color:#dcd8ff}
 .home-grid .card:nth-child(n+2):nth-child(-n+4){background:linear-gradient(135deg,rgba(96,140,255,.13),rgba(96,140,255,.03)),var(--surface);border-color:rgba(96,140,255,.32)}
 .home-grid .card:nth-child(n+5):nth-child(-n+7){background:linear-gradient(135deg,rgba(45,212,191,.12),rgba(45,212,191,.03)),var(--surface);border-color:rgba(45,212,191,.30)}
 .home-grid .card:nth-child(n+8):nth-child(-n+10){background:linear-gradient(135deg,rgba(242,169,60,.12),rgba(242,169,60,.03)),var(--surface);border-color:rgba(242,169,60,.30)}
@@ -473,6 +474,16 @@ a.card{text-decoration:none;color:inherit;box-sizing:border-box}
 #p4 #tab4{color:#4f9dff}#p4 #tab4.active{color:#4f9dff;background:rgba(79,157,255,.16);box-shadow:inset 0 -3px 0 #4f9dff}
 .iva-dup-aviso.prob{color:#fde68a;background:rgba(242,169,60,.14);border-color:rgba(242,169,60,.55)}
 .iva-ver-dup{background:var(--amber);color:#1b1300;border:none;border-radius:6px;padding:3px 10px;font-weight:800;font-size:12.5px;cursor:pointer;margin-left:6px;font-family:var(--sans)}
+/* Tarjetas del inicio: al pasar el mouse se hunden/oscurecen y se agrandan un poco */
+.home-grid .card{transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease,border-color .22s ease}
+.home-grid .card .icon{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+@media (hover:hover){
+  .home-grid .card:hover{transform:scale(1.035);z-index:2;box-shadow:inset 0 0 0 999px rgba(0,0,12,.30),0 22px 44px -12px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.10)}
+  .home-grid .card:hover .icon{transform:scale(1.08)}
+  .home-grid .card:hover .arr{color:var(--ink)}
+}
+.home-grid .card:active{transform:scale(1.01)}
+@media (prefers-reduced-motion:reduce){.home-grid .card,.home-grid .card .icon{transition:box-shadow .2s ease}.home-grid .card:hover,.home-grid .card:hover .icon{transform:none}}
 .eq-x{background:none;border:none;color:#f87171;font-weight:800;font-size:15px;cursor:pointer;margin-left:6px;padding:0 2px;line-height:1}
 .eq-nuevo-tag{font-size:11px;font-weight:800;color:var(--teal);background:rgba(45,212,191,.14);border-radius:99px;padding:2px 8px;margin-left:4px}
 .eq-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -623,12 +634,12 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <a class="card card-hero" href="#resumen" onclick="return navClick(event,mostrarResumen)"><div class="icon" style="background:#ece7f7">&#128202;</div><div class="ci"><h2>Resumen</h2><p id="resumenSub">Servicios de hoy y la semana</p></div><span class="arr">&#8250;</span></a>
 <a class="card" href="#precios" onclick="return navClick(event,mostrarPrecios)"><div class="icon green">&#128200;</div><div class="ci"><h2>Lista de Precios</h2><p>Precios con disponibilidad</p></div><span class="arr">&#8250;</span></a>
 <a class="card" href="#servicio" onclick="return navClick(event,mostrarTipoServicio)"><div class="icon" style="background:#fdeed0">&#128295;</div><div class="ci"><h2>Registrar Servicio</h2><p>Cargar un servicio nuevo</p></div><span class="arr">&#8250;</span></a>
-<a class="card" href="#stock" onclick="return navClick(event,mostrarStock)"><div class="icon">&#128661;</div><div class="ci"><h2>Stock Camionetas</h2><p>Ver y gestionar stock</p></div><span class="arr">&#8250;</span></a>
+<a class="card" href="#stock" onclick="return navClick(event,mostrarStock)"><div class="icon">&#128661;</div><div class="ci"><h2>Stock Baterías</h2><p>Ver y gestionar stock</p></div><span class="arr">&#8250;</span></a>
 <a class="card" href="#buscador" onclick="return navClick(event,mostrarBuscador)"><div class="icon orange">&#128269;</div><div class="ci"><h2>Buscador de Baterias</h2><p>Buscar por vehiculo</p></div><span class="arr">&#8250;</span></a>
 <a class="card" href="#garantias" onclick="return navClick(event,mostrarGarantias)"><div class="icon red">&#128220;</div><div class="ci"><h2>Garantias</h2><p>Registrar y consultar</p></div><span class="arr">&#8250;</span></a>
 <a class="card" href="#moto" onclick="return navClick(event,mostrarMoto)"><div class="icon" style="background:#dff1f5">&#127949;</div><div class="ci"><h2>Baterias Moto</h2><p>Lista de precios moto</p></div><span class="arr">&#8250;</span></a>
 <a class="card" href="#listas" onclick="return navClick(event,mostrarListasDist)"><div class="icon" style="background:#e6ecff">&#128203;</div><div class="ci"><h2>Listas de Distribuidores</h2><p>Fotos y PDF con precio de venta</p></div><span class="arr">&#8250;</span></a>
-<a class="card" href="#iva" onclick="return navClick(event,mostrarIva)"><div class="icon" style="background:#e1f5ea">&#129534;</div><div class="ci"><h2>Contador de IVA</h2><p>Cuánto comprar facturado, DDJJ, crédito y débito fiscal para la DDJJ</p></div><span class="arr">&#8250;</span></a>
+<a class="card" href="#iva" onclick="return navClick(event,mostrarIva)"><div class="icon" style="background:#e1f5ea">&#129534;</div><div class="ci"><h2>Facturas</h2><p>Cuánto comprar facturado, DDJJ, crédito y débito fiscal para la DDJJ</p></div><span class="arr">&#8250;</span></a>
 <a class="card" href="#compras" onclick="return navClick(event,mostrarPedidos)"><div class="icon" style="background:#fdeed0">&#128230;</div><div class="ci"><h2>Compras</h2><p>Archivos de compras con fecha, monto y % facturado</p></div><span class="arr">&#8250;</span></a>
 </div>
 </div>
@@ -4398,7 +4409,7 @@ function ivaAplicarLectura(d,link){
 function mostrarIva(){
   document.getElementById('p0').classList.add('hidden');
   document.getElementById('p12').classList.remove('hidden');
-  titulo('Contador de IVA');
+  titulo('Facturas');
   var d=new Date();ivaMes=d.getMonth();ivaAnio=d.getFullYear();
   ivaVista(1);
   document.getElementById('ivaFecha').value=hoyStr();

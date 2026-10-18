@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<link rel="dns-prefetch" href="https://script.google.com">
+<link rel="dns-prefetch" href="https://script.googleusercontent.com">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="color-scheme" content="dark">
@@ -1203,7 +1207,113 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div id="dzOverlay"><div id="dzTxt">Soltá el archivo para subirlo</div></div>
 <script>
 var API_URL='https://script.google.com/macros/s/AKfycbxpg41wxhjZtU2bTkUJ6LuvwEdgT2IDgDatwmA1hiTRLosaDPzSj57aGBLNdzIKJbYyDQ/exec';
-function api(action,params){
+// ================== VELOCIDAD: caché de lecturas ==================
+// Las lecturas (getX / xGet) se guardan en memoria y en el navegador. Al entrar a una sección se muestra
+// al instante lo último que se vio y por atrás se piden los datos nuevos; si cambiaron, se actualiza la pantalla.
+// Cualquier cambio (guardar, borrar, sumar stock...) limpia la caché para no mostrar nada viejo.
+var datosFrescos=true,CACHE_FRESCO_MS=15000,CACHE_MAX_MS=7*24*3600*1000,CACHE_MEM={},CACHE_PEND={};
+var CACHE_NO_LIMPIA=/^(ivaLeerFactura|cmLeer|pedLeer|remitoLeer|generarGarantia)$/;
+function cacheEsLectura(action,post){return post?(/Get$/.test(action)||action==='listasTodos'):/^get/.test(action);}
+function cacheKey(action,params,post){var p=params||{},o={};Object.keys(p).sort().forEach(function(k){if(k!=='action'&&k!=='clave')o[k]=p[k];});return 'c:'+(post?'P:':'G:')+action+':'+JSON.stringify(o);}
+function cacheLeer(k){
+  var e=CACHE_MEM[k];
+  if(!e){try{var t=localStorage.getItem(k);if(t){e=JSON.parse(t);CACHE_MEM[k]=e;}}catch(x){}}
+  if(e&&Date.now()-e.t>CACHE_MAX_MS)return null;
+  return e||null;
+}
+function cacheGuardar(k,data){
+  var e={t:Date.now(),d:data};CACHE_MEM[k]=e;
+  try{localStorage.setItem(k,JSON.stringify(e));}catch(x){
+    try{Object.keys(localStorage).forEach(function(kk){if(kk.indexOf('c:')===0&&kk!==k&&kk.indexOf('getDatos')===-1)localStorage.removeItem(kk);});localStorage.setItem(k,JSON.stringify(e));}catch(y){}
+  }
+}
+function cacheLimpiar(){
+  CACHE_MEM={};
+  try{Object.keys(localStorage).forEach(function(k){if(k.indexOf('c:')===0&&k.indexOf('getDatos')===-1)localStorage.removeItem(k);});}catch(x){}
+  // getDatos se conserva para arrancar rápido, pero se marca como viejo para que se vuelva a pedir
+  var viejo=Date.now()-CACHE_FRESCO_MS-1;
+  try{Object.keys(localStorage).forEach(function(k){if(k.indexOf('getDatos')!==-1){var e=JSON.parse(localStorage.getItem(k));e.t=Math.min(e.t,viejo);localStorage.setItem(k,JSON.stringify(e));}});}catch(x){}
+}
+function cachePedir(k,action,params,post){
+  if(CACHE_PEND[k])return CACHE_PEND[k];
+  var pr=(post?apiPostRaw(action,Object.assign({},params||{})):apiRaw(action,params)).then(function(r){
+    delete CACHE_PEND[k];if(action==='getDatos')datosFrescos=true;
+    if(r&&r.ok!==false)cacheGuardar(k,r);
+    return r;
+  },function(e){delete CACHE_PEND[k];if(action==='getDatos')datosFrescos=true;throw e;});
+  CACHE_PEND[k]=pr;return pr;
+}
+function cacheLlamar(action,params,post){
+  if(!cacheEsLectura(action,post)){
+    if(!CACHE_NO_LIMPIA.test(action))cacheLimpiar();
+    return post?apiPostRaw(action,params):apiRaw(action,params);
+  }
+  var k=cacheKey(action,params,post),e=cacheLeer(k);
+  if(!e)return cachePedir(k,action,params,post);
+  if(Date.now()-e.t>CACHE_FRESCO_MS){
+    if(action==='getDatos')datosFrescos=false;
+    var viejo=JSON.stringify(e.d);
+    cachePedir(k,action,params,post).then(function(r){
+      if(r&&r.ok!==false&&JSON.stringify(r)!==viejo){try{cacheActualizado(action,params||{},r);}catch(x){}}
+    }).catch(function(){});
+  }
+  return Promise.resolve(JSON.parse(JSON.stringify(e.d)));
+}
+function api(action,params){return cacheLlamar(action,params||{},false);}
+function apiPost(action,payload){return cacheLlamar(action,payload||{},true);}
+// Lectura siempre del servidor (para leer-modificar-guardar y controles de repetidas)
+function apiPostFresco(action,payload){var k=cacheKey(action,payload||{},true);return apiPostRaw(action,Object.assign({},payload||{})).then(function(r){if(r&&r.ok!==false)cacheGuardar(k,r);return r;});}
+// Mientras el stock se está actualizando no se deja sumar/restar (para no pisar cambios de otro celular)
+function datosListos(){if(datosFrescos)return true;toast('Actualizando el stock, probá de nuevo en un segundo');return false;}
+function visible(id){var el=document.getElementById(id);return !!(el&&!el.classList.contains('hidden'));}
+// Cuando llegan datos nuevos por atrás, se refresca solo la pantalla que corresponde
+function cacheActualizado(action,params,r){
+  if(action==='getDatos'){
+    datos=parseDatos(r);
+    if(visible('p1')&&typeof rCams==='function')rCams();
+    if(visible('p2')&&typeof rMarcas==='function'&&cam)rMarcas();
+    if(visible('p3')&&typeof rMod==='function'&&cam)rMod();
+    if(visible('p4'))filtrarPrecios();
+  }else if(action==='getHistorial'){
+    if(visible('p7')&&String(params.mes)===String(mesSeleccionado)&&String(params.anio)===String(anioSeleccionado))cargarHistorialMes();
+  }else if(action==='getGastoAds'){
+    if(visible('p7'))cargarHistorialMes();
+  }else if(action==='getTurnos'){
+    if(visible('p7'))cargarTurnos();
+  }else if(action==='getAvisos'){
+    renderAvisos(r.data||[]);
+  }else if(action==='ivaGet'){
+    if(visible('p12')){ivaData=r.data||[];ivaRender();if(typeof ctCalc==='function')ctCalc();}
+  }else if(action==='plGet'){
+    if(r.cfg){plCfg={marcas:r.cfg.marcas||{},precios:r.cfg.precios||{}};if(visible('p4'))filtrarPrecios();if(visible('p9')&&motoTabActual<=3)filtrarMoto();}
+  }
+}
+// Precarga en segundo plano lo que más se usa, así al entrar ya está
+function precargar(){
+  if(precargar.hecho)return;precargar.hecho=true;
+  var h=new Date(),tareas=[
+    function(){return api('getHistorial',{mes:h.getMonth(),anio:h.getFullYear()});},
+    function(){return api('getResumen');},
+    function(){return api('getGastoAds');},
+    function(){return api('getTurnos');},
+    function(){return apiPost('plGet');},
+    function(){return apiPost('cfgGet');},
+    function(){return apiPost('ivaGet');},
+    function(){return apiPost('buscadorGet');}
+  ];
+  var i=0,sig=function(){if(i>=tareas.length)return;var t=tareas[i++];Promise.resolve().then(t).catch(function(){}).then(function(){setTimeout(sig,150);});};
+  setTimeout(sig,600);
+}
+function parseDatos(r){
+  return (r.data||[]).map(function(d){
+    d.stock_emi=parseInt(d.stock_emi)||0;
+    d.stock_mario=parseInt(d.stock_mario)||0;
+    d.stock_mateo=parseInt(d.stock_mateo)||0;
+    d.stock_deposito=parseInt(d.stock_deposito)||0;
+    return d;
+  });
+}
+function apiRaw(action,params){
   params=params||{};
   return new Promise(function(resolve,reject){
     var cbName='cb_'+Date.now()+'_'+Math.floor(Math.random()*100000);
@@ -1595,14 +1705,14 @@ function eqCargarExtra(){
 }
 // Lee la config, aplica el cambio, guarda la config completa y verifica que quedó grabado
 function eqGuardarCambio(cambio){
-  return apiPost('cfgGet').then(function(r){
+  return apiPostFresco('cfgGet').then(function(r){
     if(!r||!r.ok)throw new Error((r&&r.error)||'no se pudo leer');
     var cfg=r.cfg||{},ex=eqLeerCfg(r);
     cambio(ex);
     cfg.eqMoto=JSON.stringify(ex);
     return apiPost('cfgSet',{cfg:cfg}).then(function(r2){
       if(!r2||!r2.ok)throw new Error((r2&&r2.error)||'no se pudo guardar');
-      return apiPost('cfgGet');
+      return apiPostFresco('cfgGet');
     }).then(function(r3){
       var chk=eqLeerCfg(r3);
       if(JSON.stringify(chk)!==JSON.stringify(ex))throw new Error('el servidor no guardó la equivalencia');
@@ -1667,14 +1777,14 @@ function pdCargar(){
 }
 // Lee lo último guardado, aplica el cambio, guarda y verifica (así no se pisan cambios entre celulares)
 function pdCambio(cambio,msg){
-  return apiPost('cfgGet').then(function(r){
+  return apiPostFresco('cfgGet').then(function(r){
     if(!r||!r.ok)throw new Error((r&&r.error)||'no se pudo leer');
     var cfg=r.cfg||{},lista=pdLeer(r);
     cambio(lista);
     cfg.pregMoto=JSON.stringify(lista);
     return apiPost('cfgSet',{cfg:cfg}).then(function(r2){
       if(!r2||!r2.ok)throw new Error((r2&&r2.error)||'no se pudo guardar');
-      return apiPost('cfgGet');
+      return apiPostFresco('cfgGet');
     }).then(function(r3){
       if(JSON.stringify(pdLeer(r3))!==JSON.stringify(lista))throw new Error('el servidor no guardó la pregunta');
       pdData=lista;pdRender();if(msg)toast(msg);
@@ -2001,7 +2111,7 @@ function motoNomGuardar(orig){
   var marca=MOTO_TABS[motoTabActual-1],v=document.getElementById('mnInput').value.trim();
   if(!v)return toast('El nombre no puede quedar vacío');
   var btn=document.querySelector('.mn-edit .bp');if(btn){btn.disabled=true;btn.textContent='...';}
-  apiPost('cfgGet').then(function(r){
+  apiPostFresco('cfgGet').then(function(r){
     if(!r||!r.ok)throw new Error((r&&r.error)||'no se pudo leer');
     var cfg=r.cfg||{},nm=motoNomLeer(r);
     nm[marca]=nm[marca]||{};
@@ -2009,7 +2119,7 @@ function motoNomGuardar(orig){
     cfg.motoNombres=JSON.stringify(nm);
     return apiPost('cfgSet',{cfg:cfg}).then(function(r2){
       if(!r2||!r2.ok)throw new Error((r2&&r2.error)||'no se pudo guardar');
-      return apiPost('cfgGet');
+      return apiPostFresco('cfgGet');
     }).then(function(r3){
       if(JSON.stringify(motoNomLeer(r3))!==JSON.stringify(nm))throw new Error('el servidor no guardó el nombre');
       motoNom=nm;motoNomEdit=null;filtrarMoto();toast('Nombre guardado');
@@ -2179,14 +2289,14 @@ function plNomGuardar(k,orig){
   var v=document.getElementById('plNomIn').value.trim();
   if(!v)return toast('El nombre no puede quedar vacío');
   var btn=document.querySelector('.mn-edit .bp');if(btn){btn.disabled=true;btn.textContent='...';}
-  apiPost('cfgGet').then(function(r){
+  apiPostFresco('cfgGet').then(function(r){
     if(!r||!r.ok)throw new Error((r&&r.error)||'no se pudo leer');
     var cfg=r.cfg||{},nm=plNomLeer(r);
     if(v===orig)delete nm[k];else nm[k]=v;
     cfg.plNombres=JSON.stringify(nm);
     return apiPost('cfgSet',{cfg:cfg}).then(function(r2){
       if(!r2||!r2.ok)throw new Error((r2&&r2.error)||'no se pudo guardar');
-      return apiPost('cfgGet');
+      return apiPostFresco('cfgGet');
     }).then(function(r3){
       if(JSON.stringify(plNomLeer(r3))!==JSON.stringify(nm))throw new Error('el servidor no guardó el nombre');
       plNom=nm;plNomEdit=null;filtrarPrecios();toast(v===orig?'Nombre original restaurado':'Nombre guardado');
@@ -2448,19 +2558,14 @@ function cargar(){
   sync('Sincronizando...');
   api('getDatos').then(function(r){
     if(r.ok){
-      datos=r.data.map(function(d){
-        d.stock_emi=parseInt(d.stock_emi)||0;
-        d.stock_mario=parseInt(d.stock_mario)||0;
-        d.stock_mateo=parseInt(d.stock_mateo)||0;
-        d.stock_deposito=parseInt(d.stock_deposito)||0;
-        return d;
-      });
+      datos=parseDatos(r);
       sync('Sincronizado');
       stockVartaCheck();
       document.getElementById('p0load').classList.add('hidden');
       document.getElementById('p0').classList.remove('hidden');
       cargarAvisos();
       navAbrirHash();
+      precargar();
     }else{errLoad('Error al leer.');}
   }).catch(function(e){errLoad(e.message);});
 }
@@ -2658,8 +2763,8 @@ function rMod(){
   });
   el.innerHTML=h+'</div>';
 }
-function restar(id){var m=datos.filter(function(x){return x.id===id;})[0];if(!m||m[cam.c]===0)return;m[cam.c]--;guardar(id,cam.c,m[cam.c]);rMod();toast('- '+String(m.nombre).replace(/\s*\|\s*/g,' ').trim()+' quedan '+m[cam.c]);}
-function restarSinRegistrar(id){
+function restar(id){if(!datosListos())return;var m=datos.filter(function(x){return x.id===id;})[0];if(!m||m[cam.c]===0)return;m[cam.c]--;guardar(id,cam.c,m[cam.c]);rMod();toast('- '+String(m.nombre).replace(/\s*\|\s*/g,' ').trim()+' quedan '+m[cam.c]);}
+function restarSinRegistrar(id){if(!datosListos())return;
   var m=datos.filter(function(x){return x.id===id;})[0];
   if(!m||m[cam.c]===0)return;
   if(!confirm('Restar 1 unidad de '+m.nombre+' sin registrar un servicio?'))return;
@@ -2667,7 +2772,7 @@ function restarSinRegistrar(id){
 }
 function tRep(id){var p=document.getElementById('r'+id);if(!p)return;var o=p.classList.contains('open');document.querySelectorAll('.rp.open').forEach(function(x){x.classList.remove('open');});if(!o){p.classList.add('open');qty[id]=1;document.getElementById('q'+id).textContent=1;}}
 function chQ(id,d){qty[id]=Math.max(1,(qty[id]||1)+d);document.getElementById('q'+id).textContent=qty[id];}
-function sumar(id){var m=datos.filter(function(x){return x.id===id;})[0];if(!m)return;var q=qty[id]||1;m[cam.c]+=q;guardar(id,cam.c,m[cam.c]);document.getElementById('r'+id).classList.remove('open');rMod();toast('+'+q+' '+m.nombre+' stock: '+m[cam.c]);}
+function sumar(id){if(!datosListos())return;var m=datos.filter(function(x){return x.id===id;})[0];if(!m)return;var q=qty[id]||1;m[cam.c]+=q;guardar(id,cam.c,m[cam.c]);document.getElementById('r'+id).classList.remove('open');rMod();toast('+'+q+' '+m.nombre+' stock: '+m[cam.c]);}
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
 function bc(s){return s===0?'out':s<=2?'low':'ok';}
 function bl(s){return s===0?'AGOTADO - COMPRAR STOCK':s<=2?'COMPRAR STOCK':'Disponible';}
@@ -2715,7 +2820,7 @@ function setColUbi(v,btn){
   btn.style.background='#f2a93c';btn.style.color='#1b2330';
 }
 var confirmandoColocacion=false;
-function confirmarColocacion(){
+function confirmarColocacion(){if(!datosListos())return;
   if(confirmandoColocacion)return;
   var m=datos.filter(function(x){return x.id===colId;})[0];
   if(!m){toast('Error: bateria no encontrada');return;}
@@ -3749,7 +3854,7 @@ function mostrarResultadoGarantia(url,telefono){
 var DISTRIBUIDORES=['4K distribuidora','Bari','Dimac','Telmo','Ocean Bat','Mateo','Baterias Ronconi','Varta (Hernan No Oficial)'];
 var lpInfoData={},lpInfoEditando=false;
 var lpActual=0,lpData={archivos:[],items:[]},lpMargen=55000,lpModo='agregar',lpOcupado=false,lpPedido=0;
-function apiPost(action,payload){
+function apiPostRaw(action,payload){
   payload=payload||{};
   payload.action=action;
   payload.clave=localStorage.getItem('clave')||'';
@@ -4313,7 +4418,7 @@ function ivaLote(fs){
       it.tc=String(r.datos.tipo_comprobante||'').toUpperCase();
     }).catch(function(err){it.est='err';it.txt='Error: '+err.message+'. Probá subirla sola.';}).then(function(){ivaLoteRender();sig();});
   };
-  apiPost('ivaGet').catch(function(){return null;}).then(function(r0){if(r0&&r0.ok)ivaData=r0.data||ivaData;sig();});
+  apiPostFresco('ivaGet').catch(function(){return null;}).then(function(r0){if(r0&&r0.ok)ivaData=r0.data||ivaData;sig();});
 }
 // Marca repetidas contra lo ya cargado y contra las otras del mismo lote. Las repetidas quedan destildadas.
 function ivaLoteChequear(){
@@ -4396,7 +4501,7 @@ function ivaLoteGuardar(){
       var p=it.d.fecha.split('-');ivaAnio=parseInt(p[0],10);ivaMes=parseInt(p[1],10)-1;
     }).catch(function(e){it.errG='Error al guardar: '+e.message;mal++;}).then(sig);
   };
-  apiPost('ivaGet').catch(function(){return null;}).then(function(r0){if(r0&&r0.ok)ivaData=r0.data||ivaData;sig();});
+  apiPostFresco('ivaGet').catch(function(){return null;}).then(function(r0){if(r0&&r0.ok)ivaData=r0.data||ivaData;sig();});
 }
 function ivaEsMio(cuit,nombre){
   if(String(cuit||'').replace(/\D/g,'')===IVA_MI_CUIT)return true;
@@ -4528,7 +4633,7 @@ function ivaGuardar(){
   var btn=document.getElementById('ivaGuardarBtn');btn.disabled=true;btn.textContent='Revisando...';
   var listo=function(){btn.disabled=false;btn.textContent='Guardar factura';};
   // Antes de guardar trae las facturas actualizadas (por si se cargó desde otro celular) y busca duplicadas
-  apiPost('ivaGet').catch(function(){return null;}).then(function(r0){
+  apiPostFresco('ivaGet').catch(function(){return null;}).then(function(r0){
     if(r0&&r0.ok)ivaData=r0.data||ivaData;
     var dup=ivaBuscarDup(datos);
     if(dup&&dup.t==='num'){

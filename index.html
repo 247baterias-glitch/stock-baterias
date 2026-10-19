@@ -1260,7 +1260,7 @@ function cacheLlamar(action,params,post){
   }
   var k=cacheKey(action,params,post),e=cacheLeer(k);
   if(!e)return cachePedir(k,action,params,post);
-  if(Date.now()-e.t>CACHE_FRESCO_MS){
+  if(Date.now()-e.t>CACHE_FRESCO_MS||action==='cfgGet'){
     if(action==='getDatos')datosFrescos=false;
     var viejo=JSON.stringify(e.d);
     cachePedir(k,action,params,post).then(function(r){
@@ -1299,6 +1299,54 @@ function cfgModificar(mutar,verificar){
   };
   return cfgEnCola(function(){return tarea(1);});
 }
+// ---- Respaldo de nombres/ocultos ----
+// Cada cambio queda anotado en este navegador con la hora. Si la configuración de Google vuelve a una versión
+// vieja (pasaba: guardabas uno y desaparecían los anteriores), la app lo detecta y vuelve a subir lo que falta.
+// Los sellos de hora en Google (campoT) hacen que gane el cambio más nuevo, aunque venga de otro celular.
+function ledgerTodo(){try{return JSON.parse(localStorage.getItem('nomLedger')||'{}')||{};}catch(e){return {};}}
+function ledgerAnotar(campo,k,v){
+  var L=ledgerTodo();L[campo]=L[campo]||{};L[campo][k]={v:v,t:Date.now()};
+  var lim=Date.now()-90*24*3600*1000;Object.keys(L).forEach(function(c){Object.keys(L[c]).forEach(function(kk){if(L[c][kk].t<lim)delete L[c][kk];});});
+  try{localStorage.setItem('nomLedger',JSON.stringify(L));}catch(e){}
+}
+function ledgerQuitar(campo,k){var L=ledgerTodo();if(L[campo]){delete L[campo][k];try{localStorage.setItem('nomLedger',JSON.stringify(L));}catch(e){}}}
+function cfgObj(cfg,clave){var v=cfg?cfg[clave]:null;if(typeof v==='string'){try{v=JSON.parse(v);}catch(e){v=null;}}return v&&typeof v==='object'?v:{};}
+// Aplica al mapa plano obj (y sus sellos ts) lo anotado en este navegador que sea más nuevo. Devuelve true si cambió algo.
+function ledgerAplicar(campo,obj,ts){
+  var L=ledgerTodo()[campo]||{},cambio=false;
+  Object.keys(L).forEach(function(k){
+    var e=L[k];if(ts[k]&&ts[k]>=e.t)return;
+    var cur=obj.hasOwnProperty(k)?obj[k]:null;
+    if(e.v===null){if(cur!==null){delete obj[k];cambio=true;}}
+    else if(JSON.stringify(cur)!==JSON.stringify(e.v)){obj[k]=e.v;cambio=true;}
+    if(!ts[k]||ts[k]<e.t){ts[k]=e.t;cambio=true;}
+  });
+  return cambio;
+}
+// motoNombres es {marca:{orig:nombre}}: se aplana a {"marca|orig":nombre}
+function motoAplanar(nm){var o={};Object.keys(nm).forEach(function(m){Object.keys(nm[m]||{}).forEach(function(k){o[m+'|'+k]=nm[m][k];});});return o;}
+function motoArmar(o){var nm={};Object.keys(o).forEach(function(fk){var i=fk.indexOf('|'),m=fk.slice(0,i),k=fk.slice(i+1);nm[m]=nm[m]||{};nm[m][k]=o[fk];});return nm;}
+// Mete en cfg lo anotado (para los 3 campos). Devuelve true si hubo que corregir algo.
+function cfgAplicarLedger(cfg){
+  var cambio=false,ts,obj;
+  obj=cfgObj(cfg,'plNombres');ts=cfgObj(cfg,'plNombresT');if(ledgerAplicar('plNombres',obj,ts)){cambio=true;cfg.plNombres=JSON.stringify(obj);cfg.plNombresT=JSON.stringify(ts);}
+  obj=cfgObj(cfg,'plOcultos');ts=cfgObj(cfg,'plOcultosT');if(ledgerAplicar('plOcultos',obj,ts)){cambio=true;cfg.plOcultos=JSON.stringify(obj);cfg.plOcultosT=JSON.stringify(ts);}
+  obj=motoAplanar(cfgObj(cfg,'motoNombres'));ts=cfgObj(cfg,'motoNombresT');if(ledgerAplicar('motoNombres',obj,ts)){cambio=true;cfg.motoNombres=JSON.stringify(motoArmar(obj));cfg.motoNombresT=JSON.stringify(ts);}
+  return cambio;
+}
+// Al leer la configuración: si a Google le falta algo que guardaste acá, se muestra igual y se vuelve a subir
+var cfgRepararEnCurso=false;
+function cfgRevisarYReparar(cfg){
+  var copia=JSON.parse(JSON.stringify(cfg||{}));
+  if(!cfgAplicarLedger(copia))return copia;
+  if(!cfgRepararEnCurso){
+    cfgRepararEnCurso=true;
+    cfgModificar(function(c){cfgAplicarLedger(c);},function(c){var x=JSON.parse(JSON.stringify(c));return !cfgAplicarLedger(x);})
+      .then(function(){toast('Se recuperaron nombres que se habían perdido');}).catch(function(){})
+      .then(function(){cfgRepararEnCurso=false;});
+  }
+  return copia;
+}
 function visible(id){var el=document.getElementById(id);return !!(el&&!el.classList.contains('hidden'));}
 // Cuando llegan datos nuevos por atrás, se refresca solo la pantalla que corresponde
 function cacheActualizado(action,params,r){
@@ -1318,6 +1366,10 @@ function cacheActualizado(action,params,r){
     renderAvisos(r.data||[]);
   }else if(action==='ivaGet'){
     if(visible('p12')){ivaData=r.data||[];ivaRender();if(typeof ctCalc==='function')ctCalc();}
+  }else if(action==='cfgGet'){
+    var c=cfgRevisarYReparar(r.cfg);
+    if(plNomCargado){plNom=plNomLeer({cfg:c});plOc=plOcLeer({cfg:c});if(plNomEdit===null&&visible('p4'))filtrarPrecios();}
+    if(motoNomCargado){motoNom=motoNomLeer({cfg:c});if(motoNomEdit===null&&visible('p9')&&motoTabActual<=3)filtrarMoto();}
   }else if(action==='plGet'){
     if(r.cfg){plCfg={marcas:r.cfg.marcas||{},precios:r.cfg.precios||{}};if(visible('p4'))filtrarPrecios();if(visible('p9')&&motoTabActual<=3)filtrarMoto();}
   }
@@ -2135,7 +2187,7 @@ function motoNombre(marca,orig){return (motoNom[marca]||{})[orig]||orig;}
 function motoNomLeer(r){var v=r&&r.cfg?r.cfg.motoNombres:null;if(typeof v==='string'){try{v=JSON.parse(v);}catch(e){v=null;}}return v&&typeof v==='object'?v:{};}
 function motoNomCargar(){
   motoNomCargado=true;
-  apiPost('cfgGet').then(function(r){if(r&&r.ok){motoNom=motoNomLeer(r);if(motoTabActual<=3)filtrarMoto();}}).catch(function(){motoNomCargado=false;});
+  apiPost('cfgGet').then(function(r){if(r&&r.ok){var c=cfgRevisarYReparar(r.cfg);motoNom=motoNomLeer({cfg:c});if(motoTabActual<=3)filtrarMoto();}}).catch(function(){motoNomCargado=false;});
 }
 function motoNomCelda(orig){
   var marca=MOTO_TABS[motoTabActual-1],nom=motoNombre(marca,orig),oj=eqJs(orig);
@@ -2151,18 +2203,18 @@ function motoNomGuardar(orig){
   motoNom[marca]=motoNom[marca]||{};
   var antes=motoNom[marca][orig];
   motoNomPend[pk]={marca:marca,orig:orig,v:v,quitar:quitar};
+  ledgerAnotar('motoNombres',pk,quitar?null:v);
   if(quitar)delete motoNom[marca][orig];else motoNom[marca][orig]=v;
   motoNomEdit=null;filtrarMoto();
-  cfgModificar(function(cfg){
-    var nm=motoNomLeer({cfg:cfg});nm[marca]=nm[marca]||{};if(quitar)delete nm[marca][orig];else nm[marca][orig]=v;cfg.motoNombres=JSON.stringify(nm);
-  },function(cfg){var nm=motoNomLeer({cfg:cfg})[marca]||{};return quitar?!nm.hasOwnProperty(orig):nm[orig]===v;}).then(function(r3){
+  cfgModificar(function(cfg){cfgAplicarLedger(cfg);},
+    function(cfg){var nm=motoNomLeer({cfg:cfg})[marca]||{};var x=JSON.parse(JSON.stringify(cfg));return (quitar?!nm.hasOwnProperty(orig):nm[orig]===v)&&!cfgAplicarLedger(x);}).then(function(r3){
     delete motoNomPend[pk];
     var nm=motoNomLeer(r3);
     Object.keys(motoNomPend).forEach(function(kk){var pp=motoNomPend[kk];nm[pp.marca]=nm[pp.marca]||{};if(pp.quitar)delete nm[pp.marca][pp.orig];else nm[pp.marca][pp.orig]=pp.v;});
     motoNom=nm;if(motoNomEdit===null&&visible('p9')&&motoTabActual<=3)filtrarMoto();
     toast('Nombre guardado: '+v);
   }).catch(function(e){
-    delete motoNomPend[pk];
+    delete motoNomPend[pk];ledgerQuitar('motoNombres',pk);
     if(antes===undefined)delete motoNom[marca][orig];else motoNom[marca][orig]=antes;
     if(motoNomEdit===null&&visible('p9')&&motoTabActual<=3)filtrarMoto();
     toast('No se guardó "'+v+'": '+e.message+'. Probá de nuevo.');
@@ -2319,7 +2371,7 @@ function plNombre(x){return plNom[plKey(x)]||String(x.m).trim();}
 function plNomLeer(r){var v=r&&r.cfg?r.cfg.plNombres:null;if(typeof v==='string'){try{v=JSON.parse(v);}catch(e){v=null;}}return v&&typeof v==='object'?v:{};}
 function plNomCargar(){
   plNomCargado=true;
-  apiPost('cfgGet').then(function(r){if(r&&r.ok){plNom=plNomLeer(r);plOc=plOcLeer(r);filtrarPrecios();}}).catch(function(){plNomCargado=false;});
+  apiPost('cfgGet').then(function(r){if(r&&r.ok){var c=cfgRevisarYReparar(r.cfg);plNom=plNomLeer({cfg:c});plOc=plOcLeer({cfg:c});filtrarPrecios();}}).catch(function(){plNomCargado=false;});
 }
 // ---- Modelos ocultos (los que no vendemos). Se pueden volver a mostrar cuando quieras. ----
 var plOc={},plVerOc=false,plOcPend={};
@@ -2328,16 +2380,17 @@ function plOcultar(k,nom,ocultar){
   if(ocultar&&!confirm('¿Sacar "'+nom+'" de la lista?\n\nNo se borra nada: queda oculta y la podés volver a mostrar con "Ver ocultas".'))return;
   var antes=!!plOc[k];
   plOcPend[k]=ocultar;
+  ledgerAnotar('plOcultos',k,ocultar?1:null);
   if(ocultar)plOc[k]=1;else delete plOc[k];
   filtrarPrecios();
-  cfgModificar(function(cfg){var o=plOcLeer({cfg:cfg});if(ocultar)o[k]=1;else delete o[k];cfg.plOcultos=JSON.stringify(o);},
-    function(cfg){var o=plOcLeer({cfg:cfg});return ocultar?!!o[k]:!o[k];}).then(function(r3){
+  cfgModificar(function(cfg){cfgAplicarLedger(cfg);},
+    function(cfg){var o=plOcLeer({cfg:cfg});var x=JSON.parse(JSON.stringify(cfg));return (ocultar?!!o[k]:!o[k])&&!cfgAplicarLedger(x);}).then(function(r3){
     delete plOcPend[k];
     var o=plOcLeer(r3);Object.keys(plOcPend).forEach(function(kk){if(plOcPend[kk])o[kk]=1;else delete o[kk];});
     plOc=o;if(plNomEdit===null&&visible('p4'))filtrarPrecios();
     toast(ocultar?'"'+nom+'" quedó oculta':'"'+nom+'" vuelve a la lista');
   }).catch(function(e){
-    delete plOcPend[k];if(antes)plOc[k]=1;else delete plOc[k];
+    delete plOcPend[k];ledgerQuitar('plOcultos',k);if(antes)plOc[k]=1;else delete plOc[k];
     if(plNomEdit===null&&visible('p4'))filtrarPrecios();
     toast('No se pudo '+(ocultar?'ocultar':'restaurar')+' "'+nom+'": '+e.message);
   });
@@ -2357,18 +2410,18 @@ function plNomGuardar(k,orig){
   if(!v)return toast('El nombre no puede quedar vacío');
   var quitar=(v===orig),antes=plNom[k];
   plNomPend[k]={v:v,quitar:quitar};
+  ledgerAnotar('plNombres',k,quitar?null:v);
   if(quitar)delete plNom[k];else plNom[k]=v;
   plNomEdit=null;filtrarPrecios();
-  cfgModificar(function(cfg){
-    var nm=plNomLeer({cfg:cfg});if(quitar)delete nm[k];else nm[k]=v;cfg.plNombres=JSON.stringify(nm);
-  },function(cfg){var nm=plNomLeer({cfg:cfg});return quitar?!nm.hasOwnProperty(k):nm[k]===v;}).then(function(r3){
+  cfgModificar(function(cfg){cfgAplicarLedger(cfg);},
+    function(cfg){var nm=plNomLeer({cfg:cfg});var x=JSON.parse(JSON.stringify(cfg));return (quitar?!nm.hasOwnProperty(k):nm[k]===v)&&!cfgAplicarLedger(x);}).then(function(r3){
     delete plNomPend[k];
     var nm=plNomLeer(r3);
     Object.keys(plNomPend).forEach(function(kk){var pp=plNomPend[kk];if(pp.quitar)delete nm[kk];else nm[kk]=pp.v;});
     plNom=nm;if(plNomEdit===null&&visible('p4'))filtrarPrecios();
     toast(quitar?'Nombre original restaurado':'Nombre guardado: '+v);
   }).catch(function(e){
-    delete plNomPend[k];
+    delete plNomPend[k];ledgerQuitar('plNombres',k);
     if(antes===undefined)delete plNom[k];else plNom[k]=antes;
     if(plNomEdit===null&&visible('p4'))filtrarPrecios();
     toast('No se guardó "'+v+'": '+e.message+'. Probá de nuevo.');

@@ -1286,11 +1286,12 @@ function cfgModificar(mutar,verificar){
       var cfg=r.cfg||{};mutar(cfg);
       return apiPost('cfgSet',{cfg:cfg}).then(function(r2){
         if(!r2||!r2.ok)throw new Error((r2&&r2.error)||'el servidor no aceptó el cambio');
-        return apiPostFresco('cfgGet');
-      }).then(function(r3){
-        if(!r3||!r3.ok)throw new Error((r3&&r3.error)||'no se pudo verificar');
-        if(!verificar(r3.cfg||{}))throw new Error('el cambio no quedó guardado');
-        return r3;
+        if(!verificar)return {ok:true,cfg:cfg};
+        return apiPostFresco('cfgGet').then(function(r3){
+          if(!r3||!r3.ok)throw new Error((r3&&r3.error)||'no se pudo verificar');
+          if(!verificar(r3.cfg||{}))throw new Error('el cambio no quedó guardado');
+          return r3;
+        });
       });
     }).catch(function(e){
       if(intento<2)return new Promise(function(res){setTimeout(res,800);}).then(function(){return tarea(intento+1);});
@@ -1339,11 +1340,9 @@ var cfgRepararEnCurso=false;
 function cfgRevisarYReparar(cfg){
   var copia=JSON.parse(JSON.stringify(cfg||{}));
   if(!cfgAplicarLedger(copia))return copia;
-  if(!cfgRepararEnCurso){
-    cfgRepararEnCurso=true;
-    cfgModificar(function(c){cfgAplicarLedger(c);},function(c){var x=JSON.parse(JSON.stringify(c));return !cfgAplicarLedger(x);})
-      .then(function(){toast('Se recuperaron nombres que se habían perdido');}).catch(function(){})
-      .then(function(){cfgRepararEnCurso=false;});
+  if(!cfgRepararEnCurso&&Date.now()-(cfgRevisarYReparar.ult||0)>60000){
+    cfgRepararEnCurso=true;cfgRevisarYReparar.ult=Date.now();
+    cfgModificar(function(c){cfgAplicarLedger(c);},null).catch(function(){}).then(function(){cfgRepararEnCurso=false;});
   }
   return copia;
 }
@@ -2206,18 +2205,15 @@ function motoNomGuardar(orig){
   ledgerAnotar('motoNombres',pk,quitar?null:v);
   if(quitar)delete motoNom[marca][orig];else motoNom[marca][orig]=v;
   motoNomEdit=null;filtrarMoto();
-  cfgModificar(function(cfg){cfgAplicarLedger(cfg);},
-    function(cfg){var nm=motoNomLeer({cfg:cfg})[marca]||{};var x=JSON.parse(JSON.stringify(cfg));return (quitar?!nm.hasOwnProperty(orig):nm[orig]===v)&&!cfgAplicarLedger(x);}).then(function(r3){
+  cfgModificar(function(cfg){cfgAplicarLedger(cfg);},null).then(function(r3){
     delete motoNomPend[pk];
     var nm=motoNomLeer(r3);
     Object.keys(motoNomPend).forEach(function(kk){var pp=motoNomPend[kk];nm[pp.marca]=nm[pp.marca]||{};if(pp.quitar)delete nm[pp.marca][pp.orig];else nm[pp.marca][pp.orig]=pp.v;});
     motoNom=nm;if(motoNomEdit===null&&visible('p9')&&motoTabActual<=3)filtrarMoto();
     toast('Nombre guardado: '+v);
   }).catch(function(e){
-    delete motoNomPend[pk];ledgerQuitar('motoNombres',pk);
-    if(antes===undefined)delete motoNom[marca][orig];else motoNom[marca][orig]=antes;
-    if(motoNomEdit===null&&visible('p9')&&motoTabActual<=3)filtrarMoto();
-    toast('No se guardó "'+v+'": '+e.message+'. Probá de nuevo.');
+    delete motoNomPend[pk];
+    toast('Quedó guardado en esta PC; Google no respondió ('+e.message+'). Se sube solo la próxima vez.');
   });
 }
 function filtrarMoto(){
@@ -2383,16 +2379,14 @@ function plOcultar(k,nom,ocultar){
   ledgerAnotar('plOcultos',k,ocultar?1:null);
   if(ocultar)plOc[k]=1;else delete plOc[k];
   filtrarPrecios();
-  cfgModificar(function(cfg){cfgAplicarLedger(cfg);},
-    function(cfg){var o=plOcLeer({cfg:cfg});var x=JSON.parse(JSON.stringify(cfg));return (ocultar?!!o[k]:!o[k])&&!cfgAplicarLedger(x);}).then(function(r3){
+  cfgModificar(function(cfg){cfgAplicarLedger(cfg);},null).then(function(r3){
     delete plOcPend[k];
     var o=plOcLeer(r3);Object.keys(plOcPend).forEach(function(kk){if(plOcPend[kk])o[kk]=1;else delete o[kk];});
     plOc=o;if(plNomEdit===null&&visible('p4'))filtrarPrecios();
     toast(ocultar?'"'+nom+'" quedó oculta':'"'+nom+'" vuelve a la lista');
   }).catch(function(e){
-    delete plOcPend[k];ledgerQuitar('plOcultos',k);if(antes)plOc[k]=1;else delete plOc[k];
-    if(plNomEdit===null&&visible('p4'))filtrarPrecios();
-    toast('No se pudo '+(ocultar?'ocultar':'restaurar')+' "'+nom+'": '+e.message);
+    delete plOcPend[k];
+    toast('Quedó guardado en esta PC; Google no respondió ('+e.message+'). Se sube solo la próxima vez.');
   });
 }
 function plVerOcultas(v){plVerOc=v;filtrarPrecios();}
@@ -2413,18 +2407,15 @@ function plNomGuardar(k,orig){
   ledgerAnotar('plNombres',k,quitar?null:v);
   if(quitar)delete plNom[k];else plNom[k]=v;
   plNomEdit=null;filtrarPrecios();
-  cfgModificar(function(cfg){cfgAplicarLedger(cfg);},
-    function(cfg){var nm=plNomLeer({cfg:cfg});var x=JSON.parse(JSON.stringify(cfg));return (quitar?!nm.hasOwnProperty(k):nm[k]===v)&&!cfgAplicarLedger(x);}).then(function(r3){
+  cfgModificar(function(cfg){cfgAplicarLedger(cfg);},null).then(function(r3){
     delete plNomPend[k];
     var nm=plNomLeer(r3);
     Object.keys(plNomPend).forEach(function(kk){var pp=plNomPend[kk];if(pp.quitar)delete nm[kk];else nm[kk]=pp.v;});
     plNom=nm;if(plNomEdit===null&&visible('p4'))filtrarPrecios();
     toast(quitar?'Nombre original restaurado':'Nombre guardado: '+v);
   }).catch(function(e){
-    delete plNomPend[k];ledgerQuitar('plNombres',k);
-    if(antes===undefined)delete plNom[k];else plNom[k]=antes;
-    if(plNomEdit===null&&visible('p4'))filtrarPrecios();
-    toast('No se guardó "'+v+'": '+e.message+'. Probá de nuevo.');
+    delete plNomPend[k];
+    toast('Quedó guardado en esta PC; Google no respondió ('+e.message+'). Se sube solo la próxima vez.');
   });
 }
 function filtrarPrecios(){

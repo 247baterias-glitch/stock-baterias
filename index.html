@@ -1354,7 +1354,7 @@ function sincronizar(){
   if(document.hidden||!datos.length)return;
   api('getDatos').catch(function(){});
   apiPost('cfgGet').catch(function(){});
-  if(visible('p4')||visible('p9'))apiPost('plGet').catch(function(){});
+  if(visible('p4')||visible('p9')){apiPost('plGet').catch(function(){});if(nomHojaOk!==false)nomCargar();}
   if(visible('p7')&&mesSeleccionado!==null){api('getHistorial',{mes:mesSeleccionado,anio:anioSeleccionado}).catch(function(){});api('getTurnos').catch(function(){});}
   if(visible('p12'))apiPost('ivaGet').catch(function(){});
   api('getAvisos').catch(function(){});
@@ -1363,7 +1363,7 @@ function sincronizar(){
 setInterval(sincronizar,45000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)sincronizar();});
 // ---- Aviso de versión nueva: si subiste un index.html nuevo, las otras PCs ven un cartel para actualizar ----
-var APP_VERSION='2026-10-19-sync';
+var APP_VERSION='2026-10-19-nombres';
 function revisarVersion(){
   if(location.protocol==='file:'||revisarVersion.avisado)return;
   if(Date.now()-(revisarVersion.ult||0)<120000)return;revisarVersion.ult=Date.now();
@@ -1376,6 +1376,63 @@ function revisarVersion(){
       document.body.appendChild(d);
     }
   }).catch(function(){});
+}
+// ---- Nombres en la hoja "Nombres" de Google (una fila por nombre: guardar uno nunca borra otro) ----
+var nomHojaOk=null,nomCargando=null,nomMigrado=false;
+function nomConstruir(filas){
+  var hoja={};(filas||[]).forEach(function(f){hoja[f.campo]=hoja[f.campo]||{};hoja[f.campo][f.clave]={v:f.valor,t:f.t||0};});
+  var L=ledgerTodo(),pend=[],res={};
+  ['plNombres','plOcultos','motoNombres'].forEach(function(c){
+    var m={},h=hoja[c]||{},l=L[c]||{};
+    Object.keys(h).forEach(function(k){if(h[k].v)m[k]=h[k].v;});
+    Object.keys(l).forEach(function(k){var e=l[k];if(!h[k]||e.t>h[k].t){if(e.v===null||e.v==='')delete m[k];else m[k]=e.v;pend.push({campo:c,clave:k,valor:e.v===null?'':String(e.v),t:e.t});}});
+    res[c]=m;
+  });
+  res.pend=pend;res.vacia=!(filas&&filas.length);return res;
+}
+function nomAplicar(res){
+  plNom=res.plNombres;
+  plOc={};Object.keys(res.plOcultos).forEach(function(k){plOc[k]=1;});
+  motoNom=motoArmar(res.motoNombres);
+  if(plNomEdit===null&&visible('p4'))filtrarPrecios();
+  if(motoNomEdit===null&&visible('p9')&&motoTabActual<=3)filtrarMoto();
+}
+function nomEnviar(campo,clave,valor,t){
+  return api('nombreSet',{campo:campo,k:clave,valor:valor,t:t}).then(function(r){if(!r||!r.ok)throw new Error((r&&r.error)||'Google no respondió');return r;});
+}
+// Lee los nombres de la hoja. Si el Apps Script todavía no tiene la hoja Nombres, usa el sistema anterior.
+function nomCargar(){
+  if(nomCargando)return nomCargando;
+  nomCargando=api('nombresGet').then(function(r){
+    if(!r||!r.ok){nomHojaOk=false;return false;}
+    nomHojaOk=true;
+    var res=nomConstruir(r.data);nomAplicar(res);
+    // sube lo que esta PC tiene y Google no (por ejemplo los nombres cargados antes de este arreglo)
+    var cadena=Promise.resolve();
+    res.pend.forEach(function(p){cadena=cadena.then(function(){return nomEnviar(p.campo,p.clave,p.valor,p.t).catch(function(){});});});
+    // la primera vez: pasa a la hoja los nombres que estaban en la configuración vieja
+    if(res.vacia&&!nomMigrado){
+      nomMigrado=true;
+      cadena=cadena.then(function(){return apiPostFresco('cfgGet');}).then(function(rc){
+        if(!rc||!rc.ok)return;
+        var c=rc.cfg||{},ya={};res.pend.forEach(function(p){ya[p.campo+'\u0001'+p.clave]=1;});
+        var lista=[];
+        var pn=cfgObj(c,'plNombres');Object.keys(pn).forEach(function(k){lista.push(['plNombres',k,pn[k]]);});
+        var po=cfgObj(c,'plOcultos');Object.keys(po).forEach(function(k){lista.push(['plOcultos',k,'1']);});
+        var mn=motoAplanar(cfgObj(c,'motoNombres'));Object.keys(mn).forEach(function(k){lista.push(['motoNombres',k,mn[k]]);});
+        var c2=Promise.resolve();
+        lista.forEach(function(x){if(ya[x[0]+'\u0001'+x[1]])return;c2=c2.then(function(){return nomEnviar(x[0],x[1],x[2],1).catch(function(){});});});
+        return c2.then(function(){return api('nombresGet');}).then(function(r2){if(r2&&r2.ok)nomAplicar(nomConstruir(r2.data));});
+      }).catch(function(){});
+    }
+    return true;
+  }).catch(function(){nomHojaOk=false;return false;}).then(function(x){nomCargando=null;return x;});
+  return nomCargando;
+}
+function nomGuardarUno(campo,clave,valor,okMsg){
+  var e=(ledgerTodo()[campo]||{})[clave];
+  return nomEnviar(campo,clave,valor,e?e.t:Date.now()).then(function(){toast(okMsg);})
+    .catch(function(err){toast('Quedó guardado en esta PC; Google no respondió ('+err.message+'). Se sube solo la próxima vez.');});
 }
 function visible(id){var el=document.getElementById(id);return !!(el&&!el.classList.contains('hidden'));}
 // Cuando llegan datos nuevos por atrás, se refresca solo la pantalla que corresponde
@@ -1397,6 +1454,7 @@ function cacheActualizado(action,params,r){
   }else if(action==='ivaGet'){
     if(visible('p12')){ivaData=r.data||[];ivaRender();if(typeof ctCalc==='function')ctCalc();}
   }else if(action==='cfgGet'){
+    if(nomHojaOk)return;
     var c=cfgRevisarYReparar(r.cfg);
     if(plNomCargado){plNom=plNomLeer({cfg:c});plOc=plOcLeer({cfg:c});if(plNomEdit===null&&visible('p4'))filtrarPrecios();}
     if(motoNomCargado){motoNom=motoNomLeer({cfg:c});if(motoNomEdit===null&&visible('p9')&&motoTabActual<=3)filtrarMoto();}
@@ -2217,6 +2275,9 @@ function motoNombre(marca,orig){return (motoNom[marca]||{})[orig]||orig;}
 function motoNomLeer(r){var v=r&&r.cfg?r.cfg.motoNombres:null;if(typeof v==='string'){try{v=JSON.parse(v);}catch(e){v=null;}}return v&&typeof v==='object'?v:{};}
 function motoNomCargar(){
   motoNomCargado=true;
+  nomCargar().then(function(ok){if(ok)return;motoNomCargarCfg();});
+}
+function motoNomCargarCfg(){
   apiPost('cfgGet').then(function(r){if(r&&r.ok){var c=cfgRevisarYReparar(r.cfg);motoNom=motoNomLeer({cfg:c});if(motoTabActual<=3)filtrarMoto();}}).catch(function(){motoNomCargado=false;});
 }
 function motoNomCelda(orig){
@@ -2236,6 +2297,7 @@ function motoNomGuardar(orig){
   ledgerAnotar('motoNombres',pk,quitar?null:v);
   if(quitar)delete motoNom[marca][orig];else motoNom[marca][orig]=v;
   motoNomEdit=null;filtrarMoto();
+  if(nomHojaOk){delete motoNomPend[pk];nomGuardarUno('motoNombres',pk,quitar?'':v,'Nombre guardado: '+v);return;}
   cfgModificar(function(cfg){cfgAplicarLedger(cfg);},null).then(function(r3){
     delete motoNomPend[pk];
     var nm=motoNomLeer(r3);
@@ -2398,6 +2460,9 @@ function plNombre(x){return plNom[plKey(x)]||String(x.m).trim();}
 function plNomLeer(r){var v=r&&r.cfg?r.cfg.plNombres:null;if(typeof v==='string'){try{v=JSON.parse(v);}catch(e){v=null;}}return v&&typeof v==='object'?v:{};}
 function plNomCargar(){
   plNomCargado=true;
+  nomCargar().then(function(ok){if(ok)return;plNomCargarCfg();});
+}
+function plNomCargarCfg(){
   apiPost('cfgGet').then(function(r){if(r&&r.ok){var c=cfgRevisarYReparar(r.cfg);plNom=plNomLeer({cfg:c});plOc=plOcLeer({cfg:c});filtrarPrecios();}}).catch(function(){plNomCargado=false;});
 }
 // ---- Modelos ocultos (los que no vendemos). Se pueden volver a mostrar cuando quieras. ----
@@ -2410,6 +2475,7 @@ function plOcultar(k,nom,ocultar){
   ledgerAnotar('plOcultos',k,ocultar?1:null);
   if(ocultar)plOc[k]=1;else delete plOc[k];
   filtrarPrecios();
+  if(nomHojaOk){delete plOcPend[k];nomGuardarUno('plOcultos',k,ocultar?'1':'',ocultar?'"'+nom+'" quedó oculta':'"'+nom+'" vuelve a la lista');return;}
   cfgModificar(function(cfg){cfgAplicarLedger(cfg);},null).then(function(r3){
     delete plOcPend[k];
     var o=plOcLeer(r3);Object.keys(plOcPend).forEach(function(kk){if(plOcPend[kk])o[kk]=1;else delete o[kk];});
@@ -2438,6 +2504,7 @@ function plNomGuardar(k,orig){
   ledgerAnotar('plNombres',k,quitar?null:v);
   if(quitar)delete plNom[k];else plNom[k]=v;
   plNomEdit=null;filtrarPrecios();
+  if(nomHojaOk){delete plNomPend[k];nomGuardarUno('plNombres',k,quitar?'':v,quitar?'Nombre original restaurado':'Nombre guardado: '+v);return;}
   cfgModificar(function(cfg){cfgAplicarLedger(cfg);},null).then(function(r3){
     delete plNomPend[k];
     var nm=plNomLeer(r3);

@@ -1265,6 +1265,30 @@ function apiPost(action,payload){return cacheLlamar(action,payload||{},true);}
 function apiPostFresco(action,payload){var k=cacheKey(action,payload||{},true);return apiPostRaw(action,Object.assign({},payload||{})).then(function(r){if(r&&r.ok!==false)cacheGuardar(k,r);return r;});}
 // Mientras el stock se está actualizando no se deja sumar/restar (para no pisar cambios de otro celular)
 function datosListos(){if(datosFrescos)return true;toast('Actualizando el stock, probá de nuevo en un segundo');return false;}
+// ---- Cambios de configuración: de a uno por vez (si se guardan dos juntos, el segundo pisaba al primero) ----
+var CFG_COLA=Promise.resolve();
+function cfgEnCola(fn){var p=CFG_COLA.then(fn,fn);CFG_COLA=p.catch(function(){});return p;}
+// mutar(cfg) cambia solo lo suyo; verificar(cfg) confirma que quedó guardado. Reintenta 1 vez si falla.
+function cfgModificar(mutar,verificar){
+  var tarea=function(intento){
+    return apiPostFresco('cfgGet').then(function(r){
+      if(!r||!r.ok)throw new Error((r&&r.error)||'no se pudo leer la configuración');
+      var cfg=r.cfg||{};mutar(cfg);
+      return apiPost('cfgSet',{cfg:cfg}).then(function(r2){
+        if(!r2||!r2.ok)throw new Error((r2&&r2.error)||'el servidor no aceptó el cambio');
+        return apiPostFresco('cfgGet');
+      }).then(function(r3){
+        if(!r3||!r3.ok)throw new Error((r3&&r3.error)||'no se pudo verificar');
+        if(!verificar(r3.cfg||{}))throw new Error('el cambio no quedó guardado');
+        return r3;
+      });
+    }).catch(function(e){
+      if(intento<2)return new Promise(function(res){setTimeout(res,800);}).then(function(){return tarea(intento+1);});
+      throw e;
+    });
+  };
+  return cfgEnCola(function(){return tarea(1);});
+}
 function visible(id){var el=document.getElementById(id);return !!(el&&!el.classList.contains('hidden'));}
 // Cuando llegan datos nuevos por atrás, se refresca solo la pantalla que corresponde
 function cacheActualizado(action,params,r){
@@ -1704,7 +1728,8 @@ function eqCargarExtra(){
   }).catch(function(){});
 }
 // Lee la config, aplica el cambio, guarda la config completa y verifica que quedó grabado
-function eqGuardarCambio(cambio){
+function eqGuardarCambio(cambio){return cfgEnCola(function(){return eqGuardarCambioRaw(cambio);});}
+function eqGuardarCambioRaw(cambio){
   return apiPostFresco('cfgGet').then(function(r){
     if(!r||!r.ok)throw new Error((r&&r.error)||'no se pudo leer');
     var cfg=r.cfg||{},ex=eqLeerCfg(r);
@@ -1776,7 +1801,8 @@ function pdCargar(){
   apiPost('cfgGet').then(function(r){if(r&&r.ok){pdData=pdLeer(r);pdCargado=true;}pdRender();}).catch(function(e){toast('Error: '+e.message);pdRender();});
 }
 // Lee lo último guardado, aplica el cambio, guarda y verifica (así no se pisan cambios entre celulares)
-function pdCambio(cambio,msg){
+function pdCambio(cambio,msg){return cfgEnCola(function(){return pdCambioRaw(cambio,msg);});}
+function pdCambioRaw(cambio,msg){
   return apiPostFresco('cfgGet').then(function(r){
     if(!r||!r.ok)throw new Error((r&&r.error)||'no se pudo leer');
     var cfg=r.cfg||{},lista=pdLeer(r);
@@ -2107,24 +2133,30 @@ function motoNomCelda(orig){
   return '<b>'+lpEsc(nom)+'</b><button class="mn-lapiz" title="Editar nombre" onclick="motoNomEditar(\''+oj+'\')">&#9998;</button>'+(nom!==orig?'<div class="stk-info" style="color:var(--muted)">Original: '+lpEsc(orig)+'</div>':'');
 }
 function motoNomEditar(orig){motoNomEdit=orig;filtrarMoto();var i=document.getElementById('mnInput');if(i){i.focus();i.select();}}
+var motoNomPend={};
 function motoNomGuardar(orig){
   var marca=MOTO_TABS[motoTabActual-1],v=document.getElementById('mnInput').value.trim();
   if(!v)return toast('El nombre no puede quedar vacío');
-  var btn=document.querySelector('.mn-edit .bp');if(btn){btn.disabled=true;btn.textContent='...';}
-  apiPostFresco('cfgGet').then(function(r){
-    if(!r||!r.ok)throw new Error((r&&r.error)||'no se pudo leer');
-    var cfg=r.cfg||{},nm=motoNomLeer(r);
-    nm[marca]=nm[marca]||{};
-    if(v===orig)delete nm[marca][orig];else nm[marca][orig]=v;
-    cfg.motoNombres=JSON.stringify(nm);
-    return apiPost('cfgSet',{cfg:cfg}).then(function(r2){
-      if(!r2||!r2.ok)throw new Error((r2&&r2.error)||'no se pudo guardar');
-      return apiPostFresco('cfgGet');
-    }).then(function(r3){
-      if(JSON.stringify(motoNomLeer(r3))!==JSON.stringify(nm))throw new Error('el servidor no guardó el nombre');
-      motoNom=nm;motoNomEdit=null;filtrarMoto();toast('Nombre guardado');
-    });
-  }).catch(function(e){if(btn){btn.disabled=false;btn.innerHTML='&#10003;';}toast('Error: '+e.message);});
+  var quitar=(v===orig),pk=marca+'|'+orig;
+  motoNom[marca]=motoNom[marca]||{};
+  var antes=motoNom[marca][orig];
+  motoNomPend[pk]={marca:marca,orig:orig,v:v,quitar:quitar};
+  if(quitar)delete motoNom[marca][orig];else motoNom[marca][orig]=v;
+  motoNomEdit=null;filtrarMoto();
+  cfgModificar(function(cfg){
+    var nm=motoNomLeer({cfg:cfg});nm[marca]=nm[marca]||{};if(quitar)delete nm[marca][orig];else nm[marca][orig]=v;cfg.motoNombres=JSON.stringify(nm);
+  },function(cfg){var nm=motoNomLeer({cfg:cfg})[marca]||{};return quitar?!nm.hasOwnProperty(orig):nm[orig]===v;}).then(function(r3){
+    delete motoNomPend[pk];
+    var nm=motoNomLeer(r3);
+    Object.keys(motoNomPend).forEach(function(kk){var pp=motoNomPend[kk];nm[pp.marca]=nm[pp.marca]||{};if(pp.quitar)delete nm[pp.marca][pp.orig];else nm[pp.marca][pp.orig]=pp.v;});
+    motoNom=nm;if(motoNomEdit===null&&visible('p9')&&motoTabActual<=3)filtrarMoto();
+    toast('Nombre guardado: '+v);
+  }).catch(function(e){
+    delete motoNomPend[pk];
+    if(antes===undefined)delete motoNom[marca][orig];else motoNom[marca][orig]=antes;
+    if(motoNomEdit===null&&visible('p9')&&motoTabActual<=3)filtrarMoto();
+    toast('No se guardó "'+v+'": '+e.message+'. Probá de nuevo.');
+  });
 }
 function filtrarMoto(){
   if(!motoCfgCargado){motoCfgCargado=true;apiPost('plGet').then(function(r){if(r&&r.ok&&r.cfg){plCfg={marcas:r.cfg.marcas||{},precios:r.cfg.precios||{}};plCargado=true;if(motoTabActual<=3)filtrarMoto();}}).catch(function(){});}
@@ -2285,23 +2317,28 @@ function plNomCelda(x,badge){
   return '<b>'+lpEsc(nom)+'</b>'+badge+'<button class="mn-lapiz" title="Editar nombre (el stock y el precio siguen conectados)" onclick="plNomEditar(\''+kj+'\')">&#9998;</button>'+(nom!==orig?'<div class="stk-info" style="color:var(--muted)">Código: '+lpEsc(orig)+'</div>':'');
 }
 function plNomEditar(k){plNomEdit=k;filtrarPrecios();var i=document.getElementById('plNomIn');if(i){i.focus();i.select();}}
+var plNomPend={};
 function plNomGuardar(k,orig){
   var v=document.getElementById('plNomIn').value.trim();
   if(!v)return toast('El nombre no puede quedar vacío');
-  var btn=document.querySelector('.mn-edit .bp');if(btn){btn.disabled=true;btn.textContent='...';}
-  apiPostFresco('cfgGet').then(function(r){
-    if(!r||!r.ok)throw new Error((r&&r.error)||'no se pudo leer');
-    var cfg=r.cfg||{},nm=plNomLeer(r);
-    if(v===orig)delete nm[k];else nm[k]=v;
-    cfg.plNombres=JSON.stringify(nm);
-    return apiPost('cfgSet',{cfg:cfg}).then(function(r2){
-      if(!r2||!r2.ok)throw new Error((r2&&r2.error)||'no se pudo guardar');
-      return apiPostFresco('cfgGet');
-    }).then(function(r3){
-      if(JSON.stringify(plNomLeer(r3))!==JSON.stringify(nm))throw new Error('el servidor no guardó el nombre');
-      plNom=nm;plNomEdit=null;filtrarPrecios();toast(v===orig?'Nombre original restaurado':'Nombre guardado');
-    });
-  }).catch(function(e){if(btn){btn.disabled=false;btn.innerHTML='&#10003;';}toast('Error: '+e.message);});
+  var quitar=(v===orig),antes=plNom[k];
+  plNomPend[k]={v:v,quitar:quitar};
+  if(quitar)delete plNom[k];else plNom[k]=v;
+  plNomEdit=null;filtrarPrecios();
+  cfgModificar(function(cfg){
+    var nm=plNomLeer({cfg:cfg});if(quitar)delete nm[k];else nm[k]=v;cfg.plNombres=JSON.stringify(nm);
+  },function(cfg){var nm=plNomLeer({cfg:cfg});return quitar?!nm.hasOwnProperty(k):nm[k]===v;}).then(function(r3){
+    delete plNomPend[k];
+    var nm=plNomLeer(r3);
+    Object.keys(plNomPend).forEach(function(kk){var pp=plNomPend[kk];if(pp.quitar)delete nm[kk];else nm[kk]=pp.v;});
+    plNom=nm;if(plNomEdit===null&&visible('p4'))filtrarPrecios();
+    toast(quitar?'Nombre original restaurado':'Nombre guardado: '+v);
+  }).catch(function(e){
+    delete plNomPend[k];
+    if(antes===undefined)delete plNom[k];else plNom[k]=antes;
+    if(plNomEdit===null&&visible('p4'))filtrarPrecios();
+    toast('No se guardó "'+v+'": '+e.message+'. Probá de nuevo.');
+  });
 }
 function filtrarPrecios(){
   var b=document.getElementById('busP').value.toLowerCase();
@@ -4689,7 +4726,7 @@ function ivaGuardarBenef(){
 }
 function ivaSetBenef(v){
   ivaBenefHasta=v||'';ivaRender();
-  apiPost('cfgSet',{cfg:{ivaBenefHasta:ivaBenefHasta}}).then(function(r){if(!r.ok)toast('Error: '+r.error);else toast(v?'Fecha del beneficio guardada':'Fecha borrada');}).catch(function(e){toast('Error: '+e.message);});
+  var val=ivaBenefHasta;cfgModificar(function(cfg){cfg.ivaBenefHasta=val;},function(cfg){return (cfg.ivaBenefHasta||'')===val;}).then(function(){toast(v?'Fecha del beneficio guardada':'Fecha borrada');}).catch(function(e){toast('Error: '+e.message);});
 }
 function ivaBenefHtml(){
   var dias=ivaDiasBenef(),d=ivaBenefDate();

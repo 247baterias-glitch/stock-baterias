@@ -1363,7 +1363,7 @@ function sincronizar(){
 setInterval(sincronizar,45000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)sincronizar();});
 // ---- Aviso de versión nueva: si subiste un index.html nuevo, las otras PCs ven un cartel para actualizar ----
-var APP_VERSION='2026-10-19-nombres';
+var APP_VERSION='2026-10-19-sermat2';
 function revisarVersion(){
   if(location.protocol==='file:'||revisarVersion.avisado)return;
   if(Date.now()-(revisarVersion.ult||0)<120000)return;revisarVersion.ult=Date.now();
@@ -1552,7 +1552,8 @@ var PUB=[
 {m:'UB EFB 840',l:'$168.869,23',p:'$275.000,00'}
 ];
 var PSERMAT=[
-{m:'SERMAT 12X95 BAJA S95QD',l:'$136.048,46',p:'$191.048,46'},
+{m:'SERMAT 12X35 ASIATICA CHICA S18SD',l:'$85.000,00',p:'$135.000,00'},
+{m:'SERMAT 12X40 ASIATICA GRANDE S22JD',l:'$90.000,00',p:'$140.000,00'},
 {m:'SERMAT 12X45 40FD',l:'$65.675,01',p:'$120.675,01'},
 {m:'SERMAT 12X55 S22ED',l:'$76.572,00',p:'$131.572,00'},
 {m:'SERMAT 12X65 S20GD',l:'$73.754,25',p:'$128.754,25'},
@@ -1562,13 +1563,12 @@ var PSERMAT=[
 {m:'SERMAT 12X70 75 CAJON CHICO S26AD',l:'$91.851,22',p:'$146.851,22'},
 {m:'SERMAT 12X85 S30LD',l:'$117.116,81',p:'$172.116,81'},
 {m:'SERMAT 12X85C S80CD',l:'—',p:'—'},
+{m:'SERMAT 12X95 BAJA S95QD',l:'$136.048,46',p:'$191.048,46'},
 {m:'SERMAT 12X110C S100HA',l:'$139.383,98',p:'$194.383,98'},
 {m:'SERMAT 12X180 S150BD',l:'$220.986,35',p:'$275.986,35'},
 {m:'SERMAT S180BD',l:'$237.938,11',p:'$292.938,11'},
 {m:'SERMAT S220PI',l:'$284.949,90',p:'$339.949,90'},
-{m:'SERMAT C23 12X180',l:'$208.245,00',p:'$270.000,00'},
-{m:'SERMAT 12X35 ASIATICA CHICA S18SD',l:'$85.000,00',p:'$135.000,00'},
-{m:'SERMAT 12X40 ASIATICA GRANDE S22JD',l:'$90.000,00',p:'$140.000,00'}
+{m:'SERMAT C23 12X180',l:'$208.245,00',p:'$270.000,00'}
 ];
 var PHERBO=[
 {m:'Herbo 12x65',l:'$66.000,00',p:'$121.000,00'},

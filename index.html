@@ -523,6 +523,15 @@ a.card{text-decoration:none;color:inherit;box-sizing:border-box}
 #p7 .mc{transition:transform .22s var(--rs-ease),box-shadow .22s ease}
 @media (hover:hover){#p7 .sv-card:hover,#p7 .pr-card:hover,#p7 .rs-moto:hover{transform:translateY(-3px);box-shadow:0 22px 40px -18px rgba(0,0,0,.9)}}
 @media (prefers-reduced-motion:reduce){#p7 *{transition:none!important}.rs-meses .ptab.active,.rs-meses .ptab:hover,.rs-reg:hover,#p7 .mc:hover{transform:none!important}}
+.pl-oc-btn{background:none;border:1px solid rgba(248,113,113,.35);color:#f87171;border-radius:6px;font-size:12px;font-weight:800;cursor:pointer;margin-left:6px;padding:1px 7px;line-height:1.5;opacity:.55;transition:opacity .15s,background .15s}
+.pl-oc-btn:hover{opacity:1;background:rgba(248,113,113,.15)}
+.pl-oc-btn.pl-oc-res{color:#34d399;border-color:rgba(52,211,153,.5);opacity:1}
+.pl-oc-tag{display:inline-block;background:rgba(248,113,113,.18);color:#fca5a5;font-size:10.5px;font-weight:800;border-radius:99px;padding:1px 8px;margin-right:8px;vertical-align:middle}
+#p4 tr:has(.pl-oc-tag) td{opacity:.5}
+#p4 tr:has(.pl-oc-tag) td:nth-child(2){opacity:1}
+.pl-oc-bar{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);border-radius:var(--r-md);padding:10px 14px;font-size:14px;color:var(--ink-soft);margin:-4px 0 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pl-oc-bar.hidden{display:none}.pl-oc-bar b{color:var(--ink)}
+.pl-oc-bar button{background:var(--border2);border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:5px 12px;font-weight:700;cursor:pointer;font-family:var(--sans)}
 .eq-x{background:none;border:none;color:#f87171;font-weight:800;font-size:15px;cursor:pointer;margin-left:6px;padding:0 2px;line-height:1}
 .eq-nuevo-tag{font-size:11px;font-weight:800;color:var(--teal);background:rgba(45,212,191,.14);border-radius:99px;padding:2px 8px;margin-left:4px}
 .eq-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
@@ -704,6 +713,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </div>
 <div class="mc" id="plCtrl" style="margin-bottom:12px"></div>
 <div class="sbox"><input type="text" id="busP" placeholder="Buscar modelo..." oninput="filtrarPrecios()"/></div>
+<div id="plOcBar" class="pl-oc-bar hidden"></div>
 <div class="twrap"><table class="ptable">
 <thead id="preciosHead"></thead><tbody id="preciosBody"></tbody></table></div>
 </div>
@@ -2309,12 +2319,36 @@ function plNombre(x){return plNom[plKey(x)]||String(x.m).trim();}
 function plNomLeer(r){var v=r&&r.cfg?r.cfg.plNombres:null;if(typeof v==='string'){try{v=JSON.parse(v);}catch(e){v=null;}}return v&&typeof v==='object'?v:{};}
 function plNomCargar(){
   plNomCargado=true;
-  apiPost('cfgGet').then(function(r){if(r&&r.ok){plNom=plNomLeer(r);filtrarPrecios();}}).catch(function(){plNomCargado=false;});
+  apiPost('cfgGet').then(function(r){if(r&&r.ok){plNom=plNomLeer(r);plOc=plOcLeer(r);filtrarPrecios();}}).catch(function(){plNomCargado=false;});
 }
+// ---- Modelos ocultos (los que no vendemos). Se pueden volver a mostrar cuando quieras. ----
+var plOc={},plVerOc=false,plOcPend={};
+function plOcLeer(r){var v=r&&r.cfg?r.cfg.plOcultos:null;if(typeof v==='string'){try{v=JSON.parse(v);}catch(e){v=null;}}return v&&typeof v==='object'?v:{};}
+function plOcultar(k,nom,ocultar){
+  if(ocultar&&!confirm('¿Sacar "'+nom+'" de la lista?\n\nNo se borra nada: queda oculta y la podés volver a mostrar con "Ver ocultas".'))return;
+  var antes=!!plOc[k];
+  plOcPend[k]=ocultar;
+  if(ocultar)plOc[k]=1;else delete plOc[k];
+  filtrarPrecios();
+  cfgModificar(function(cfg){var o=plOcLeer({cfg:cfg});if(ocultar)o[k]=1;else delete o[k];cfg.plOcultos=JSON.stringify(o);},
+    function(cfg){var o=plOcLeer({cfg:cfg});return ocultar?!!o[k]:!o[k];}).then(function(r3){
+    delete plOcPend[k];
+    var o=plOcLeer(r3);Object.keys(plOcPend).forEach(function(kk){if(plOcPend[kk])o[kk]=1;else delete o[kk];});
+    plOc=o;if(plNomEdit===null&&visible('p4'))filtrarPrecios();
+    toast(ocultar?'"'+nom+'" quedó oculta':'"'+nom+'" vuelve a la lista');
+  }).catch(function(e){
+    delete plOcPend[k];if(antes)plOc[k]=1;else delete plOc[k];
+    if(plNomEdit===null&&visible('p4'))filtrarPrecios();
+    toast('No se pudo '+(ocultar?'ocultar':'restaurar')+' "'+nom+'": '+e.message);
+  });
+}
+function plVerOcultas(v){plVerOc=v;filtrarPrecios();}
 function plNomCelda(x,badge){
   var k=plKey(x),kj=eqJs(k),nom=plNombre(x),orig=String(x.m).trim();
   if(plNomEdit===k)return '<div class="mn-edit"><input id="plNomIn" value="'+lpEsc(nom)+'" onkeydown="if(event.key===\'Enter\')plNomGuardar(\''+kj+'\',\''+eqJs(orig)+'\');if(event.key===\'Escape\')plNomEditar(null)"/><button class="bp" onclick="plNomGuardar(\''+kj+'\',\''+eqJs(orig)+'\')">&#10003;</button><button class="bs" onclick="plNomEditar(null)">&#10005;</button></div>';
-  return '<b>'+lpEsc(nom)+'</b>'+badge+'<button class="mn-lapiz" title="Editar nombre (el stock y el precio siguen conectados)" onclick="plNomEditar(\''+kj+'\')">&#9998;</button>'+(nom!==orig?'<div class="stk-info" style="color:var(--muted)">Código: '+lpEsc(orig)+'</div>':'');
+  var oc=!!plOc[k],nj=eqJs(nom);
+  return (oc?'<span class="pl-oc-tag">OCULTA</span>':'')+'<b>'+lpEsc(nom)+'</b>'+badge+'<button class="mn-lapiz" title="Editar nombre (el stock y el precio siguen conectados)" onclick="plNomEditar(\''+kj+'\')">&#9998;</button>'+
+    (oc?'<button class="pl-oc-btn pl-oc-res" title="Volver a mostrar en la lista" onclick="plOcultar(\''+kj+'\',\''+nj+'\',false)">&#8634; Mostrar</button>':'<button class="pl-oc-btn" title="No la vendemos: sacarla de la lista" onclick="plOcultar(\''+kj+'\',\''+nj+'\',true)">&#10005;</button>')+(nom!==orig?'<div class="stk-info" style="color:var(--muted)">Código: '+lpEsc(orig)+'</div>':'');
 }
 function plNomEditar(k){plNomEdit=k;filtrarPrecios();var i=document.getElementById('plNomIn');if(i){i.focus();i.select();}}
 var plNomPend={};
@@ -2347,9 +2381,12 @@ function filtrarPrecios(){
   plRenderCtrl();
   document.getElementById('preciosHead').innerHTML='<tr><th>Marca</th><th>Modelo</th><th>Precio</th>'+(hayDesc?'<th>Desc.</th><th>Costo c/desc.</th>':'')+'<th style="color:#2dd4bf">Costo c/IVA (21%)</th><th style="color:#15803d">Venta con envío ('+(fac?'costo c/IVA ':'')+'+$'+formatMoney(mg)+')</th><th style="color:#15803d">Venta c/IVA (21%)</th><th style="color:#0e7490" title="Venta con envío − $'+formatMoney(RETIRO_DESC)+'">Retirando por depósito</th><th style="color:#dc2626">Si llama decidido</th><th>Stock</th></tr>';
   if(!plNomCargado)plNomCargar();
+  var nOc=lista.filter(function(x){return plOc[plKey(x)];}).length,bar=document.getElementById('plOcBar');
+  if(bar){bar.classList.toggle('hidden',!nOc&&!plVerOc);bar.innerHTML=nOc?(plVerOc?'Mostrando también las <b>'+nOc+'</b> ocultas de '+lpEsc(plMarca())+' <button onclick="plVerOcultas(false)">Esconderlas</button>':'<b>'+nOc+'</b> modelo'+(nOc===1?'':'s')+' de '+lpEsc(plMarca())+' oculto'+(nOc===1?'':'s')+' porque no se venden <button onclick="plVerOcultas(true)">Ver ocultas</button>'):'';}
   var h='';
   lista.forEach(function(x,i){
     if(x.m.toLowerCase().indexOf(b)===-1&&plNombre(x).toLowerCase().indexOf(b)===-1)return;
+    if(plOc[plKey(x)]&&!plVerOc)return;
     var si=getStockInfo(x.m);
     var stk=si?si.txt:'Sin stock';
     var cls=si&&si.total>0?'stk-ok':'stk-no';

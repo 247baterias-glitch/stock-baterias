@@ -135,6 +135,17 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .stk-card .acts button{font-size:16px;padding:14px 10px}
 .stk-danada{margin-top:8px;width:100%;background:transparent;border:1px dashed rgba(248,113,113,.4);color:#f87171;border-radius:var(--r-sm);padding:9px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--sans)}
 .stk-danada:disabled{opacity:.35;cursor:default}
+.gf-box{display:flex;flex-direction:column;gap:10px}
+.gf-btn{width:100%;padding:12px;font-size:15px}
+.gf-prev:empty{display:none}
+.gf-item{position:relative;display:inline-block;max-width:260px}
+.gf-item img{display:block;max-width:260px;max-height:200px;border-radius:var(--r-md);border:1px solid var(--border);background:#fff}
+.gf-item small{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+.gf-doc{display:inline-block;padding:10px 14px;border-radius:var(--r-md);border:1px solid var(--border);font-size:14px}
+.gf-x{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:14px;cursor:pointer}
+.gf-quitada{font-size:13.5px;color:var(--red);font-weight:700;display:flex;align-items:center;gap:10px}
+.gf-thumb{display:inline-flex;flex-direction:column;gap:4px;margin-top:10px;text-decoration:none;color:var(--amber);font-size:13px;font-weight:700}
+.gf-thumb img{max-width:220px;max-height:160px;border-radius:var(--r-md);border:1px solid var(--border);background:#fff;object-fit:cover}
 @media (min-width:900px){
   #p1,#p2{width:100vw;max-width:960px;position:relative;left:50%;transform:translateX(-50%)}
   #p3{width:100vw;max-width:min(1400px,calc(100vw - 48px));position:relative;left:50%;transform:translateX(-50%)}
@@ -747,6 +758,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="gfield"><label>Fecha Ingreso</label><input type="date" id="gFechaIngreso"/></div>
 <div class="gfield"><label>Fecha Devolucion</label><input type="date" id="gFechaDevolucion"/></div>
 <div class="gfield"><label>Distribuidor</label><input type="text" id="gDistribuidor" placeholder="Ej: Moura, Willard..."/></div>
+<div class="gfield"><label>Foto del remito</label><input type="file" id="gFoto" accept="image/*,application/pdf" style="display:none" onchange="gfElegida('g',this)"/><div class="gf-box"><button type="button" class="bs gf-btn" onclick="document.getElementById('gFoto').click()">&#128247; Sacar o elegir foto</button><div class="gf-prev" id="gFotoPrev"></div></div></div>
 <button class="bp" onclick="guardarGarantiaForm()">Guardar Garantia</button>
 </div>
 </div>
@@ -1162,6 +1174,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="gfield"><label>Fecha Ingreso</label><input type="date" id="egFechaIngreso"/></div>
 <div class="gfield"><label>Fecha Devolucion</label><input type="date" id="egFechaDevolucion"/></div>
 <div class="gfield"><label>Distribuidor</label><input type="text" id="egDistribuidor"/></div>
+<div class="gfield"><label>Foto del remito</label><input type="file" id="egFoto" accept="image/*,application/pdf" style="display:none" onchange="gfElegida('eg',this)"/><div class="gf-box"><button type="button" class="bs gf-btn" onclick="document.getElementById('egFoto').click()">&#128247; Sacar o elegir foto</button><div class="gf-prev" id="egFotoPrev"></div></div></div>
 <div style="display:flex;gap:8px;margin-top:8px">
 <button class="bp" onclick="confirmarEditGarantia()">Guardar cambios</button>
 <button class="bs" onclick="cerrarEditGarantiaOverlay()">Cancelar</button>
@@ -1363,7 +1376,7 @@ function sincronizar(){
 setInterval(sincronizar,45000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)sincronizar();});
 // ---- Aviso de versión nueva: si subiste un index.html nuevo, las otras PCs ven un cartel para actualizar ----
-var APP_VERSION='2026-10-19-sermat2';
+var APP_VERSION='2026-10-26-remitos';
 function revisarVersion(){
   if(location.protocol==='file:'||revisarVersion.avisado)return;
   if(Date.now()-(revisarVersion.ult||0)<120000)return;revisarVersion.ult=Date.now();
@@ -2648,6 +2661,7 @@ function cargarGarantias(){
       h+='<div class="gcard-row">Ingreso: <span>'+fmtFecha(String(g.fecha_ingreso||''))+'</span></div>';
       if(g.fecha_devolucion)h+='<div class="gcard-row">Devolucion: <span>'+fmtFecha(String(g.fecha_devolucion||''))+'</span></div>';
       if(g.distribuidor)h+='<div class="gcard-row">Distribuidor: <span>'+g.distribuidor+'</span></div>';
+      if(g.remito)h+='<a class="gf-thumb" href="https://drive.google.com/file/d/'+encodeURIComponent(g.remito)+'/view" target="_blank" rel="noopener" title="Ver remito"><img src="https://drive.google.com/thumbnail?id='+encodeURIComponent(g.remito)+'&sz=w600" loading="lazy" alt="Remito" onerror="this.replaceWith(document.createTextNode(\'📄 Ver remito\'))"/><span>&#128206; Remito</span></a>';
       var resColor=colorEstadoGarantia(g.resuelto);
       h+='<div class="gcard-row" style="margin-top:8px">Estado: <select onchange="cambiarEstadoGarantia(\''+g.id+'\',this.value,this)" style="margin-left:6px;padding:6px 10px;border-radius:8px;border:1.5px solid '+resColor+';background:#14183f;font-size:13px;font-weight:700;color:'+resColor+';cursor:pointer">';
       if(!g.resuelto)h+='<option value="" selected style="background:#14183f;color:#8a90b3">— Elegir estado —</option>';
@@ -2692,6 +2706,7 @@ function editarGarantiaClick(id){
   document.getElementById('egFechaIngreso').value=g.fecha_ingreso||'';
   document.getElementById('egFechaDevolucion').value=g.fecha_devolucion||'';
   document.getElementById('egDistribuidor').value=g.distribuidor||'';
+  gfReset('eg',g.remito||'');
   confirmandoEditGarantia=false;
   var btnG=document.querySelector('#editGarantiaOverlay .bp');
   if(btnG){btnG.disabled=false;btnG.textContent='Guardar cambios';}
@@ -2716,6 +2731,14 @@ function confirmarEditGarantia(){
   var id=editGarantiaId;
   var campos=Object.keys(nuevos);
   function guardarSiguiente(i){
+    if(i>=campos.length&&gfPendiente('eg')){
+      if(btnG)btnG.textContent='Subiendo foto...';
+      gfSubir('eg',id).then(function(){gfReset('eg','');guardarSiguiente(i);}).catch(function(e){
+        confirmandoEditGarantia=false;if(btnG){btnG.disabled=false;btnG.textContent='Guardar cambios';}
+        toast('Los datos se guardaron, pero la foto no: '+e.message);
+      });
+      return;
+    }
     if(i>=campos.length){
       confirmandoEditGarantia=false;
       if(btnG){btnG.disabled=false;btnG.textContent='Guardar cambios';}
@@ -2742,6 +2765,50 @@ function eliminarGarantiaClick(id){
     else{toast('Error al eliminar');}
   }).catch(function(e){toast('Error: '+e.message);});
 }
+// ---- Foto del remito de garantías ----
+var GF={g:{arch:null,quitar:false,actual:''},eg:{arch:null,quitar:false,actual:''}};
+function gfPreparar(file){
+  return new Promise(function(resolve,reject){
+    var reader=new FileReader();
+    reader.onerror=function(){reject(new Error('No se pudo leer la foto'));};
+    reader.onload=function(){
+      var url=reader.result;
+      if(!/^image\//.test(file.type)){resolve({mime:file.type||'application/pdf',data:url.split(',')[1],nombre:file.name,prev:''});return;}
+      var img=new Image();
+      img.onload=function(){
+        var k=Math.min(1,1600/Math.max(img.width,img.height)),c=document.createElement('canvas');
+        c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+        var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);
+        var d=c.toDataURL('image/jpeg',0.82);
+        resolve({mime:'image/jpeg',data:d.split(',')[1],nombre:file.name.replace(/\.[^.]+$/,'')+'.jpg',prev:d});
+      };
+      img.onerror=function(){resolve({mime:file.type,data:url.split(',')[1],nombre:file.name,prev:''});};
+      img.src=url;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function gfElegida(p,inp){
+  var f=(inp.files||[])[0];inp.value='';
+  if(!f)return;
+  if(f.size>18*1024*1024)return toast('La foto es muy pesada (máx 18 MB)');
+  gfPreparar(f).then(function(a){GF[p].arch=a;GF[p].quitar=false;gfPintar(p);}).catch(function(e){toast(e.message);});
+}
+function gfPintar(p){
+  var el=document.getElementById(p+'FotoPrev');if(!el)return;
+  var st=GF[p],h='';
+  if(st.arch)h='<div class="gf-item">'+(st.arch.prev?'<img src="'+st.arch.prev+'" alt=""/>':'<span class="gf-doc">&#128196; '+lpEsc(st.arch.nombre)+'</span>')+'<button type="button" class="gf-x" title="Sacar" onclick="GF.'+p+'.arch=null;gfPintar(\''+p+'\')">&#10005;</button><small>Nueva</small></div>';
+  else if(st.actual&&!st.quitar)h='<div class="gf-item"><img src="https://drive.google.com/thumbnail?id='+encodeURIComponent(st.actual)+'&sz=w400" alt=""/><button type="button" class="gf-x" title="Quitar foto" onclick="GF.'+p+'.quitar=true;gfPintar(\''+p+'\')">&#10005;</button><small>Actual</small></div>';
+  else if(st.actual&&st.quitar)h='<span class="gf-quitada">Se va a quitar la foto <button type="button" class="bs" onclick="GF.'+p+'.quitar=false;gfPintar(\''+p+'\')">Deshacer</button></span>';
+  el.innerHTML=h;
+}
+function gfReset(p,actual){GF[p]={arch:null,quitar:false,actual:actual||''};gfPintar(p);}
+function gfPendiente(p){return !!(GF[p].arch||(GF[p].quitar&&GF[p].actual));}
+function gfSubir(p,id){
+  var a=GF[p].arch,body={id:id};
+  if(a){body.data=a.data;body.mime=a.mime;body.nombre='remito-'+id+(a.mime==='application/pdf'?'.pdf':'.jpg');}
+  return apiPost('garantiaFoto',body).then(function(r){if(!r||!r.ok)throw new Error((r&&r.error)||'Google no respondió');return r;});
+}
 function guardarGarantiaForm(){
   var datos={
     garantia:document.getElementById('gGarantia').value.trim(),
@@ -2753,8 +2820,19 @@ function guardarGarantiaForm(){
   };
   if(!datos.garantia||!datos.auto){toast('Completa Garantia y Auto');return;}
   sync('Guardando...');
+  var conFoto=gfPendiente('g');
   api('guardarGarantia',datos).then(function(){
+    if(!conFoto)return;
+    toast('Garantía guardada, subiendo la foto...');
+    return api('getGarantias').then(function(r){
+      var c=((r&&r.data)||[]).filter(function(x){return String(x.garantia).trim()===datos.garantia&&String(x.auto).trim()===datos.auto;});
+      c.sort(function(a,b){return (parseInt(String(b.id).replace(/\D/g,''))||0)-(parseInt(String(a.id).replace(/\D/g,''))||0);});
+      if(!c.length)throw new Error('no encontré la garantía recién guardada');
+      return gfSubir('g',c[0].id);
+    }).catch(function(e){toast('La garantía se guardó, pero la foto no: '+e.message);});
+  }).then(function(){
     sync('Sincronizado');
+    gfReset('g','');
     toast('Garantia guardada');
     ['gGarantia','gMotivo','gAuto','gFechaIngreso','gFechaDevolucion','gDistribuidor'].forEach(function(id){document.getElementById(id).value='';});
     cambiarGTab(1);

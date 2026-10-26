@@ -153,6 +153,9 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .ped-bats-todo{margin-top:14px;width:100%}
 .ped-bats-btn{background:rgba(242,169,60,.12);border:1px solid rgba(242,169,60,.45);color:var(--ink);border-radius:var(--r-sm);padding:6px 10px;font-size:13.5px;cursor:pointer;font-family:var(--sans);white-space:nowrap}
 .ped-bats-0{background:transparent;border-style:dashed;color:var(--muted)}
+.ped-bats-c{display:inline-flex;align-items:center;gap:4px}
+.ped-bats-re{width:28px;height:28px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:15px;line-height:1}
+.ped-bats-re:hover{color:var(--violet);border-color:var(--violet)}
 .ped-bats-an{background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.5);color:var(--violet);font-weight:700}
 .ped-it-tit{font-weight:800;font-size:14.5px;margin:12px 0 8px}
 .ped-it{display:flex;flex-direction:column;gap:6px}
@@ -1407,7 +1410,7 @@ function sincronizar(){
 setInterval(sincronizar,45000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)sincronizar();});
 // ---- Aviso de versión nueva: si subiste un index.html nuevo, las otras PCs ven un cartel para actualizar ----
-var APP_VERSION='2026-10-26-compras-bat';
+var APP_VERSION='2026-10-26-compras-bat2';
 function revisarVersion(){
   if(location.protocol==='file:'||revisarVersion.avisado)return;
   if(Date.now()-(revisarVersion.ult||0)<120000)return;revisarVersion.ult=Date.now();
@@ -5432,23 +5435,51 @@ function pedRender(){
 }
 // ---- Baterías compradas (items leídos de cada compra) ----
 var pedItemsNuevo=[],pedEditItems=null,pedAnalizando=false;
+function pedPendiente(x){return !!x.archivo_id&&(!x.items||!x.items.length);}
 function pedUnidades(items){return (items||[]).reduce(function(t,it){return t+(Number(it.cantidad)||0);},0);}
-function pedEtiqueta(it){var c=String(it.codigo||it.descripcion||'').toUpperCase().trim(),m=String(it.marca||'').toUpperCase().trim();return (m&&c.indexOf(m)!==0?m+' ':'')+c;}
+// Unifica el mismo modelo escrito distinto: "20GD" = "M20GD" (Moura), "620" = "UB620" (Willard), "BATERIA M150BD 12X180" = "MOURA M150BD"
+var PED_MARCAS=['MOURA','WILLARD','VARTA','SERMAT','VOLTA','BOSCH','HERBO','BARI','YUASA','HELIAR','ACDELCO','PRESTOLITE','OPTIMA','MOTOBATT'];
+function pedNorm(it){
+  var t=String(it.codigo||it.descripcion||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\b(BATERIAS?|BAT)\b/g,' ').replace(/\s+/g,' ').trim();
+  var m=String(it.marca||'').toUpperCase().trim();
+  PED_MARCAS.forEach(function(x){if(t.indexOf(x+' ')===0||t===x){if(!m)m=x;t=t.slice(x.length).trim();}});
+  if(m==='UB')m='WILLARD';
+  // primer "palabra-codigo"; se descartan medidas tipo 12X65 / 12V / 65AH
+  var toks=t.split(' ').filter(function(w){return w&&!/^\d+X\d+$/.test(w)&&!/^\d+(V|AH|A)$/.test(w);});
+  var c=toks[0]||t;
+  if(c==='UB'&&toks[1])c='UB'+toks[1];
+  if(c==='EFB'&&toks[1])c='EFB '+toks[1];
+  if(!m){
+    if(/^M[A-Z]?\d/.test(c))m='MOURA';
+    else if(/^UB/.test(c))m='WILLARD';
+    else if(/^V(PA|DA|FB|FA|GM|A)\d/.test(c))m='VARTA';
+    else if(/^VOL/.test(c))m='VOLTA';
+    else if(/^S\d/.test(c))m='SERMAT';
+  }
+  if(m==='MOURA'&&/^\d{2,3}[A-Z]{2,3}$/.test(c))c='M'+c;
+  if(m==='VARTA'&&/^\d{2,3}[A-Z]{2}$/.test(c))c='VA'+c;
+  if(m==='WILLARD'&&/^\d{3,4}$/.test(c))c='UB'+c;
+  if(m==='VOLTA')c=c.replace(/^VOL-?/,'VOL-');
+  return {marca:m,codigo:c};
+}
+function pedEtiqueta(it){var n=pedNorm(it);return ((n.marca?n.marca+' ':'')+n.codigo).trim();}
 function pedCeldaBats(x){
-  if(x.items&&x.items.length)return '<button class="ped-bats-btn" onclick="pedEditar(\''+x.id+'\')" title="Ver / corregir">&#128267; <b>'+pedUnidades(x.items)+'</b></button>';
+  var re=x.archivo_id?'<button class="ped-bats-re" title="Volver a leer con IA" onclick="pedAnalizarUno(\''+x.id+'\')">&#8635;</button>':'';
+  if(x.items&&x.items.length)return '<span class="ped-bats-c"><button class="ped-bats-btn" onclick="pedEditar(\''+x.id+'\')" title="Ver / corregir">&#128267; <b>'+pedUnidades(x.items)+'</b></button>'+re+'</span>';
+  if(x.items&&!x.items.length&&x.archivo_id)return '<button class="ped-bats-btn ped-bats-an" onclick="pedAnalizarUno(\''+x.id+'\')" title="Leyó 0 baterías: volver a leer">0 &#8635; Releer</button>';
   if(x.items&&!x.items.length)return '<button class="ped-bats-btn ped-bats-0" onclick="pedEditar(\''+x.id+'\')" title="Cargar a mano">0</button>';
   if(x.archivo_id)return '<button class="ped-bats-btn ped-bats-an" onclick="pedAnalizarUno(\''+x.id+'\')">Analizar</button>';
   return '<button class="ped-bats-btn ped-bats-0" onclick="pedEditar(\''+x.id+'\')" title="Cargar a mano">+ cargar</button>';
 }
 function pedBatsPintar(lista){
   var el=document.getElementById('pedBats');if(!el)return;
-  var ag={},tot=0,conIt=0,sinAn=lista.filter(function(x){return !x.items&&x.archivo_id;}).length;
+  var ag={},tot=0,conIt=0,sinAn=lista.filter(pedPendiente).length;
   lista.forEach(function(x){
-    if(!x.items)return;conIt++;
+    if(!x.items||!x.items.length)return;conIt++;
     x.items.forEach(function(it){var k=pedEtiqueta(it);if(!k)return;ag[k]=(ag[k]||0)+(Number(it.cantidad)||0);tot+=Number(it.cantidad)||0;});
   });
   var keys=Object.keys(ag).sort(function(a,b){return ag[b]-ag[a]||a.localeCompare(b);});
-  var todasSin=pedData.filter(function(x){return !x.items&&x.archivo_id;}).length;
+  var todasSin=pedData.filter(pedPendiente).length;
   var h='<div class="mc ped-bats"><div class="ped-bats-h"><div><div class="ped-bats-t">&#128267; Baterías compradas · '+NOMBRES_MES[pedMes]+'</div>';
   h+='<div class="ped-bats-s">'+conIt+' de '+lista.length+' compra'+(lista.length===1?'':'s')+' con baterías leídas'+(sinAn?' · <b style="color:var(--amber)">'+sinAn+' sin analizar</b>':'')+'</div></div>';
   h+='<div class="ped-bats-n"><b>'+tot+'</b><small>baterías</small></div></div>';
@@ -5458,7 +5489,7 @@ function pedBatsPintar(lista){
     keys.forEach(function(k){h+='<div class="ped-bats-row"><span class="ped-bats-k">'+lpEsc(k)+'</span><span class="ped-bats-bar"><i style="width:'+Math.max(4,ag[k]/max*100)+'%"></i></span><b>'+ag[k]+'</b></div>';});
     h+='</div>';
   }else h+='<div class="ped-bats-vacio">Todavía no hay baterías leídas en '+NOMBRES_MES[pedMes]+'.</div>';
-  if(todasSin)h+='<button class="bs ped-bats-todo" id="pedAnTodoBtn" onclick="pedAnalizarTodo()"'+(pedAnalizando?' disabled':'')+'>'+(pedAnalizando?'Analizando...':'&#128269; Analizar las '+todasSin+' compras cargadas antes (todos los meses)')+'</button>';
+  if(todasSin)h+='<button class="bs ped-bats-todo" id="pedAnTodoBtn" onclick="pedAnalizarTodo()"'+(pedAnalizando?' disabled':'')+'>'+(pedAnalizando?'Analizando...':'&#128269; Analizar / releer las '+todasSin+' compras sin baterías leídas (todos los meses)')+'</button>';
   h+='</div>';
   el.innerHTML=h;
 }
@@ -5467,12 +5498,12 @@ function pedAnalizarUno(id){
   toast('Leyendo las baterías de la compra...');
   return apiPost('pedAnalizar',{id:id}).then(function(r){
     if(!r.ok){toast('Error: '+r.error);return false;}
-    p.items=r.items||[];pedRender();toast(pedUnidades(p.items)+' baterías leídas');return true;
+    p.items=r.items||[];pedRender();toast(p.items.length?pedUnidades(p.items)+' baterías leídas':'Volvió a leer 0 baterías. Probá de nuevo o cargalas a mano con el lápiz.');return true;
   }).catch(function(e){toast('Error: '+e.message);return false;});
 }
 function pedAnalizarTodo(){
   if(pedAnalizando)return;
-  var cola=pedData.filter(function(x){return !x.items&&x.archivo_id;}).map(function(x){return x.id;});
+  var cola=pedData.filter(pedPendiente).map(function(x){return x.id;});
   if(!cola.length)return;
   if(!confirm('Voy a leer con la IA '+cola.length+' compras cargadas antes. Tarda unos segundos por compra. ¿Seguimos?'))return;
   pedAnalizando=true;var i=0,ok=0;

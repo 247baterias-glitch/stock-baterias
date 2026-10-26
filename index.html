@@ -135,6 +135,35 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .stk-card .acts button{font-size:16px;padding:14px 10px}
 .stk-danada{margin-top:8px;width:100%;background:transparent;border:1px dashed rgba(248,113,113,.4);color:#f87171;border-radius:var(--r-sm);padding:9px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--sans)}
 .stk-danada:disabled{opacity:.35;cursor:default}
+.ped-bats{margin-bottom:12px}
+.ped-bats-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ped-bats-t{font-size:18px;font-weight:800}
+.ped-bats-s{font-size:13px;color:var(--muted);margin-top:3px}
+.ped-bats-n{text-align:right}
+.ped-bats-n b{display:block;font-size:40px;font-weight:800;color:var(--amber);line-height:1}
+.ped-bats-n small{font-size:12px;color:var(--muted)}
+.ped-bats-l{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.ped-bats-row{display:grid;grid-template-columns:minmax(140px,260px) 1fr 50px;align-items:center;gap:12px;font-size:14.5px}
+.ped-bats-head{font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.04em;grid-template-columns:1fr auto}
+.ped-bats-k{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ped-bats-bar{height:8px;border-radius:99px;background:var(--bg);overflow:hidden}
+.ped-bats-bar i{display:block;height:100%;background:var(--amber);border-radius:99px}
+.ped-bats-row>b{text-align:right;font-size:16px}
+.ped-bats-vacio{margin-top:12px;color:var(--muted);font-size:14px}
+.ped-bats-todo{margin-top:14px;width:100%}
+.ped-bats-btn{background:rgba(242,169,60,.12);border:1px solid rgba(242,169,60,.45);color:var(--ink);border-radius:var(--r-sm);padding:6px 10px;font-size:13.5px;cursor:pointer;font-family:var(--sans);white-space:nowrap}
+.ped-bats-0{background:transparent;border-style:dashed;color:var(--muted)}
+.ped-bats-an{background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.5);color:var(--violet);font-weight:700}
+.ped-it-tit{font-weight:800;font-size:14.5px;margin:12px 0 8px}
+.ped-it{display:flex;flex-direction:column;gap:6px}
+.ped-it-r{display:grid;grid-template-columns:1fr 80px 32px;gap:6px;align-items:center;position:relative}
+.ped-it-r input{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 10px;font-size:14.5px;color:var(--ink);font-family:var(--sans);min-width:0}
+.ped-it-x{position:static}
+.ped-it-add{align-self:flex-start;margin-top:4px}
+.ped-it-tot{font-size:14px;color:var(--muted);margin-top:4px}
+.ped-it-tot b{color:var(--amber);font-size:16px}
+.ped-it-box{background:#0c0e33;border-radius:20px;padding:1.5rem;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;border:1px solid #282b5c}
+@media (max-width:560px){.ped-bats-row{grid-template-columns:1fr 60px 40px}}
 .gf-box{display:flex;flex-direction:column;gap:10px}
 .gf-btn{width:100%;padding:12px;font-size:15px}
 .gf-prev:empty{display:none}
@@ -977,11 +1006,13 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
 <div class="ptabs" id="pedMeses"></div>
 <div class="iva-res" id="pedRes"></div>
+<div id="pedBats"></div>
 <div class="mc">
 <div style="font-weight:800;font-size:16px;margin-bottom:12px">Cargar compra</div>
 <button type="button" class="iva-foto" id="pedFotoBtn" onclick="document.getElementById('pedFotoInput').click()">&#128206; Adjuntar compra (JPG o PDF)<small>o arrastrá el archivo acá desde la PC</small></button>
 <input type="file" id="pedFotoInput" accept="image/*,application/pdf" style="display:none" onchange="pedArchivoElegido(this)"/>
 <div class="iva-leido" id="pedLeido"></div>
+<div id="pedItemsForm"></div>
 <div class="iva-form">
 <div class="gfield"><label>Fecha</label><input type="date" id="pedFecha"/></div>
 <div class="gfield"><label>Monto total</label><input type="text" inputmode="decimal" id="pedMonto" placeholder="Ej: 1.500.000" oninput="pedPreview()"/></div>
@@ -994,7 +1025,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button class="bp" id="pedGuardarBtn" style="width:100%;margin-top:12px" onclick="pedGuardar()">Guardar compra</button>
 </div>
 <div class="twrap" style="margin-top:12px;max-height:none"><table class="ptable">
-<thead><tr><th>Fecha</th><th>Detalle</th><th>Monto</th><th>Facturado</th><th>Con factura</th><th>Sin factura</th><th>Archivo</th><th></th></tr></thead><tbody id="pedBody"></tbody>
+<thead><tr><th>Fecha</th><th>Detalle</th><th>Baterías</th><th>Monto</th><th>Facturado</th><th>Con factura</th><th>Sin factura</th><th>Archivo</th><th></th></tr></thead><tbody id="pedBody"></tbody>
 </table></div>
 </div>
 <div id="lpViewer" class="lpv hidden">
@@ -1376,7 +1407,7 @@ function sincronizar(){
 setInterval(sincronizar,45000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)sincronizar();});
 // ---- Aviso de versión nueva: si subiste un index.html nuevo, las otras PCs ven un cartel para actualizar ----
-var APP_VERSION='2026-10-26-remitos';
+var APP_VERSION='2026-10-26-compras-bat';
 function revisarVersion(){
   if(location.protocol==='file:'||revisarVersion.avisado)return;
   if(Date.now()-(revisarVersion.ult||0)<120000)return;revisarVersion.ult=Date.now();
@@ -5324,6 +5355,7 @@ function pedArchivoElegido(inp){
     btn.disabled=false;btn.innerHTML='&#128206; Adjuntar compra (JPG o PDF)<small>o arrastrá el archivo acá desde la PC</small>';
     if(!r.ok){toast('Error: '+r.error);return;}
     pedArchivo={id:r.archivo_id||'',mime:r.mime||''};
+    pedItemsNuevo=(r.datos&&r.datos.items)||[];pedItemsFormPintar();
     var link=pedArchivo.id?' <a href="https://drive.google.com/file/d/'+pedArchivo.id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700">Ver archivo</a>':'';
     var d=r.datos||{};
     if(/^\d{4}-\d{2}-\d{2}$/.test(d.fecha||''))document.getElementById('pedFecha').value=d.fecha;
@@ -5338,7 +5370,7 @@ function pedGuardar(){
   var m=lpNum(document.getElementById('pedMonto').value);
   if(!fecha){toast('Completa la fecha');return;}
   if(isNaN(m)||m<=0){toast('Completa el monto');return;}
-  var datos={fecha:fecha,monto:m,facturado:pedFac,detalle:document.getElementById('pedDetalle').value.trim(),archivo_id:pedArchivo.id,mime:pedArchivo.mime};
+  var datos={fecha:fecha,monto:m,facturado:pedFac,detalle:document.getElementById('pedDetalle').value.trim(),archivo_id:pedArchivo.id,mime:pedArchivo.mime,items:pedItemsNuevo.length?pedItemsNuevo:null};
   var btn=document.getElementById('pedGuardarBtn');btn.disabled=true;btn.textContent='Guardando...';
   apiPost('pedAgregar',datos).then(function(r){
     btn.disabled=false;btn.textContent='Guardar compra';
@@ -5346,7 +5378,7 @@ function pedGuardar(){
     datos.id=r.id;pedData.push(datos);
     var p=fecha.split('-');pedAnio=parseInt(p[0],10);pedMes=parseInt(p[1],10)-1;
     document.getElementById('pedMonto').value='';document.getElementById('pedDetalle').value='';
-    document.getElementById('pedLeido').innerHTML='';pedArchivo={id:'',mime:''};
+    document.getElementById('pedLeido').innerHTML='';pedArchivo={id:'',mime:''};pedItemsNuevo=[];pedItemsFormPintar();
     pedFac=0;pedRenderChips();
     pedPreview();pedRender();toast('Compra guardada');
   }).catch(function(e){btn.disabled=false;btn.textContent='Guardar compra';toast('Error: '+e.message);});
@@ -5393,9 +5425,104 @@ function pedRender(){
     opc.forEach(function(o){sel+='<option value="'+o+'"'+(o===x.facturado?' selected':'')+'>'+o+'%</option>';});
     sel+='</select>';
     var arch=x.archivo_id?'<a href="https://drive.google.com/file/d/'+x.archivo_id+'/view" target="_blank" rel="noopener" style="color:var(--amber);font-weight:700;text-decoration:none">'+(/pdf/.test(x.mime||'')?'&#128196;':'&#128444;')+' Ver</a>':'<span style="color:var(--muted2)">—</span>';
-    b+='<tr><td>'+fmtFecha(x.fecha)+'</td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td style="font-weight:800">$'+formatARS(x.monto)+'</td><td>'+sel+'</td><td style="color:#2dd4bf;font-weight:700">$'+formatARS(f)+'</td><td style="color:var(--amber)">$'+formatARS(x.monto-f)+'</td><td>'+arch+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="pedEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';
+    b+='<tr><td>'+fmtFecha(x.fecha)+'</td><td><b>'+lpEsc(x.detalle||'-')+'</b></td><td>'+pedCeldaBats(x)+'</td><td style="font-weight:800">$'+formatARS(x.monto)+'</td><td>'+sel+'</td><td style="color:#2dd4bf;font-weight:700">$'+formatARS(f)+'</td><td style="color:var(--amber)">$'+formatARS(x.monto-f)+'</td><td>'+arch+'</td><td><div class="lp-row-act"><button title="Eliminar" style="color:#f87171" onclick="pedEliminar(\''+x.id+'\')">&#10005;</button></div></td></tr>';
   });
-  document.getElementById('pedBody').innerHTML=b||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin compras en '+NOMBRES_MES[pedMes]+'</td></tr>';
+  document.getElementById('pedBody').innerHTML=b||'<tr><td colspan="9" style="text-align:center;padding:1rem;color:#94a0af">Sin compras en '+NOMBRES_MES[pedMes]+'</td></tr>';
+  pedBatsPintar(lista);
+}
+// ---- Baterías compradas (items leídos de cada compra) ----
+var pedItemsNuevo=[],pedEditItems=null,pedAnalizando=false;
+function pedUnidades(items){return (items||[]).reduce(function(t,it){return t+(Number(it.cantidad)||0);},0);}
+function pedEtiqueta(it){var c=String(it.codigo||it.descripcion||'').toUpperCase().trim(),m=String(it.marca||'').toUpperCase().trim();return (m&&c.indexOf(m)!==0?m+' ':'')+c;}
+function pedCeldaBats(x){
+  if(x.items&&x.items.length)return '<button class="ped-bats-btn" onclick="pedEditar(\''+x.id+'\')" title="Ver / corregir">&#128267; <b>'+pedUnidades(x.items)+'</b></button>';
+  if(x.items&&!x.items.length)return '<button class="ped-bats-btn ped-bats-0" onclick="pedEditar(\''+x.id+'\')" title="Cargar a mano">0</button>';
+  if(x.archivo_id)return '<button class="ped-bats-btn ped-bats-an" onclick="pedAnalizarUno(\''+x.id+'\')">Analizar</button>';
+  return '<button class="ped-bats-btn ped-bats-0" onclick="pedEditar(\''+x.id+'\')" title="Cargar a mano">+ cargar</button>';
+}
+function pedBatsPintar(lista){
+  var el=document.getElementById('pedBats');if(!el)return;
+  var ag={},tot=0,conIt=0,sinAn=lista.filter(function(x){return !x.items&&x.archivo_id;}).length;
+  lista.forEach(function(x){
+    if(!x.items)return;conIt++;
+    x.items.forEach(function(it){var k=pedEtiqueta(it);if(!k)return;ag[k]=(ag[k]||0)+(Number(it.cantidad)||0);tot+=Number(it.cantidad)||0;});
+  });
+  var keys=Object.keys(ag).sort(function(a,b){return ag[b]-ag[a]||a.localeCompare(b);});
+  var todasSin=pedData.filter(function(x){return !x.items&&x.archivo_id;}).length;
+  var h='<div class="mc ped-bats"><div class="ped-bats-h"><div><div class="ped-bats-t">&#128267; Baterías compradas · '+NOMBRES_MES[pedMes]+'</div>';
+  h+='<div class="ped-bats-s">'+conIt+' de '+lista.length+' compra'+(lista.length===1?'':'s')+' con baterías leídas'+(sinAn?' · <b style="color:var(--amber)">'+sinAn+' sin analizar</b>':'')+'</div></div>';
+  h+='<div class="ped-bats-n"><b>'+tot+'</b><small>baterías</small></div></div>';
+  if(keys.length){
+    var max=ag[keys[0]];
+    h+='<div class="ped-bats-l"><div class="ped-bats-row ped-bats-head"><span>BATERÍAS - ITEMS</span><span>CANTIDAD</span></div>';
+    keys.forEach(function(k){h+='<div class="ped-bats-row"><span class="ped-bats-k">'+lpEsc(k)+'</span><span class="ped-bats-bar"><i style="width:'+Math.max(4,ag[k]/max*100)+'%"></i></span><b>'+ag[k]+'</b></div>';});
+    h+='</div>';
+  }else h+='<div class="ped-bats-vacio">Todavía no hay baterías leídas en '+NOMBRES_MES[pedMes]+'.</div>';
+  if(todasSin)h+='<button class="bs ped-bats-todo" id="pedAnTodoBtn" onclick="pedAnalizarTodo()"'+(pedAnalizando?' disabled':'')+'>'+(pedAnalizando?'Analizando...':'&#128269; Analizar las '+todasSin+' compras cargadas antes (todos los meses)')+'</button>';
+  h+='</div>';
+  el.innerHTML=h;
+}
+function pedAnalizarUno(id){
+  var p=pedData.filter(function(x){return x.id===id;})[0];if(!p)return Promise.resolve();
+  toast('Leyendo las baterías de la compra...');
+  return apiPost('pedAnalizar',{id:id}).then(function(r){
+    if(!r.ok){toast('Error: '+r.error);return false;}
+    p.items=r.items||[];pedRender();toast(pedUnidades(p.items)+' baterías leídas');return true;
+  }).catch(function(e){toast('Error: '+e.message);return false;});
+}
+function pedAnalizarTodo(){
+  if(pedAnalizando)return;
+  var cola=pedData.filter(function(x){return !x.items&&x.archivo_id;}).map(function(x){return x.id;});
+  if(!cola.length)return;
+  if(!confirm('Voy a leer con la IA '+cola.length+' compras cargadas antes. Tarda unos segundos por compra. ¿Seguimos?'))return;
+  pedAnalizando=true;var i=0,ok=0;
+  var sig=function(){
+    var btn=document.getElementById('pedAnTodoBtn');if(btn)btn.textContent='Analizando '+(i+1)+' de '+cola.length+'...';
+    if(i>=cola.length){pedAnalizando=false;pedRender();toast('Listo: '+ok+' de '+cola.length+' compras analizadas');return;}
+    var id=cola[i++],p=pedData.filter(function(x){return x.id===id;})[0];
+    apiPost('pedAnalizar',{id:id}).then(function(r){if(r.ok&&p){p.items=r.items||[];ok++;}}).catch(function(){}).then(function(){pedRender();sig();});
+  };
+  pedRender();sig();
+}
+// Editor de items (corregir lo que leyó la IA o cargar a mano)
+function pedItemsHtml(items,pref){
+  var h='<div class="ped-it">';
+  items.forEach(function(it,i){
+    h+='<div class="ped-it-r"><input type="text" value="'+lpEsc(pedEtiqueta(it))+'" placeholder="Ej: MOURA M22GD" onchange="'+pref+'[' +i+'].codigo=this.value;'+pref+'['+i+'].marca=\'\'"/>';
+    h+='<input type="number" min="0" inputmode="numeric" value="'+(Number(it.cantidad)||0)+'" onchange="'+pref+'['+i+'].cantidad=parseInt(this.value)||0;pedItemsTot(this)"/>';
+    h+='<button type="button" class="gf-x ped-it-x" onclick="'+pref+'.splice('+i+',1);'+(pref==='pedItemsNuevo'?'pedItemsFormPintar()':'pedEditarPintar()')+'">&#10005;</button></div>';
+  });
+  h+='<button type="button" class="bs ped-it-add" onclick="'+pref+'.push({codigo:\'\',marca:\'\',cantidad:1});'+(pref==='pedItemsNuevo'?'pedItemsFormPintar()':'pedEditarPintar()')+'">+ Agregar batería</button>';
+  h+='<div class="ped-it-tot">Total: <b>'+pedUnidades(items)+'</b> baterías</div></div>';
+  return h;
+}
+function pedItemsTot(inp){var b=inp.closest('.ped-it');if(!b)return;var t=0;b.querySelectorAll('input[type=number]').forEach(function(x){t+=parseInt(x.value)||0;});var e=b.querySelector('.ped-it-tot b');if(e)e.textContent=t;}
+function pedItemsFormPintar(){
+  var el=document.getElementById('pedItemsForm');if(!el)return;
+  el.innerHTML=pedItemsNuevo.length?'<div class="ped-it-tit">&#128267; Baterías de esta compra (revisá las cantidades)</div>'+pedItemsHtml(pedItemsNuevo,'pedItemsNuevo'):'';
+}
+function pedEditar(id){
+  var p=pedData.filter(function(x){return x.id===id;})[0];if(!p)return;
+  pedEditItems={id:id,items:JSON.parse(JSON.stringify(p.items||[]))};
+  var ov=document.getElementById('pedItOv');
+  if(!ov){ov=document.createElement('div');ov.id='pedItOv';ov.className='col-overlay';document.body.appendChild(ov);}
+  ov.classList.remove('hidden');pedEditarPintar();
+}
+function pedEditarPintar(){
+  var ov=document.getElementById('pedItOv');if(!ov||!pedEditItems)return;
+  var p=pedData.filter(function(x){return x.id===pedEditItems.id;})[0]||{};
+  ov.innerHTML='<div class="ped-it-box"><div style="font-size:19px;font-weight:800;margin-bottom:4px">Baterías de la compra</div><div style="color:var(--muted);font-size:13.5px;margin-bottom:12px">'+fmtFecha(p.fecha||'')+' · '+lpEsc(p.detalle||'')+(p.archivo_id?' · <a href="https://drive.google.com/file/d/'+p.archivo_id+'/view" target="_blank" rel="noopener" style="color:var(--amber)">Ver archivo</a>':'')+'</div>'+
+    pedItemsHtml(pedEditItems.items,'pedEditItems.items')+
+    '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="bp" onclick="pedEditarGuardar()">Guardar</button><button class="bs" onclick="document.getElementById(\'pedItOv\').classList.add(\'hidden\')">Cancelar</button>'+(p.archivo_id?'<button class="bs" style="margin-left:auto" onclick="document.getElementById(\'pedItOv\').classList.add(\'hidden\');pedAnalizarUno(\''+p.id+'\')">&#128269; Volver a leer con IA</button>':'')+'</div></div>';
+}
+function pedEditarGuardar(){
+  var e=pedEditItems;if(!e)return;
+  var items=e.items.filter(function(it){return String(it.codigo||'').trim()&&Number(it.cantidad)>0;});
+  apiPost('pedActualizar',{id:e.id,items:items}).then(function(r){
+    if(!r.ok){toast('Error: '+r.error);return;}
+    var p=pedData.filter(function(x){return x.id===e.id;})[0];if(p)p.items=items.map(function(it){return {codigo:String(it.codigo).trim().toUpperCase(),marca:String(it.marca||'').toUpperCase(),cantidad:Number(it.cantidad)};});
+    document.getElementById('pedItOv').classList.add('hidden');pedRender();toast('Baterías guardadas');
+  }).catch(function(x){toast('Error: '+x.message);});
 }
 // ---- Comparador entre distribuidores ----
 var cmpData=[];

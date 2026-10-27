@@ -135,6 +135,15 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .stk-card .acts button{font-size:16px;padding:14px 10px}
 .stk-danada{margin-top:8px;width:100%;background:transparent;border:1px dashed rgba(248,113,113,.4);color:#f87171;border-radius:var(--r-sm);padding:9px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--sans)}
 .stk-danada:disabled{opacity:.35;cursor:default}
+.mp-box{margin-top:10px;padding:10px 12px;border-radius:var(--r-md);background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.35)}
+.mp-t{font-size:13px;font-weight:800;color:var(--green);margin-bottom:8px}
+.mp-g{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mp-col small{display:block;font-size:11px;font-weight:800;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.mp-it{margin-bottom:6px}
+.mp-mod{display:block;font-size:12.5px;color:var(--ink-soft)}
+.mp-it b{display:block;font-size:20px;font-weight:800;color:var(--ink)}
+.mp-sub{display:block;font-size:11.5px;color:var(--muted)}
+@media (max-width:640px){.mp-g{grid-template-columns:1fr}}
 .ped-bats{margin-bottom:12px}
 .ped-bats-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .ped-bats-t{font-size:18px;font-weight:800}
@@ -1410,7 +1419,7 @@ function sincronizar(){
 setInterval(sincronizar,45000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)sincronizar();});
 // ---- Aviso de versión nueva: si subiste un index.html nuevo, las otras PCs ven un cartel para actualizar ----
-var APP_VERSION='2026-10-26-compras-bat3';
+var APP_VERSION='2026-10-26-moto-precios';
 function revisarVersion(){
   if(location.protocol==='file:'||revisarVersion.avisado)return;
   if(Date.now()-(revisarVersion.ult||0)<120000)return;revisarVersion.ult=Date.now();
@@ -1866,7 +1875,7 @@ function bmBuscar(){
     if(x.borne)tags.push('<span class="bm-tag">&#10133; Borne '+lpEsc(x.borne)+'</span>');
     if(tags.length)h+='<div class="bm-tags">'+tags.join('')+'</div>';
     if(x.nota)h+='<div class="bm-nota">'+lpEsc(x.nota)+'</div>';
-    h+=eqBloqueMini(eqGruposDe(x.v,[x.b,x.eq]));
+    h+=eqBloqueMini(eqGruposDe(x.v,[x.b,x.eq]),[x.b,x.eq]);
     h+='</div><div class="lp-row-act"><button title="Modificar" onclick="bmEditar('+x.fila+')">&#9998;</button><button title="Eliminar" style="color:#f87171" onclick="bmEliminar('+x.fila+')">&#10005;</button></div></div>';
   });
   el.innerHTML=h;
@@ -2090,13 +2099,61 @@ function eqCodHtml(g,k){
   if(!c.length)return '<span class="eq-no">'+(k==='moura'?'No fabrica':'—')+'</span>';
   return c.map(function(x){return '<span class="eq-cod">'+lpEsc(x)+'</span>';}).join(' ');
 }
-function eqBloqueMini(gs){
-  if(!gs.length)return '';
-  return gs.map(function(g){
+function eqBloqueMini(gs,codsExtra){
+  if(!gs.length)return codsExtra&&codsExtra.length?mpBloque(mpClaves([],codsExtra)):'';
+  return gs.map(function(g,i){
     var h='<div class="eq-mini"><div class="eq-mini-t">&#128257; Equivalencias · '+lpEsc(g.titulo)+'</div><div class="eq-mini-g">';
     EQ_MARCAS.forEach(function(m){h+='<div><small>'+m[1]+'</small>'+eqCodHtml(g,m[0])+'</div>';});
-    return h+'</div></div>';
+    h+='</div>'+mpBloque(mpClaves(g,i===0?codsExtra:[]));
+    return h+'</div>';
   }).join('');
+}
+// ---- Precios de las 3 listas de moto (Bosch, High Power, Yuasa) para los códigos equivalentes ----
+var MP_LISTAS=[['Bosch',function(){return PBOSCH_MOTO;}],['High Power',function(){return PHIGHPOWER_MOTO;}],['Yuasa',function(){return PYUASA_MOTO;}]];
+// "YTX7A-BS" = "YTX7A" ; Bosch "BTX7A" = "YTX7A", "BB4L-B" = "YB4L-B", "BN9-4B-1" = "12N9-4B-1"
+function mpClave(t){
+  var c=String(t||'').toUpperCase().replace(/\s+(S\/ACT|AGM|LIB).*$/,'').trim().split(/\s+/)[0]||'';
+  c=c.replace(/[^A-Z0-9.]/g,'');
+  if(c.length>5&&/BS$/.test(c))c=c.slice(0,-2);
+  return c;
+}
+function mpVariantes(c){
+  var o=[c];
+  if(/^B(TX|TZ|T|B)\d/.test(c))o.push('Y'+c.slice(1));
+  if(/^BN\d/.test(c))o.push('12'+c.slice(1));
+  return o;
+}
+function mpClavesItem(m){
+  var o=[];String(m).split(/[()\/]/).forEach(function(p){var c=mpClave(p);if(c.length>=4)mpVariantes(c).forEach(function(v){if(o.indexOf(v)===-1)o.push(v);});});
+  return o;
+}
+function mpClaves(g,extra){
+  var o=[],add=function(t){String(t||'').split(/[\/,]|\s-\s|\(|\)|\s+o\s+/).forEach(function(p){p=p.replace(/^[^:]*:\s*/,'');var c=mpClave(p);if(c.length>=4)mpVariantes(c).forEach(function(v){if(o.indexOf(v)===-1)o.push(v);});});};
+  if(g&&g.cod)EQ_MARCAS.forEach(function(m){(g.cod[m[0]]||[]).forEach(add);});
+  (extra||[]).forEach(add);
+  return o;
+}
+function mpVenta(idx,x){
+  var lista=MP_LISTAS[idx][1](),marca='MOTO '+MP_LISTAS[idx][0];
+  var cfg=((plCfg&&plCfg.marcas)||{})[marca]||{},mgDef=motoMargenDef(lista),mg=cfg.margen!==undefined?Number(cfg.margen):mgDef;
+  var costo=plNum(x.c),extra=Math.round(plNum(x.v)-costo)-mgDef;if(!(plNum(x.v)>0)||Math.abs(extra)<1)extra=0;
+  return {costo:costo,venta:costo+mg+extra};
+}
+function mpBloque(claves){
+  if(!claves.length)return '';
+  if(!motoCfgCargado){motoCfgCargado=true;apiPost('plGet').then(function(r){if(r&&r.ok&&r.cfg){plCfg={marcas:r.cfg.marcas||{},precios:r.cfg.precios||{}};plCargado=true;if(document.getElementById('resMM'))bmBuscar();}}).catch(function(){});}
+  var h='<div class="mp-box"><div class="mp-t">&#128176; Precios en tus listas</div><div class="mp-g">',hay=false;
+  MP_LISTAS.forEach(function(L,idx){
+    var hits=L[1]().filter(function(x){return !x.pendiente&&mpClavesItem(x.m).some(function(k){return claves.indexOf(k)!==-1;});});
+    h+='<div class="mp-col"><small>'+L[0]+'</small>';
+    if(!hits.length)h+='<span class="eq-no">No está en la lista</span>';
+    hits.forEach(function(x){
+      hay=true;var p=mpVenta(idx,x),nom=typeof motoNombre==='function'?motoNombre(L[0],x.m):x.m;
+      h+='<div class="mp-it"><span class="mp-mod">'+lpEsc(nom)+'</span><b>$'+formatMoney(p.venta)+'</b><span class="mp-sub">con envío · costo $'+formatMoney(p.costo)+' · retirando $'+formatMoney(p.venta-RETIRO_DESC)+'</span></div>';
+    });
+    h+='</div>';
+  });
+  return hay?h+'</div></div>':'';
 }
 function eqMotosNoCargadas(b){
   var out=[],pal=b.toLowerCase().split(/\s+/);

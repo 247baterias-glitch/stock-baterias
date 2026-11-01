@@ -1143,7 +1143,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="gfield"><label>Batería colocada</label><input type="text" id="smBat" list="smBatList" placeholder="Ej: YTX5L-BS (BTX5L)" oninput="smSugerirPrecio();smEqRender()"/><datalist id="smBatList"></datalist></div>
 <div class="gfield wide" id="smEqBox" style="grid-column:1/-1"></div>
 <div class="gfield"><label>Carga regulador (opcional)</label><input type="text" id="smCarga" placeholder="Ej: 14.2"/></div>
-<div class="gfield"><label>Vigencia garantia</label><input type="text" id="smVigencia" value="12 meses"/></div>
+<div class="gfield"><label>Vigencia garantia</label><input type="text" id="smVigencia" value="6 meses"/></div>
 <div class="gfield"><label>Telefono cliente (opcional, para enviar garantia)</label><input type="text" id="smTel" placeholder="Ej: 1123456789"/></div>
 <div class="gfield"><label>Precio</label><input type="text" id="smPrecio" placeholder="Ej: $75.000"/></div>
 <div class="gfield wide"><label>Forma de pago</label>
@@ -3293,7 +3293,7 @@ function abrirMotoOverlay(){
   document.getElementById('smTitulo').textContent='Colocación batería de moto · '+(camExtra?camExtra.n:'');
   document.getElementById('smFecha').value=hoyStr();
   ['smMoto','smAnio','smCil','smDominio','smBat','smCarga','smTel','smPrecio'].forEach(function(id){document.getElementById(id).value='';});
-  document.getElementById('smVigencia').value='12 meses';
+  document.getElementById('smVigencia').value='6 meses';
   var llenarMotos=function(){document.getElementById('smMotoList').innerHTML=BUSC_MOTO.map(function(x){return '<option value="'+lpEsc(x.v)+'">'+lpEsc(x.b||'')+'</option>';}).join('');};
   if(bmCargado)llenarMotos();else apiPost('buscadorGet',{moto:true}).then(function(r){if(r.ok){BUSC_MOTO=r.data||[];bmCargado=true;llenarMotos();}}).catch(function(){});
   document.getElementById('smBatList').innerHTML=smListaMotos().map(function(x){return '<option value="'+lpEsc(x.m)+'">'+lpEsc(x.marca)+'</option>';}).join('');
@@ -3337,7 +3337,7 @@ function confirmarServicioMoto(){
   if(smVal.pago==='Transferencia'&&!smVal.cuenta)return toast('Elegi la cuenta destino');
   if(!smVal.ubi)return toast('Elegi la ubicacion');
   var info=smBuscarBat(bat),marca=info?info.marca:'';
-  var d={fecha:fecha,dominio:g('smDominio'),carga:g('smCarga'),vigencia:g('smVigencia')||'12 meses',tel:g('smTel')};
+  var d={fecha:fecha,dominio:g('smDominio'),carga:g('smCarga'),vigencia:g('smVigencia')||'6 meses',tel:g('smTel')};
   confirmandoMoto=true;
   var btn=document.getElementById('smConfirmar');btn.disabled=true;btn.textContent='Guardando...';
   sync('Guardando...');

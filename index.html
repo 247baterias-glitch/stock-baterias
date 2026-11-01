@@ -3769,7 +3769,17 @@ function renderStatsMes(){
   // Por cuenta de transferencia
   var ctas=Object.keys(st.porCuentaTransferencia||{}).sort(function(a,b){return (st.porCuentaTransferenciaMonto[b]||0)-(st.porCuentaTransferenciaMonto[a]||0);});
   var totCtaM=ctas.reduce(function(t,k){return t+(st.porCuentaTransferenciaMonto[k]||0);},0);
-  h+=caja('&#127974; Por cuenta de transferencia',ctas.length?'$'+formatMoney(totCtaM)+' transferidos':'',ctas.length?barras(ctas.map(function(k){var m=st.porCuentaTransferenciaMonto[k]||0;return {k:k,v:st.porCuentaTransferencia[k],extra:'$'+formatMoney(m)+' · '+pctTxt(m,totCtaM)+' del monto',tip:k+': '+st.porCuentaTransferencia[k]+' transferencias, $'+formatMoney(m)};}),ctas.reduce(function(t,k){return t+st.porCuentaTransferencia[k];},0)):'<div class="sv-vacio">Sin transferencias en '+lpEsc(mesLabel)+'</div>');
+  // Detalle por cuenta: qué servicios cuentan para cada una (para revisar cargas mal hechas)
+  var ultCta={},detCtas='';
+  ctas.forEach(function(k){
+    var ls=serviciosCache.filter(function(s){return s.forma_pago==='Transferencia'&&s.cuenta_transferencia===k;})
+      .sort(function(a,b){return String(b.fecha).localeCompare(String(a.fecha));});
+    if(ls.length)ultCta[k]=String(ls[0].fecha);
+    detCtas+='<details class="sv-det" style="margin-top:10px"><summary style="cursor:pointer;color:#a78bfa;font-weight:700;font-size:13px">Ver los '+ls.length+' servicios de '+lpEsc(k)+'</summary><div style="max-height:260px;overflow:auto;margin-top:6px">'+
+      ls.map(function(s){return '<div style="display:flex;gap:10px;font-size:12.5px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span style="color:#8a90b3;white-space:nowrap">'+fmtFecha(String(s.fecha))+'</span><span style="flex:1;min-width:0">'+lpEsc(s.vehiculo||s.modelo_bateria||'')+'</span><span style="white-space:nowrap">'+lpEsc(s.tecnico||'')+'</span><span style="white-space:nowrap;font-weight:700">$'+formatMoney(parseFloat(String(s.precio||'').replace(/[^0-9.-]/g,''))||0)+'</span></div>';}).join('')+
+      '</div></details>';
+  });
+  h+=caja('&#127974; Por cuenta de transferencia',ctas.length?'$'+formatMoney(totCtaM)+' transferidos':'',ctas.length?barras(ctas.map(function(k){var m=st.porCuentaTransferenciaMonto[k]||0;return {k:k,v:st.porCuentaTransferencia[k],extra:'$'+formatMoney(m)+' · '+pctTxt(m,totCtaM)+' del monto'+(ultCta[k]?' · última: '+fmtFecha(ultCta[k]):''),tip:k+': '+st.porCuentaTransferencia[k]+' transferencias, $'+formatMoney(m)};}),ctas.reduce(function(t,k){return t+st.porCuentaTransferencia[k];},0))+detCtas:'<div class="sv-vacio">Sin transferencias en '+lpEsc(mesLabel)+'</div>');
   h+='</div>';
   // Por modelo: ranking (los 10 más colocados + ver todos)
   var mods=Object.keys(st.porModelo).sort(function(a,b){return st.porModelo[b]-st.porModelo[a]||(a<b?-1:1);});

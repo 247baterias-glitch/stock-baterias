@@ -2501,7 +2501,7 @@ var recDatos=[];
 function cargarRecordatorios(){
   var box=document.getElementById('recList');box.innerHTML='<div class="loading">Cargando...</div>';
   api('getRecordatorios',{}).then(function(r){
-    if(!r||!r.ok){box.innerHTML='<div class="loading">No se pudo cargar</div>';return;}
+    if(!r||!r.ok){box.innerHTML='<div class="loading">No se pudo cargar<br><small>Servidor: '+recEsc(r?(r.error||JSON.stringify(r)):'sin respuesta')+'</small></div>';return;}
     recDatos=r.data||[];
     if(!recDatos.length){box.innerHTML='<div class="loading">No hay clientes para avisar por ahora</div>';return;}
     box.innerHTML=recDatos.map(function(c,i){
@@ -2513,7 +2513,7 @@ function cargarRecordatorios(){
        +'<button class="bp" onclick="recWhatsapp('+i+')">WhatsApp</button>'
        +'<button class="bs" onclick="recMarcar('+i+',\'Baja\')">No avisar más</button></div></div>';
     }).join('');
-  }).catch(function(){box.innerHTML='<div class="loading">No se pudo cargar</div>';});
+  }).catch(function(e){box.innerHTML='<div class="loading">No se pudo cargar<br><small>Detalle: '+recEsc(e&&e.message?e.message:e)+'</small></div>';});
 }
 function recWhatsapp(i){
   var c=recDatos[i];if(!c)return;
@@ -6485,4 +6485,3 @@ function dzDestino(e){
 })();
 </script>
 </body>
-</html>

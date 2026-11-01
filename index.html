@@ -275,6 +275,7 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .gfield{margin-bottom:12px}
 .gfield label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.03em}
 .gfield input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:12px;font-size:16px;outline:none;font-family:var(--sans);color:var(--ink);transition:border-color .12s ease}
+.gfield select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:12px;font-size:16px;outline:none;font-family:var(--sans);color:var(--ink)}
 .gfield input:focus{border-color:var(--amber);background:var(--surface)}
 .gcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.25rem 1.4rem;margin-bottom:10px;box-shadow:var(--shadow-card)}
 .gcard-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
@@ -743,6 +744,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <a class="card" href="#listas" onclick="return navClick(event,mostrarListasDist)"><div class="icon" style="background:#e6ecff">&#128203;</div><div class="ci"><h2>Listas de Distribuidores</h2><p>Fotos y PDF con precio de venta</p></div><span class="arr">&#8250;</span></a>
 <a class="card" href="#iva" onclick="return navClick(event,mostrarIva)"><div class="icon" style="background:#e1f5ea">&#129534;</div><div class="ci"><h2>Facturas</h2><p>Cuánto comprar facturado, DDJJ, crédito y débito fiscal para la DDJJ</p></div><span class="arr">&#8250;</span></a>
 <a class="card" href="#compras" onclick="return navClick(event,mostrarPedidos)"><div class="icon" style="background:#fdeed0">&#128230;</div><div class="ci"><h2>Compras</h2><p>Archivos de compras con fecha, monto y % facturado</p></div><span class="arr">&#8250;</span></a>
+<a class="card" href="#recordatorios" onclick="return navClick(event,mostrarRecordatorios)"><div class="icon" style="background:#e6f4ea">&#128197;</div><div class="ci"><h2>Recordatorios</h2><p>Clientes a los 2 años de su batería</p></div><span class="arr">&#8250;</span></a>
 </div>
 </div>
 <div id="p0load"><div class="loading">Cargando...</div></div>
@@ -1014,6 +1016,12 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </table></div>
 </div>
 </div>
+<div id="p14" class="hidden">
+<button class="back" onclick="volverInicio()">&#8592; Volver</button>
+<div class="mc"><div style="font-weight:800;font-size:16px;margin-bottom:6px">Recordatorios de cambio de batería</div>
+<div style="font-size:13px;color:var(--muted)">Clientes cuya batería cumple 2 años (aparecen 30 días antes y hasta 60 días después). Tocá WhatsApp para enviarles el aviso.</div></div>
+<div id="recList"><div class="loading">Cargando...</div></div>
+</div>
 <div id="p13" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
 <div class="ptabs" id="pedMeses"></div>
@@ -1101,7 +1109,8 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="gfield"><label>Dominio (patente)</label><input type="text" id="colDominio" placeholder="Ej: AF129EQ"/></div>
 <div class="gfield"><label>Carga alternador (opcional)</label><input type="text" id="colCargaAlternador" placeholder="Ej: 14.5"/></div>
 <div class="gfield"><label>Vigencia garantia</label><input type="text" id="colVigencia" value="12 meses"/></div>
-<div class="gfield"><label>Telefono cliente (opcional, para enviar garantia)</label><input type="text" id="colTelefonoCliente" placeholder="Ej: 1123456789"/></div>
+<div class="gfield"><label>Tipo de cliente</label><select id="colTipoCliente"><option value="">Elegir...</option><option value="Nuevo">Cliente nuevo</option><option value="Repetido">Cliente repetido</option></select></div>
+<div class="gfield"><label>Telefono cliente (obligatorio, para garantia y recordatorio)</label><input type="text" inputmode="tel" id="colTelefonoCliente" placeholder="Ej: 1123456789"/></div>
 <div class="gfield"><label>Precio</label><input type="text" id="colPrecio" placeholder="Ej: $150.000"/></div>
 <div class="gfield wide"><label>Forma de pago</label>
 <div style="display:flex;gap:8px" id="colPagoBtns">
@@ -1144,7 +1153,8 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="gfield wide" id="smEqBox" style="grid-column:1/-1"></div>
 <div class="gfield"><label>Carga regulador (opcional)</label><input type="text" id="smCarga" placeholder="Ej: 14.2"/></div>
 <div class="gfield"><label>Vigencia garantia</label><input type="text" id="smVigencia" value="6 meses"/></div>
-<div class="gfield"><label>Telefono cliente (opcional, para enviar garantia)</label><input type="text" id="smTel" placeholder="Ej: 1123456789"/></div>
+<div class="gfield"><label>Tipo de cliente</label><select id="smTipoCliente"><option value="">Elegir...</option><option value="Nuevo">Cliente nuevo</option><option value="Repetido">Cliente repetido</option></select></div>
+<div class="gfield"><label>Telefono cliente (obligatorio, para garantia y recordatorio)</label><input type="text" inputmode="tel" id="smTel" placeholder="Ej: 1123456789"/></div>
 <div class="gfield"><label>Precio</label><input type="text" id="smPrecio" placeholder="Ej: $75.000"/></div>
 <div class="gfield wide"><label>Forma de pago</label>
 <div style="display:flex;gap:8px" id="smPagoBtns">
@@ -1179,6 +1189,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div style="font-size:19px;font-weight:700;margin-bottom:14px" id="extraTitulo">Datos del servicio</div>
 <div class="gfield"><label>Fecha</label><input type="date" id="extraFecha"/></div>
 <div class="gfield"><label>Vehiculo</label><input type="text" id="extraVehiculo" placeholder="Ej: Corolla 2018"/></div>
+<div class="gfield"><label>Tipo de cliente</label><select id="extraTipoCliente"><option value="">Elegir...</option><option value="Nuevo">Cliente nuevo</option><option value="Repetido">Cliente repetido</option></select></div>
 <div class="gfield"><label>Telefono (opcional)</label><input type="text" id="extraTelefono" placeholder="Ej: 1123456789"/></div>
 <div class="gfield"><label>Precio</label><input type="text" id="extraPrecio" placeholder="Ej: $50.000"/></div>
 <div class="gfield"><label>Forma de pago</label>
@@ -2456,7 +2467,7 @@ function mostrarBuscador(){
 }
 function mostrarGarantias(){document.getElementById('p0').classList.add('hidden');document.getElementById('p6').classList.remove('hidden');titulo('Garantias');cambiarGTab(1);}
 // ---- Enlaces del menú: clic normal abre la sección acá; clic derecho / Ctrl+clic / rueda abre en pestaña nueva ----
-var NAV_HASH={resumen:'mostrarResumen',precios:'mostrarPrecios',servicio:'mostrarTipoServicio',stock:'mostrarStock',buscador:'mostrarBuscador',garantias:'mostrarGarantias',moto:'mostrarMoto',listas:'mostrarListasDist',iva:'mostrarIva',compras:'mostrarPedidos'};
+var NAV_HASH={resumen:'mostrarResumen',precios:'mostrarPrecios',servicio:'mostrarTipoServicio',stock:'mostrarStock',buscador:'mostrarBuscador',garantias:'mostrarGarantias',moto:'mostrarMoto',listas:'mostrarListasDist',iva:'mostrarIva',compras:'mostrarPedidos',recordatorios:'mostrarRecordatorios'};
 function navClick(e,fn){
   if(e.ctrlKey||e.metaKey||e.shiftKey||e.button!==0)return true; // deja que el navegador la abra en otra pestaña/ventana
   e.preventDefault();fn();return false;
@@ -2468,13 +2479,59 @@ function navAbrirHash(){
   if(typeof fn==='function'){try{fn();}catch(e){}}
   if(location.hash)history.replaceState(null,'',location.pathname+location.search);
 }
+// ---- Teléfonos: dejar solo 10 dígitos (sin 54, 9, 0 ni 15) ----
+function normTelAR(t){
+  var d=String(t||'').replace(/\D/g,'');
+  if(d.indexOf('54')===0)d=d.slice(2);
+  if(d.indexOf('9')===0&&d.length===11)d=d.slice(1);
+  if(d.indexOf('0')===0)d=d.slice(1);
+  var m=d.match(/^(\d{2,4})15(\d{6,8})$/);
+  if(m&&d.length>10)d=m[1]+m[2];
+  return d.length>10?d.slice(-10):d;
+}
+// ---- Recordatorios (2 años) ----
+function mostrarRecordatorios(){
+  ['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
+  document.getElementById('p14').classList.remove('hidden');
+  titulo('Recordatorios');
+  cargarRecordatorios();
+}
+function recEsc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+var recDatos=[];
+function cargarRecordatorios(){
+  var box=document.getElementById('recList');box.innerHTML='<div class="loading">Cargando...</div>';
+  api('getRecordatorios',{}).then(function(r){
+    if(!r||!r.ok){box.innerHTML='<div class="loading">No se pudo cargar</div>';return;}
+    recDatos=r.data||[];
+    if(!recDatos.length){box.innerHTML='<div class="loading">No hay clientes para avisar por ahora</div>';return;}
+    box.innerHTML=recDatos.map(function(c,i){
+      var d=c.dias,est=d<0?('Vencida hace '+(-d)+' días'):(d===0?'Vence hoy':'Vence en '+d+' días');
+      return '<div class="mc" style="margin-top:10px"><div style="font-weight:800">'+recEsc(c.vehiculo)+'</div>'
+       +'<div style="font-size:13px;color:var(--muted);margin:3px 0">Batería '+recEsc(c.modelo_bateria)+' · colocada '+recEsc(c.ultima_fecha)+'</div>'
+       +'<div style="font-size:13px;margin-bottom:8px">'+est+' · Tel: '+recEsc(c.telefono)+'</div>'
+       +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+       +'<button class="bp" onclick="recWhatsapp('+i+')">WhatsApp</button>'
+       +'<button class="bs" onclick="recMarcar('+i+',\'Baja\')">No avisar más</button></div></div>';
+    }).join('');
+  }).catch(function(){box.innerHTML='<div class="loading">No se pudo cargar</div>';});
+}
+function recWhatsapp(i){
+  var c=recDatos[i];if(!c)return;
+  var msg='Hola! Te escribimos de Baterías Nano. Hace casi 2 años te colocamos la batería de tu '+c.vehiculo+'. Es un buen momento para revisarla y evitar que te deje en la calle. Si no querés recibir más avisos, respondé BAJA.';
+  window.open('https://wa.me/549'+c.telefono+'?text='+encodeURIComponent(msg),'_blank');
+  recMarcar(i,'Avisado');
+}
+function recMarcar(i,estado){
+  var c=recDatos[i];if(!c)return;
+  api('marcarRecordatorio',{telefono:c.telefono,estado:estado,base:c.ultima_fecha}).then(function(){cargarRecordatorios();}).catch(function(){toast('No se pudo guardar');});
+}
 function volverInicio(){
-  ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
+  ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13','p14'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
   document.getElementById('p0').classList.remove('hidden');titulo('Stock Baterias');
   tipoExtra='';camExtra=null;
 }
 function mostrarTipoServicio(){
-  ['p0','p1','p2','p3','p4','p5','p6','p7','p9','p10','p11','p12','p13'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
+  ['p0','p1','p2','p3','p4','p5','p6','p7','p9','p10','p11','p12','p13','p14'].forEach(function(id){document.getElementById(id).classList.add('hidden');});
   document.getElementById('p8').classList.remove('hidden');
   titulo('Registrar Servicio');
 }
@@ -3178,7 +3235,7 @@ function abrirColocacion(id,codigo){
   document.getElementById('colDominio').value='';
   document.getElementById('colCargaAlternador').value='';
   document.getElementById('colVigencia').value='12 meses';
-  document.getElementById('colTelefonoCliente').value='';
+  document.getElementById('colTelefonoCliente').value='';document.getElementById('colTipoCliente').value='';
   document.getElementById('colPrecio').value='';
   document.querySelectorAll('#colPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
   document.querySelectorAll('#colUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
@@ -3225,6 +3282,8 @@ function confirmarColocacion(){if(!datosListos())return;
   if(!anio){toast('Completa el anio del vehiculo');return;}
   if(!motor){toast('Completa el motor');return;}
   if(!combustible){toast('Completa el combustible');return;}
+  if(!document.getElementById('colTipoCliente').value){toast('Elegi si es cliente nuevo o repetido');return;}
+  if(normTelAR(telefonoCliente).length<10){toast('Completa el telefono del cliente (con codigo de area)');return;}
   if(!precio){toast('Completa el precio');return;}
   if(!colPago){toast('Elegi la forma de pago');return;}
   if(colPago==='Transferencia'&&!colCuenta){toast('Elegi la cuenta destino');return;}
@@ -3252,7 +3311,8 @@ function confirmarColocacion(){if(!datosListos())return;
     dominio:dominio,
     carga_alternador:cargaAlternador,
     vigencia:vigencia,
-    telefono_cliente:telefonoCliente
+    telefono_cliente:normTelAR(telefonoCliente),
+    cliente_tipo:document.getElementById('colTipoCliente').value
   }).then(function(r){
     confirmandoColocacion=false;
     if(btnConfirmar){btnConfirmar.disabled=false;btnConfirmar.textContent='Confirmar';}
@@ -3292,7 +3352,7 @@ function abrirMotoOverlay(){
   smVal={pago:'',cuenta:'',ubi:''};confirmandoMoto=false;
   document.getElementById('smTitulo').textContent='Colocación batería de moto · '+(camExtra?camExtra.n:'');
   document.getElementById('smFecha').value=hoyStr();
-  ['smMoto','smAnio','smCil','smDominio','smBat','smCarga','smTel','smPrecio'].forEach(function(id){document.getElementById(id).value='';});
+  ['smMoto','smAnio','smCil','smDominio','smBat','smCarga','smTel','smPrecio'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('smTipoCliente').value='';
   document.getElementById('smVigencia').value='6 meses';
   var llenarMotos=function(){document.getElementById('smMotoList').innerHTML=BUSC_MOTO.map(function(x){return '<option value="'+lpEsc(x.v)+'">'+lpEsc(x.b||'')+'</option>';}).join('');};
   if(bmCargado)llenarMotos();else apiPost('buscadorGet',{moto:true}).then(function(r){if(r.ok){BUSC_MOTO=r.data||[];bmCargado=true;llenarMotos();}}).catch(function(){});
@@ -3332,6 +3392,8 @@ function confirmarServicioMoto(){
   if(!anio)return toast('Completa el año de la moto');
   if(!cil)return toast('Completa la cilindrada');
   if(!bat)return toast('Completa la batería colocada');
+  if(!document.getElementById('smTipoCliente').value)return toast('Elegi si es cliente nuevo o repetido');
+  if(normTelAR(g('smTel')).length<10)return toast('Completa el telefono del cliente (con codigo de area)');
   if(!precio)return toast('Completa el precio');
   if(!smVal.pago)return toast('Elegi la forma de pago');
   if(smVal.pago==='Transferencia'&&!smVal.cuenta)return toast('Elegi la cuenta destino');
@@ -3344,7 +3406,7 @@ function confirmarServicioMoto(){
   // Se registra como servicio (así aparece en Resumen) con el modelo "MOTO <batería>"
   api('registrarServicioExtra',{
     fecha:fecha,vehiculo:moto+(anio?' '+anio:'')+(cil?' '+cil:''),tipo:'MOTO '+bat,precio:precio,
-    forma_pago:smVal.pago,cuenta_transferencia:smVal.cuenta,ubicacion:smVal.ubi,tecnico:camExtra.n,telefono_cliente:d.tel,
+    forma_pago:smVal.pago,cuenta_transferencia:smVal.cuenta,ubicacion:smVal.ubi,tecnico:camExtra.n,telefono_cliente:normTelAR(d.tel),cliente_tipo:document.getElementById('smTipoCliente').value,
     anio_vehiculo:anio,motor:cil,combustible:'Nafta',dominio:d.dominio,carga_alternador:d.carga,vigencia:d.vigencia
   }).then(function(r){
     confirmandoMoto=false;btn.disabled=false;btn.textContent='Confirmar';
@@ -3377,7 +3439,7 @@ function abrirExtraOverlay(){
   document.getElementById('extraTitulo').textContent='Datos del servicio: '+tipoExtra;
   document.getElementById('extraFecha').value=hoyStr();
   document.getElementById('extraVehiculo').value='';
-  document.getElementById('extraTelefono').value='';
+  document.getElementById('extraTelefono').value='';document.getElementById('extraTipoCliente').value='';
   document.getElementById('extraPrecio').value=(tipoExtra==='Visita tecnica')?'28000':'';
   document.querySelectorAll('#extraPagoBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
   document.querySelectorAll('#extraUbiBtns .bs').forEach(function(b){b.style.background='transparent';b.style.color='#c7cde0';});
@@ -3414,6 +3476,7 @@ function confirmarServicioExtra(){
   var vehiculo=document.getElementById('extraVehiculo').value.trim();
   var precio=document.getElementById('extraPrecio').value.trim();
   if(!vehiculo){toast('Completa el vehiculo');return;}
+  if(!document.getElementById('extraTipoCliente').value){toast('Elegi si es cliente nuevo o repetido');return;}
   if(!precio){toast('Completa el precio');return;}
   if(!extraPago){toast('Elegi la forma de pago');return;}
   if(extraPago==='Transferencia'&&!extraCuenta){toast('Elegi la cuenta destino');return;}
@@ -3431,7 +3494,8 @@ function confirmarServicioExtra(){
     cuenta_transferencia:extraCuenta,
     ubicacion:extraUbi,
     tecnico:camExtra.n,
-    telefono_cliente:document.getElementById('extraTelefono').value.trim()
+    telefono_cliente:normTelAR(document.getElementById('extraTelefono').value),
+    cliente_tipo:document.getElementById('extraTipoCliente').value
   }).then(function(r){
     confirmandoExtra=false;
     if(btnE){btnE.disabled=false;btnE.textContent='Confirmar';}

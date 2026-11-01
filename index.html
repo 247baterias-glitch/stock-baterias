@@ -1110,7 +1110,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button type="button" class="bs" onclick="setColPago('Tarjeta',this)" style="flex:1">Tarjeta</button>
 </div>
 </div>
-<div class="gfield wide" id="colCuentaField" style="display:none"><label>Cuenta destino</label>
+<div class="gfield wide" id="colCuentaField" style="display:none"><label>¿A qué cuenta entró la transferencia?</label>
 <div style="display:flex;gap:8px;flex-wrap:wrap" id="colCuentaBtns">
 <button type="button" class="bs" onclick="setColCuenta('Mateo',this)" style="flex:1">Mateo</button>
 <button type="button" class="bs" onclick="setColCuenta('Mario',this)" style="flex:1">Mario</button>
@@ -1153,7 +1153,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button type="button" class="bs" onclick="smSet('pago','Tarjeta',this)" style="flex:1">Tarjeta</button>
 </div>
 </div>
-<div class="gfield wide" id="smCuentaField" style="display:none"><label>Cuenta destino</label>
+<div class="gfield wide" id="smCuentaField" style="display:none"><label>¿A qué cuenta entró la transferencia?</label>
 <div style="display:flex;gap:8px;flex-wrap:wrap" id="smCuentaBtns">
 <button type="button" class="bs" onclick="smSet('cuenta','Mateo',this)" style="flex:1">Mateo</button>
 <button type="button" class="bs" onclick="smSet('cuenta','Mario',this)" style="flex:1">Mario</button>
@@ -1188,7 +1188,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button type="button" class="bs" onclick="setExtraPago('Tarjeta',this)" style="flex:1">Tarjeta</button>
 </div>
 </div>
-<div class="gfield" id="extraCuentaField" style="display:none"><label>Cuenta destino</label>
+<div class="gfield" id="extraCuentaField" style="display:none"><label>¿A qué cuenta entró la transferencia?</label>
 <div style="display:flex;gap:8px;flex-wrap:wrap" id="extraCuentaBtns">
 <button type="button" class="bs" onclick="setExtraCuenta('Mateo',this)" style="flex:1">Mateo</button>
 <button type="button" class="bs" onclick="setExtraCuenta('Mario',this)" style="flex:1">Mario</button>
@@ -3612,6 +3612,36 @@ function mostrarResumen(){
     renderStatsMes();
   }).catch(function(e){document.getElementById('resumenBody').innerHTML='<div class="err">Error: '+e.message+'</div>';});
 }
+function ctaMarcarTodos(k,btn){
+  var cbs=[].slice.call(document.querySelectorAll('.ctaSel')).filter(function(c){return c.dataset.cta===k;});
+  var todos=cbs.every(function(c){return c.checked;});
+  cbs.forEach(function(c){c.checked=!todos;});
+  btn.textContent=todos?'Marcar todos':'Desmarcar todos';
+}
+// Cambia la cuenta destino de los servicios marcados (reenvía el servicio completo con la cuenta nueva)
+function ctaMover(k,btn){
+  var dest=document.getElementById('ctaDest_'+k).value;
+  var filas=[].slice.call(document.querySelectorAll('.ctaSel')).filter(function(c){return c.dataset.cta===k&&c.checked;}).map(function(c){return c.dataset.fila;});
+  if(!filas.length)return toast('Marcá al menos un servicio');
+  if(!confirm('¿Pasar '+filas.length+' servicio'+(filas.length===1?'':'s')+' de '+k+' a la cuenta de '+dest+'?'))return;
+  btn.disabled=true;
+  var lista=serviciosCache.filter(function(s){return filas.indexOf(String(s.fila))>=0;});
+  var hechos=0,errores=0;
+  sync('Guardando...');
+  lista.reduce(function(p,s){
+    return p.then(function(){
+      btn.textContent='Guardando '+(hechos+errores+1)+'/'+lista.length+'...';
+      return api('actualizarServicioCompleto',{fila:s.fila,fecha:s.fecha||'',vehiculo:s.vehiculo||'',anio_vehiculo:s.anio_vehiculo||'',motor:s.motor||'',combustible:s.combustible||'',
+        modelo_bateria:s.modelo_bateria||'',dominio:s.dominio||'',carga_alternador:s.carga_alternador||'',vigencia:s.vigencia||'',telefono_cliente:s.telefono_cliente||'',
+        precio:s.precio||'',forma_pago:s.forma_pago||'',cuenta_transferencia:dest,ubicacion:s.ubicacion||'',tecnico:s.tecnico||''})
+      .then(function(r){if(r&&r.ok)hechos++;else errores++;},function(){errores++;});
+    });
+  },Promise.resolve()).then(function(){
+    sync(errores?'Error':'Sincronizado');
+    toast(hechos+' servicio'+(hechos===1?'':'s')+' pasado'+(hechos===1?'':'s')+' a '+dest+(errores?' · '+errores+' con error':''));
+    cargarHistorialMes();
+  });
+}
 function calcularStatsMes(lista){
   var porTecnico={}, porMarca={}, porModelo={}, modeloMarca={}, porPago={}, porPagoMonto={}, porCuentaTransferencia={}, porCuentaTransferenciaMonto={};
   var totalColoc=0, totalArr=0, totalCarga=0, totalVis=0, motoLista=[];
@@ -3776,8 +3806,8 @@ function renderStatsMes(){
       .sort(function(a,b){return String(b.fecha).localeCompare(String(a.fecha));});
     if(ls.length)ultCta[k]=String(ls[0].fecha);
     detCtas+='<details class="sv-det" style="margin-top:10px"><summary style="cursor:pointer;color:#a78bfa;font-weight:700;font-size:13px">Ver los '+ls.length+' servicios de '+lpEsc(k)+'</summary><div style="max-height:260px;overflow:auto;margin-top:6px">'+
-      ls.map(function(s){return '<div style="display:flex;gap:10px;font-size:12.5px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span style="color:#8a90b3;white-space:nowrap">'+fmtFecha(String(s.fecha))+'</span><span style="flex:1;min-width:0">'+lpEsc(s.vehiculo||s.modelo_bateria||'')+'</span><span style="white-space:nowrap">'+lpEsc(s.tecnico||'')+'</span><span style="white-space:nowrap;font-weight:700">$'+formatMoney(parseFloat(String(s.precio||'').replace(/[^0-9.-]/g,''))||0)+'</span></div>';}).join('')+
-      '</div></details>';
+      ls.map(function(s){return '<label style="display:flex;gap:10px;align-items:center;font-size:12.5px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer"><input type="checkbox" class="ctaSel" data-fila="'+lpEsc(s.fila)+'" data-cta="'+lpEsc(k)+'" style="accent-color:#a78bfa"><span style="color:#8a90b3;white-space:nowrap">'+fmtFecha(String(s.fecha))+'</span><span style="flex:1;min-width:0">'+lpEsc(s.vehiculo||s.modelo_bateria||'')+'</span><span style="white-space:nowrap">'+lpEsc(s.tecnico||'')+'</span><span style="white-space:nowrap;font-weight:700">$'+formatMoney(parseFloat(String(s.precio||'').replace(/[^0-9.-]/g,''))||0)+'</span></label>';}).join('')+
+      '</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:13px"><button type="button" class="bs" style="padding:6px 10px;font-size:12.5px" onclick="ctaMarcarTodos(\''+lpEsc(k)+'\',this)">Marcar todos</button><span style="color:#8a90b3">Pasar marcados a</span><select id="ctaDest_'+lpEsc(k)+'" style="padding:6px 8px;border-radius:8px;background:#14183f;color:#fff;border:1px solid #3a3f6b">'+['Mario','Mateo','Natacha','Emiliano'].filter(function(x){return x!==k;}).map(function(x){return '<option>'+x+'</option>';}).join('')+'</select><button type="button" class="bp" style="padding:6px 12px;font-size:12.5px;width:auto" onclick="ctaMover(\''+lpEsc(k)+'\',this)">Cambiar cuenta</button></div></details>';
   });
   h+=caja('&#127974; Por cuenta de transferencia',ctas.length?'$'+formatMoney(totCtaM)+' transferidos':'',ctas.length?barras(ctas.map(function(k){var m=st.porCuentaTransferenciaMonto[k]||0;return {k:k,v:st.porCuentaTransferencia[k],extra:'$'+formatMoney(m)+' · '+pctTxt(m,totCtaM)+' del monto'+(ultCta[k]?' · última: '+fmtFecha(ultCta[k]):''),tip:k+': '+st.porCuentaTransferencia[k]+' transferencias, $'+formatMoney(m)};}),ctas.reduce(function(t,k){return t+st.porCuentaTransferencia[k];},0))+detCtas:'<div class="sv-vacio">Sin transferencias en '+lpEsc(mesLabel)+'</div>');
   h+='</div>';

@@ -947,7 +947,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
 <div id="urgBox"></div>
 <button class="cmp-btn" onclick="mostrarComparador()">&#9878; Comparar precios entre distribuidores</button>
-<div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button id="lpOrdBtn" class="bs" style="padding:4px 10px;font-size:12px" onclick="lpToggleOrdenDist()">↕ Ordenar marcas</button></div>
+<div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button id="lpOrdBtn" class="bs" style="padding:4px 10px;font-size:12px" onclick="lpToggleOrdenDist()">↕ Ordenar distribuidores</button></div>
 <div class="ptabs" id="lpTabs"></div>
 <div id="lpErr"></div>
 <div class="mc lp-info" id="lpInfo"></div>
@@ -962,7 +962,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <div class="lp-desc" id="lpDescBox"></div>
 <div class="lp-estado" id="lpEstado"></div>
 </div>
-<div class="sbox"><input type="text" id="busLP" placeholder="Buscar marca o modelo..." oninput="lpRenderTabla()"/></div>
+<div style="display:flex;gap:8px;align-items:center"><div class="sbox" style="flex:1"><input type="text" id="busLP" placeholder="Buscar marca o modelo..." oninput="lpRenderTabla()"/></div><button id="lpOrdMarcaBtn" class="bs" style="padding:8px 10px;font-size:12px;white-space:nowrap" onclick="lpToggleOrdenMarca()">↕ Ordenar marcas</button></div>
 <div class="twrap"><table class="ptable">
 <thead id="lpHead"></thead><tbody id="lpBody"></tbody>
 </table></div>
@@ -1490,7 +1490,7 @@ var nomHojaOk=null,nomCargando=null,nomMigrado=false;
 function nomConstruir(filas){
   var hoja={};(filas||[]).forEach(function(f){hoja[f.campo]=hoja[f.campo]||{};hoja[f.campo][f.clave]={v:f.valor,t:f.t||0};});
   var L=ledgerTodo(),pend=[],res={};
-  ['plNombres','plOcultos','motoNombres','distOrden'].forEach(function(c){
+  ['plNombres','plOcultos','motoNombres','distOrden','marcaOrden'].forEach(function(c){
     var m={},h=hoja[c]||{},l=L[c]||{};
     Object.keys(h).forEach(function(k){if(h[k].v)m[k]=h[k].v;});
     Object.keys(l).forEach(function(k){var e=l[k];if(!h[k]||e.t>h[k].t){if(e.v===null||e.v==='')delete m[k];else m[k]=e.v;pend.push({campo:c,clave:k,valor:e.v===null?'':String(e.v),t:e.t});}});
@@ -1504,6 +1504,9 @@ function nomAplicar(res){
   motoNom=motoArmar(res.motoNombres);
   if(res.distOrden&&res.distOrden.global){
     try{lpAplicarOrdenDist(JSON.parse(res.distOrden.global));if(visible('p10'))lpRenderTabs();}catch(e){}
+  }
+  if(res.marcaOrden&&res.marcaOrden.global){
+    try{MARCA_ORDEN=JSON.parse(res.marcaOrden.global);if(visible('p10'))lpRenderTabla();}catch(e){}
   }
   if(plNomEdit===null&&visible('p4'))filtrarPrecios();
   if(motoNomEdit===null&&visible('p9')&&motoTabActual<=3)filtrarMoto();
@@ -6164,7 +6167,7 @@ function lpRenderTabs(){
   });
   document.getElementById('lpTabs').innerHTML=h;
   var b=document.getElementById('lpOrdBtn');
-  if(b)b.textContent=lpOrdenEditando?'✓ Listo':'↕ Ordenar marcas';
+  if(b)b.textContent=lpOrdenEditando?'✓ Listo':'↕ Ordenar distribuidores';
 }
 function lpCambiarDist(i){
   if(lpOcupado){toast('Espera a que termine la subida');return;}
@@ -6383,14 +6386,41 @@ function lpMarcaNorm(marca,modelo){
   }
   return s;
 }
+// Orden de marcas elegido a mano (ej: poner "BARI" primero dentro de una lista). Las marcas que no estén
+// en esta lista se ordenan alfabéticamente después, como siempre. Se sincroniza entre las 3 PCs.
+var MARCA_ORDEN=[],lpOrdenMarcaEditando=false;
+function lpPosMarca(m){var i=MARCA_ORDEN.indexOf(m);return i===-1?9999:i;}
 function lpOrdenar(items){
   return items.slice().sort(function(a,b){
     var ma=lpMarcaNorm(a.marca,a.modelo),mb=lpMarcaNorm(b.marca,b.modelo);
     if(!ma&&mb)return 1;
     if(ma&&!mb)return -1;
-    if(ma!==mb)return ma.localeCompare(mb,'es');
+    if(ma!==mb){
+      var pa=lpPosMarca(ma),pb=lpPosMarca(mb);
+      if(pa!==pb)return pa-pb;
+      return ma.localeCompare(mb,'es');
+    }
     return String(a.modelo).localeCompare(String(b.modelo),'es',{numeric:true,sensitivity:'base'});
   });
+}
+function lpToggleOrdenMarca(){
+  lpOrdenMarcaEditando=!lpOrdenMarcaEditando;
+  document.getElementById('busLP').value='';
+  lpRenderTabla();
+}
+function lpMoverMarca(mn,dir){
+  var visibles=[],vistos={};
+  lpOrdenar(lpData.items).forEach(function(it){
+    var m=lpMarcaNorm(it.marca,it.modelo);
+    if(m&&!vistos[m]){vistos[m]=1;visibles.push(m);}
+  });
+  var i=visibles.indexOf(mn),j=i+dir;
+  if(i===-1||j<0||j>=visibles.length)return;
+  var tmp=visibles[i];visibles[i]=visibles[j];visibles[j]=tmp;
+  var resto=MARCA_ORDEN.filter(function(m){return visibles.indexOf(m)===-1;});
+  MARCA_ORDEN=visibles.concat(resto);
+  lpRenderTabla();
+  nomGuardarUno('marcaOrden','global',JSON.stringify(MARCA_ORDEN),'Orden guardado');
 }
 function lpRenderTabla(){
   var items0=lpData.items;
@@ -6423,7 +6453,11 @@ function lpRenderTabla(){
     if(mn!==grupo){
       grupo=mn;
       var cant=items.filter(function(x){return lpMarcaNorm(x.marca,x.modelo)===mn;}).length;
-      h+='<tr class="lp-grp"><td colspan="'+ncol+'">'+lpEsc(mn||'SIN MARCA')+' ('+cant+')</td></tr>';
+      var etiqueta=lpEsc(mn||'SIN MARCA')+' ('+cant+')';
+      if(lpOrdenMarcaEditando&&mn){
+        etiqueta='<button class="lp-ord-fl" onclick="lpMoverMarca(\''+mn+'\',-1)">&#9650;</button><button class="lp-ord-fl" onclick="lpMoverMarca(\''+mn+'\',1)">&#9660;</button> '+etiqueta;
+      }
+      h+='<tr class="lp-grp"><td colspan="'+ncol+'">'+etiqueta+'</td></tr>';
     }
     h+='<tr><td>'+lpEsc(mn||'-')+'</td><td><b>'+lpEsc(it.modelo)+'</b></td>';
     if(ext.ah)h+='<td>'+(it.ah?lpEsc(it.ah)+' Ah':'—')+'</td>';
@@ -6437,6 +6471,8 @@ function lpRenderTabla(){
     h+='<td><div class="lp-row-act"><button title="Corregir modelo o costo" onclick="lpEditarItem(\''+it.id+'\')">&#9998;</button><button title="Quitar fila" style="color:#f87171" onclick="lpEliminarItem(\''+it.id+'\')">&#10005;</button></div></td></tr>';
   });
   body.innerHTML=h;
+  var ob=document.getElementById('lpOrdMarcaBtn');
+  if(ob)ob.textContent=lpOrdenMarcaEditando?'✓ Listo':'↕ Ordenar marcas';
 }
 function lpEstado(t){document.getElementById('lpEstado').textContent=t||'';}
 function lpBotones(dis){document.querySelectorAll('#p10 .lp-tools button').forEach(function(b){b.disabled=dis;});}

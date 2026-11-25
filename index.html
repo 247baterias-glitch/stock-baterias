@@ -2651,7 +2651,43 @@ var PL_TABS=['Moura','Willard / UB','Sermat','Herbo','Bari','Volta','Bosch','Var
 // Marcas que se compran siempre facturadas: la venta se calcula sobre el costo CON IVA
 var PL_FACTURADO={'Varta':'Dimac vende todo facturado'};
 var plCfg={marcas:{},precios:{}},plCargado=false;
-function plLista(){return tabActual===1?PMOURA:tabActual===2?PUB:tabActual===3?PSERMAT:tabActual===4?PHERBO:tabActual===5?PBARI:tabActual===6?PVOLTA:tabActual===7?PBOSCH:PVARTA;}
+// Nombre normalizado (el mismo que usan las Listas de Distribuidores) de cada marca de Lista de Precios
+var PL_MARCA_NORM={'Moura':'MOURA','Willard / UB':'WILLARD','Sermat':'SERMAT','Herbo':'HERBO','Bari':'BARI','Volta':'VOLTA','Bosch':'BOSCH','Varta':'VARTA'};
+// Catálogo fijo por marca: se usa solo si esa marca NO tiene un "distribuidor de referencia" elegido
+var PL_MARCA_LISTA={'Moura':PMOURA,'Willard / UB':PUB,'Sermat':PSERMAT,'Herbo':PHERBO,'Bari':PBARI,'Volta':PVOLTA,'Bosch':PBOSCH,'Varta':PVARTA};
+// ---- Distribuidor de referencia por marca ----
+// Si una marca tiene elegido un distribuidor, su "Lista de Precios" sale en vivo de lo que subiste en
+// "Listas de Distribuidores" para ese distribuidor (mismos modelos, mismo precio, mismo descuento), en vez
+// del catálogo fijo. Así no hay que cargar nada a mano: se actualiza solo con lo que subís allá.
+function plRefDist(marca){
+  var m=plCfg.marcas[marca];
+  if(m&&m.refDist!==undefined)return m.refDist;
+  if(marca==='Bari')return 'Bari'; // antes de elegir nada a mano: Bari (marca) = distribuidor "Bari"
+  return '';
+}
+function plListaDist(marca){
+  if(!plActItems)return null;
+  var dist=plRefDist(marca);if(!dist)return null;
+  var mn=PL_MARCA_NORM[marca]||marca.toUpperCase();
+  var porModelo={};
+  plActItems.forEach(function(it){
+    if(it.d!==dist)return;
+    if(lpMarcaNorm(it.marca,it.modelo)!==mn)return;
+    var mod=String(it.modelo).trim();if(!mod)return;
+    var ya=porModelo[mod];
+    if(ya&&ya.precio<=it.precio)return; // si el modelo se repite en la lista, queda el precio más bajo
+    porModelo[mod]={precio:it.precio};
+  });
+  var out=Object.keys(porModelo).map(function(mod){return {m:mod,l:'$'+formatARS(porModelo[mod].precio),p:''};});
+  out.sort(function(a,b){return a.m.localeCompare(b.m,'es',{numeric:true});});
+  return out;
+}
+function plListaMarca(marca){
+  var din=plListaDist(marca);
+  if(din)return din;
+  return PL_MARCA_LISTA[marca]||[];
+}
+function plLista(){return plListaMarca(plMarca());}
 function plMarca(){return PL_TABS[tabActual-1];}
 function plNum(t){return parseFloat(String(t||'').replace(/\$/g,'').replace(/\./g,'').replace(',','.'))||0;}
 // Margen por defecto = la diferencia venta-lista más repetida de la lista original
@@ -2660,21 +2696,29 @@ function plMargenDefault(lista){
   lista.forEach(function(x){var d=Math.round(plNum(x.p)-plNum(x.l));if(d>0){c[d]=(c[d]||0)+1;if(c[d]>max){max=c[d];best=d;}}});
   return best;
 }
-function plCfgMarca(){
-  var m=plCfg.marcas[plMarca()]||{};
-  // Varta: lista de precios contado de Dimac (26/06/26), por defecto con su descuento 35 + 15
-  var pctDef=plMarca()==='Varta'?'-35 -15':'';
-  return {margen:(m.margen!==undefined?Number(m.margen):plMargenDefault(plLista())),pct:m.pct!==undefined?m.pct:pctDef};
+// Config (margen + % de descuento) de una marca. Si tiene distribuidor de referencia, el % sale del
+// descuento que esa marca tiene cargado en Listas de Distribuidores para ese distribuidor (no se edita acá).
+function plCfgParaMarca(marca,lista){
+  var m=plCfg.marcas[marca]||{},rd=plRefDist(marca),pct;
+  if(rd){
+    var mn=PL_MARCA_NORM[marca]||marca.toUpperCase(),dd=plActDescs[rd];
+    pct=dd&&dd.marcas?(dd.marcas[mn]||''):'';
+  }else{
+    var pctDef=marca==='Varta'?'-35 -15':'';
+    pct=m.pct!==undefined?m.pct:pctDef;
+  }
+  return {margen:(m.margen!==undefined?Number(m.margen):plMargenDefault(lista)),pct:pct,refDist:rd};
 }
+function plCfgMarca(){return plCfgParaMarca(plMarca(),plLista());}
 function plKey(x){return plMarca()+'|'+String(x.m).trim();}
+function plSetRefDist(v){
+  var m=plMarca();
+  plCfg.marcas[m]=plCfg.marcas[m]||{};
+  plCfg.marcas[m].refDist=v||'';
+  plActAsegurarCargado(function(){plGuardar(v?'Lista de '+m+' ahora sale de '+v:'Lista de '+m+' vuelve al catálogo fijo');});
+}
 // ---- Búsqueda de baterías por medida/modelo (ej: "12x65"), usada en el Buscador de Baterías ----
 // Recorre TODAS las marcas del catálogo (no solo la pestaña abierta), con el mismo cálculo de precio que "Lista de Precios".
-var PL_MARCA_LISTA={'Moura':PMOURA,'Willard / UB':PUB,'Sermat':PSERMAT,'Herbo':PHERBO,'Bari':PBARI,'Volta':PVOLTA,'Bosch':PBOSCH,'Varta':PVARTA};
-function plCfgParaMarca(marca,lista){
-  var m=plCfg.marcas[marca]||{};
-  var pctDef=marca==='Varta'?'-35 -15':'';
-  return {margen:(m.margen!==undefined?Number(m.margen):plMargenDefault(lista)),pct:m.pct!==undefined?m.pct:pctDef};
-}
 function plVentaItem(marca,lista,x){
   var c=plCfgParaMarca(marca,lista),f=lpFactorDesc(c.pct),mg=c.margen,fac=!!PL_FACTURADO[marca];
   var mgDef=plMargenDefault(lista);
@@ -2690,7 +2734,7 @@ function plVentaItem(marca,lista,x){
 function buscarBateriasPorTexto(q){
   var out=[];
   Object.keys(PL_MARCA_LISTA).forEach(function(marca){
-    var lista=PL_MARCA_LISTA[marca];
+    var lista=plListaMarca(marca);
     lista.forEach(function(x){
       var k=marca+'|'+String(x.m).trim();
       if(plOc[k])return; // no mostrar las que se sacaron de la venta
@@ -2716,9 +2760,12 @@ function plGuardar(msg){
 function plGuardarCtrl(){
   var mg=lpNum(document.getElementById('plMargen').value);
   if(isNaN(mg)||mg<0){toast('Margen inválido');return;}
-  var pct=document.getElementById('plPct').value.trim();
-  plCfg.marcas[plMarca()]={margen:mg,pct:pct};
-  plGuardar('Guardado para '+plMarca());
+  var m=plMarca(),prev=plCfg.marcas[m]||{},pctEl=document.getElementById('plPct');
+  var nuevo={margen:mg};
+  if(prev.refDist!==undefined)nuevo.refDist=prev.refDist;
+  nuevo.pct=pctEl?pctEl.value.trim():prev.pct;
+  plCfg.marcas[m]=nuevo;
+  plGuardar('Guardado para '+m);
 }
 function plEditarVenta(i){
   var x=plLista()[i];if(!x)return;
@@ -2739,12 +2786,20 @@ function plEditarPrecio(i){
   plCfg.precios[k]=n;plGuardar('Precio actualizado');
 }
 function plRenderCtrl(){
-  var c=plCfgMarca(),f=lpFactorDesc(c.pct),m=plMarca();
-  var h='<div class="lp-margen" style="margin-bottom:10px"><span>Venta de '+lpEsc(m)+' = costo + $</span><input type="text" inputmode="numeric" id="plMargen" value="'+formatMoney(c.margen)+'" onkeydown="if(event.key===\'Enter\')plGuardarCtrl()"/></div>';
-  h+='<div class="lp-margen"><span>% sobre el precio de cada batería</span><input type="text" id="plPct" value="'+lpEsc(c.pct)+'" placeholder="Ej: +4 -3" style="width:140px" onkeydown="if(event.key===\'Enter\')plGuardarCtrl()"/><button class="bs" onclick="plGuardarCtrl()">Guardar</button>';
-  h+='<span style="font-size:12.5px;color:var(--muted)">'+(f!==1?'<b style="color:#a78bfa">'+lpDescTexto(c.pct)+'</b> → pagás el '+(f*100).toLocaleString('es-AR',{maximumFractionDigits:2})+'% del precio':'+4 = aumento · -14 = descuento · +4 -3 = aumento y después descuento')+'</span></div>';
-  h+='<div class="urg-pl"><button class="bs pla-btn" onclick="plActAbrir()">&#128260; Actualizar precios desde una lista de distribuidor</button></div>';
-  h+='<div id="plAct" class="pla-box'+(plActMarca===m?'':' hidden')+'"></div>';
+  var c=plCfgMarca(),f=lpFactorDesc(c.pct),m=plMarca(),rd=c.refDist;
+  var h='<div class="lp-margen" style="margin-bottom:10px"><span>Lista de precios de '+lpEsc(m)+' desde</span><select id="plRefDistSel" onchange="plSetRefDist(this.value)" style="max-width:220px">';
+  h+='<option value=""'+(rd?'':' selected')+'>Catálogo fijo (cargado a mano)</option>';
+  DISTRIBUIDORES_BASE.forEach(function(d){h+='<option value="'+lpEsc(d)+'"'+(d===rd?' selected':'')+'>'+lpEsc(d)+'</option>';});
+  h+='</select></div>';
+  h+='<div class="lp-margen" style="margin-bottom:10px"><span>Venta de '+lpEsc(m)+' = costo + $</span><input type="text" inputmode="numeric" id="plMargen" value="'+formatMoney(c.margen)+'" onkeydown="if(event.key===\'Enter\')plGuardarCtrl()"/></div>';
+  if(rd){
+    h+='<div class="lp-margen"><span style="font-size:12.5px;color:var(--muted)">Descuento (de Listas de Distribuidores, "'+lpEsc(rd)+'"): '+(f!==1?'<b style="color:#a78bfa">'+lpDescTexto(c.pct)+'</b> → pagás el '+(f*100).toLocaleString('es-AR',{maximumFractionDigits:2})+'% del precio':'sin descuento cargado')+'</span></div>';
+  }else{
+    h+='<div class="lp-margen"><span>% sobre el precio de cada batería</span><input type="text" id="plPct" value="'+lpEsc(c.pct)+'" placeholder="Ej: +4 -3" style="width:140px" onkeydown="if(event.key===\'Enter\')plGuardarCtrl()"/><button class="bs" onclick="plGuardarCtrl()">Guardar</button>';
+    h+='<span style="font-size:12.5px;color:var(--muted)">'+(f!==1?'<b style="color:#a78bfa">'+lpDescTexto(c.pct)+'</b> → pagás el '+(f*100).toLocaleString('es-AR',{maximumFractionDigits:2})+'% del precio':'+4 = aumento · -14 = descuento · +4 -3 = aumento y después descuento')+'</span></div>';
+    h+='<div class="urg-pl"><button class="bs pla-btn" onclick="plActAbrir()">&#128260; Actualizar precios desde una lista de distribuidor</button></div>';
+    h+='<div id="plAct" class="pla-box'+(plActMarca===m?'':' hidden')+'"></div>';
+  }
   h+='<div class="urg-pl"><button class="urg-btn" onclick="urgAbrir()">&#128680; URGENTE COMPRAR</button><div id="urgPl" class="urg-chips"></div></div>';
   h+='<div id="urgForm" class="urg-form hidden"><input type="text" id="urgModelo" placeholder="Modelo de batería de '+lpEsc(m)+' (ej: M22GD 12X65)" onkeydown="if(event.key===\'Enter\')urgGuardar()"/><input type="text" id="urgNota" placeholder="Nota (opcional): cantidad, para quién..." onkeydown="if(event.key===\'Enter\')urgGuardar()"/><button class="bp" id="urgBtn" onclick="urgGuardar()">Guardar</button></div>';
   if(PL_FACTURADO[m])h+='<div class="pl-fac">&#129534; '+lpEsc(PL_FACTURADO[m])+': la venta se calcula sobre el <b>costo con IVA (21%)</b> + $'+formatMoney(c.margen)+'.</div>';
@@ -2754,9 +2809,29 @@ function plRenderCtrl(){
   if(plActMarca===m)plActPintar();
 }
 // ---- Actualizar precios desde las listas que subiste en Listas de Distribuidores ----
-var PL_MARCA_NORM={'Moura':'MOURA','Willard / UB':'WILLARD','Sermat':'SERMAT','Herbo':'HERBO','Bari':'BARI','Volta':'VOLTA','Bosch':'BOSCH','Varta':'VARTA'};
-var plActItems=null,plActDescs={},plActMarca=null,plActDist='',plActSel={},plActCopiarDesc=false,plActCargando=false;
+var plActItems=null,plActDescs={},plActMarca=null,plActDist='',plActSel={},plActCopiarDesc=false,plActCargando=false,plActCargandoCbs=[];
 function plActFuenteGuardada(m){try{return localStorage.getItem('plActFuente_'+m)||'';}catch(e){return '';}}
+// Trae (una sola vez, con caché) los ítems y descuentos de TODAS las listas de distribuidores subidas.
+// La usan tanto "Actualizar precios" como la lista en vivo por distribuidor de referencia y el Buscador de Baterías.
+function plActAsegurarCargado(cb){
+  if(plActItems){cb&&cb();return;}
+  if(plActCargando){if(cb)plActCargandoCbs.push(cb);return;}
+  plActCargando=true;
+  apiPost('listasTodos').then(function(r){
+    plActCargando=false;
+    if(r&&r.ok){
+      plActItems=(r.items||[]).filter(function(it){return Number(it.precio)>0;});
+      lpNormItems(plActItems);
+      plActDescs=r.descs||{};
+    }
+    cb&&cb();
+    var cbs=plActCargandoCbs;plActCargandoCbs=[];cbs.forEach(function(f){f&&f();});
+  }).catch(function(){
+    plActCargando=false;
+    cb&&cb();
+    var cbs=plActCargandoCbs;plActCargandoCbs=[];cbs.forEach(function(f){f&&f();});
+  });
+}
 function plActAbrir(){
   var m=plMarca();
   if(plActMarca===m){plActMarca=null;document.getElementById('plAct').classList.add('hidden');return;}
@@ -2764,15 +2839,10 @@ function plActAbrir(){
   var el=document.getElementById('plAct');el.classList.remove('hidden');
   if(plActItems){plActPintar();return;}
   el.innerHTML='<div class="loading">Leyendo las listas de los distribuidores...</div>';
-  if(plActCargando)return;plActCargando=true;
-  apiPost('listasTodos').then(function(r){
-    plActCargando=false;
-    if(!r||!r.ok){el.innerHTML='<div class="err">No se pudieron leer las listas: '+lpEsc(r?r.error:'')+'</div>';return;}
-    plActItems=(r.items||[]).filter(function(it){return Number(it.precio)>0;});
-    lpNormItems(plActItems);
-    plActDescs=r.descs||{};
+  plActAsegurarCargado(function(){
+    if(!plActItems){el.innerHTML='<div class="err">No se pudieron leer las listas</div>';return;}
     if(plActMarca)plActPintar();
-  }).catch(function(e){plActCargando=false;el.innerHTML='<div class="err">'+lpEsc(e.message)+'</div>';});
+  });
 }
 // Precios de la marca en cada distribuidor, por modelo (clave del comparador)
 // Ya con el descuento que tiene esa marca en ese distribuidor (el mismo que se ve en Listas de Distribuidores).
@@ -2919,12 +2989,23 @@ function plNomGuardar(k,orig){
   });
 }
 function filtrarPrecios(){
-  var b=document.getElementById('busP').value.toLowerCase();
+  var b=document.getElementById('busP').value.toLowerCase(),marcaAct=plMarca();
+  if(plRefDist(marcaAct)&&!plActItems){
+    plRenderCtrl();
+    document.getElementById('preciosHead').innerHTML='';
+    document.getElementById('preciosBody').innerHTML='<tr><td colspan="11" style="text-align:center;padding:1rem;color:#94a0af">Cargando lista de '+lpEsc(marcaAct)+' desde Listas de Distribuidores...</td></tr>';
+    plActAsegurarCargado(function(){if(visible('p4')&&plMarca()===marcaAct)filtrarPrecios();});
+    return;
+  }
   var lista=plLista(),c=plCfgMarca(),f=lpFactorDesc(c.pct),hayDesc=f!==1,mg=c.margen,fac=!!PL_FACTURADO[plMarca()];
   var mgDef=plMargenDefault(lista);
   plRenderCtrl();
   document.getElementById('preciosHead').innerHTML='<tr><th>Marca</th><th>Modelo</th><th>Precio</th>'+(hayDesc?'<th>Desc.</th><th>Costo c/desc.</th>':'')+'<th style="color:#2dd4bf">Costo c/IVA (21%)</th><th style="color:#15803d">Venta con envío ('+(fac?'costo c/IVA ':'')+'+$'+formatMoney(mg)+')</th><th style="color:#15803d">Venta c/IVA (21%)</th><th style="color:#0e7490" title="Venta con envío − $'+formatMoney(RETIRO_DESC)+'">Retirando por depósito</th><th style="color:#dc2626">Si llama decidido</th><th>Stock</th></tr>';
   if(!plNomCargado)plNomCargar();
+  if(plRefDist(marcaAct)&&!lista.length){
+    document.getElementById('preciosBody').innerHTML='<tr><td colspan="11" style="text-align:center;padding:1rem;color:#94a0af">No hay modelos de '+lpEsc(marcaAct)+' cargados en la lista de "'+lpEsc(plRefDist(marcaAct))+'" en Listas de Distribuidores.</td></tr>';
+    return;
+  }
   var nOc=lista.filter(function(x){return plOc[plKey(x)];}).length,bar=document.getElementById('plOcBar');
   if(bar){bar.classList.toggle('hidden',!nOc&&!plVerOc);bar.innerHTML=nOc?(plVerOc?'Mostrando también las <b>'+nOc+'</b> ocultas de '+lpEsc(plMarca())+' <button onclick="plVerOcultas(false)">Esconderlas</button>':'<b>'+nOc+'</b> modelo'+(nOc===1?'':'s')+' de '+lpEsc(plMarca())+' oculto'+(nOc===1?'':'s')+' porque no se venden <button onclick="plVerOcultas(true)">Ver ocultas</button>'):'';}
   var h='';
@@ -2962,6 +3043,7 @@ function buscarVehiculo(){
   var res=BUSCADOR.filter(function(x){return String(x[0]).toLowerCase().indexOf(b)!==-1;});
   if(!plCargado)plCargar();
   if(!plNomCargado)plNomCargar();
+  if(!plActItems)plActAsegurarCargado(function(){if(visible('p5'))buscarVehiculo();});
   var bats=buscarBateriasPorTexto(b);
   if(!res.length&&!bats.length){el.innerHTML='<div class="no-res">No se encontraron resultados</div>';return;}
   var h='';

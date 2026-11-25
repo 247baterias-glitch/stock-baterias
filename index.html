@@ -280,9 +280,10 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .ptab{position:relative;flex:1;text-align:center;padding:10px 9px;font-size:13.5px;font-weight:600;border-radius:var(--r-sm);cursor:pointer;border:none;background:transparent;color:var(--muted);white-space:nowrap;transition:background .12s ease,color .12s ease}
 .ptab.active{background:var(--surface);color:var(--ink);box-shadow:0 1px 0 var(--amber) inset,0 2px 6px rgba(27,35,48,.08)}
 .lp-tab-ord{display:flex;align-items:center;gap:4px;color:var(--ink);background:var(--surface)}
-.ptab-ofr{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#f59e0b;color:#1b1300;font-size:9px;font-weight:800;letter-spacing:.02em;padding:1px 6px;border-radius:99px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.35);pointer-events:none;z-index:1}
-.ptab-ofr-chip{background:#f59e0b;color:#1b1300;font-size:10px;font-weight:800;padding:1px 6px;border-radius:99px;margin-left:4px}
-.plan-ofr-on{background:#f59e0b!important;color:#1b1300!important;border-color:#f59e0b!important}
+.ptab-ofr{position:absolute;top:-17px;left:50%;transform:translateX(-50%) rotate(-4deg);background:linear-gradient(135deg,#ffb020,#ff3d3d);color:#fff;font-size:12px;font-weight:900;letter-spacing:.04em;padding:4px 12px;border-radius:7px;white-space:nowrap;box-shadow:0 4px 12px rgba(255,61,61,.55),0 0 0 2px rgba(255,255,255,.25);pointer-events:none;z-index:2;animation:ofrPulse 1.4s ease-in-out infinite}
+@keyframes ofrPulse{0%,100%{transform:translateX(-50%) rotate(-4deg) scale(1)}50%{transform:translateX(-50%) rotate(-4deg) scale(1.1)}}
+.ptab-ofr-chip{background:linear-gradient(135deg,#ffb020,#ff3d3d);color:#fff;font-size:12px;font-weight:900;letter-spacing:.03em;padding:3px 10px;border-radius:7px;margin-left:6px;box-shadow:0 2px 8px rgba(255,61,61,.45)}
+.plan-ofr-on{background:linear-gradient(135deg,#ffb020,#ff3d3d)!important;color:#fff!important;border-color:transparent!important;font-weight:800;box-shadow:0 2px 10px rgba(255,61,61,.45)}
 .lp-ord-fl{border:none;background:var(--border2);color:var(--ink);border-radius:6px;padding:2px 6px;font-size:11px;cursor:pointer;line-height:1.4}
 .lp-ord-fl:disabled{opacity:.3;cursor:default}
 .twrap{border-radius:var(--r-lg);border:1px solid var(--border);overflow:auto;max-height:68vh;box-shadow:var(--shadow-card)}
@@ -557,19 +558,19 @@ a.card{text-decoration:none;color:inherit;box-sizing:border-box}
 .hoy-tag{display:inline-block;background:var(--amber);color:#1b1300;font-weight:800;font-size:12.5px;border-radius:99px;padding:3px 10px;margin-right:12px}
 .hoy-cant{font-size:16px;color:var(--ink)}.hoy-cant b{font-size:19px;color:var(--amber)}
 .hoy-det{font-size:13.5px;color:var(--ink-soft);margin-left:12px}
-#p4 .ptabs{padding:6px;gap:6px}
+#p4 .ptabs{padding:22px 6px 6px;gap:6px}
 #p4 .ptab{font-size:19px;font-weight:800;padding:16px 12px;letter-spacing:.01em}
 #p4 .ptab.active{font-size:20px}
 @media (max-width:760px){#p4 .ptab{font-size:16px;padding:13px 14px}}
 /* Colores de cada marca en Lista de Precios */
-#p4 #tab1{color:#ffd60a}#p4 #tab1.active{color:#ffd60a;background:rgba(255,214,10,.16);box-shadow:inset 0 -3px 0 #ffd60a}
-#p4 #tab2{color:#ef4444}#p4 #tab2.active{color:#ef4444;background:rgba(239,68,68,.16);box-shadow:inset 0 -3px 0 #ef4444}
-#p4 #tab8{color:#a3a9b0}#p4 #tab8.active{color:#a3a9b0;background:rgba(163,169,176,.16);box-shadow:inset 0 -3px 0 #a3a9b0}
-#p4 #tab3{color:#fb8c1e}#p4 #tab3.active{color:#fb8c1e;background:rgba(251,140,30,.16);box-shadow:inset 0 -3px 0 #fb8c1e}
-#p4 #tab6{color:#fdba74}#p4 #tab6.active{color:#fdba74;background:rgba(253,186,116,.16);box-shadow:inset 0 -3px 0 #fdba74}
-#p4 #tab7{color:#f43f3f}#p4 #tab7.active{color:#f43f3f;background:rgba(244,63,63,.16);box-shadow:inset 0 -3px 0 #f43f3f}
-#p4 #tab5{color:#4f9dff}#p4 #tab5.active{color:#4f9dff;background:rgba(79,157,255,.16);box-shadow:inset 0 -3px 0 #4f9dff}
-#p4 #tab4{color:#4f9dff}#p4 #tab4.active{color:#4f9dff;background:rgba(79,157,255,.16);box-shadow:inset 0 -3px 0 #4f9dff}
+#p4 #tab1{color:#fff}#p4 #tab1.active{color:#fff;background:rgba(255,214,10,.16);box-shadow:inset 0 -3px 0 #ffd60a}
+#p4 #tab2{color:#fff}#p4 #tab2.active{color:#fff;background:rgba(239,68,68,.16);box-shadow:inset 0 -3px 0 #ef4444}
+#p4 #tab8{color:#fff}#p4 #tab8.active{color:#fff;background:rgba(163,169,176,.16);box-shadow:inset 0 -3px 0 #a3a9b0}
+#p4 #tab3{color:#fff}#p4 #tab3.active{color:#fff;background:rgba(251,140,30,.16);box-shadow:inset 0 -3px 0 #fb8c1e}
+#p4 #tab6{color:#fff}#p4 #tab6.active{color:#fff;background:rgba(253,186,116,.16);box-shadow:inset 0 -3px 0 #fdba74}
+#p4 #tab7{color:#fff}#p4 #tab7.active{color:#fff;background:rgba(244,63,63,.16);box-shadow:inset 0 -3px 0 #f43f3f}
+#p4 #tab5{color:#fff}#p4 #tab5.active{color:#fff;background:rgba(79,157,255,.16);box-shadow:inset 0 -3px 0 #4f9dff}
+#p4 #tab4{color:#fff}#p4 #tab4.active{color:#fff;background:rgba(79,157,255,.16);box-shadow:inset 0 -3px 0 #4f9dff}
 .iva-dup-aviso.prob{color:#fde68a;background:rgba(242,169,60,.14);border-color:rgba(242,169,60,.55)}
 .iva-ver-dup{background:var(--amber);color:#1b1300;border:none;border-radius:6px;padding:3px 10px;font-weight:800;font-size:12.5px;cursor:pointer;margin-left:6px;font-family:var(--sans)}
 /* Tarjetas del inicio: al pasar el mouse se hunden/oscurecen y se agrandan un poco */

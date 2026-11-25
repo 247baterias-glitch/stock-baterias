@@ -324,6 +324,18 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .tmini-actions{display:flex;gap:6px;flex-shrink:0;align-items:center}
 .tmini-x{width:28px;height:28px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s ease}
 .tmini-ok{width:28px;height:28px;border-radius:var(--r-sm);border:none;background:var(--panel);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.carga-chip{position:fixed;left:16px;bottom:16px;z-index:9500;background:#13173d;border:1.5px solid #2dd4bf;color:#fff;border-radius:999px;padding:10px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap;box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:calc(100vw - 32px)}
+.carga-chip small{flex-basis:100%;font-weight:600;color:#9aa3c7;font-size:12px;padding-left:22px}
+.carga-spin{width:14px;height:14px;border-radius:50%;border:2.5px solid rgba(45,212,191,.3);border-top-color:#2dd4bf;animation:cargaGira .8s linear infinite}
+@keyframes cargaGira{to{transform:rotate(360deg)}}
+.carga-avisos{position:fixed;right:16px;bottom:16px;z-index:9600;display:flex;flex-direction:column;gap:8px;max-width:min(420px,calc(100vw - 32px))}
+.carga-aviso{display:flex;gap:10px;align-items:flex-start;border-radius:12px;padding:12px 14px;color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.45);font-size:13.5px;line-height:1.4}
+.carga-aviso.err{background:#b91c1c;border:1.5px solid #f87171}
+.carga-aviso.ok{background:#047857;border:1.5px solid #34d399}
+.carga-aviso div{flex:1;display:flex;flex-direction:column;gap:3px}
+.carga-aviso b{font-size:14.5px}
+.carga-aviso small{opacity:.75;font-size:11.5px}
+.carga-aviso button{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;width:26px;height:26px;cursor:pointer;flex-shrink:0}
 .aviso-box{margin-bottom:12px}
 .home-grid .aviso-box{grid-column:1/-1;margin:0}
 .home-grid .aviso-box:empty{display:none}
@@ -1455,7 +1467,7 @@ function sincronizar(){
 setInterval(sincronizar,45000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)sincronizar();});
 // ---- Aviso de versión nueva: si subiste un index.html nuevo, las otras PCs ven un cartel para actualizar ----
-var APP_VERSION='2026-11-24-aviso-rojo';
+var APP_VERSION='2026-11-24-cargas-rapidas';
 function revisarVersion(){
   if(location.protocol==='file:'||revisarVersion.avisado)return;
   if(Date.now()-(revisarVersion.ult||0)<120000)return;revisarVersion.ult=Date.now();
@@ -4527,11 +4539,60 @@ function apiPostRaw(action,payload){
   payload=payload||{};
   payload.action=action;
   payload.clave=localStorage.getItem('clave')||'';
-  return fetch(API_URL,{method:'POST',body:JSON.stringify(payload)}).then(function(r){
+  var pesada=CARGA_PESADA[action];
+  if(!pesada)return fetch(API_URL,{method:'POST',body:JSON.stringify(payload)}).then(function(r){
     if(!r.ok)throw new Error('Error de red ('+r.status+')');
     return r.json();
   });
+  // Lecturas con IA: reloj visible, corte a los 5 min (Google corta a los 6) y aviso que no se borra
+  var ctl=window.AbortController?new AbortController():null,cortado=false;
+  var tmo=setTimeout(function(){cortado=true;if(ctl)ctl.abort();},5*60*1000);
+  cargaInicio();
+  return fetch(API_URL,{method:'POST',body:JSON.stringify(payload),signal:ctl?ctl.signal:undefined}).then(function(r){
+    if(!r.ok)throw new Error('Error de red ('+r.status+')');
+    return r.json();
+  }).then(function(r){
+    clearTimeout(tmo);cargaFin();
+    if(!r||r.ok===false)cargaAviso('err',pesada+': no se pudo cargar',(r&&r.error)||'Error desconocido');
+    else if(r.error_lectura)cargaAviso('err',pesada+': se subió pero la IA no pudo leerlo',r.error_lectura+' · Probá con ↻ Releer o subí una foto más nítida.');
+    else if(document.hidden&&action!=='pedAnalizar')cargaAviso('ok',pesada+' lista ✔',r.items!==undefined?(r.items+' modelos leídos'):'Volvé a la pestaña para revisarla.');
+    return r;
+  }).catch(function(e){
+    clearTimeout(tmo);cargaFin();
+    var msg=cortado?'Google tardó más de 5 minutos y se cortó.':/load failed|failed to fetch|networkerror|aborted/i.test(String(e&&e.message))?'Se cortó la conexión con Google mientras leía el archivo.':String(e&&e.message||e);
+    cargaAviso('err',pesada+': no se pudo cargar',msg+' Probá de nuevo. Si es un PDF largo, subí solo las páginas necesarias o una foto.');
+    throw new Error(msg);
+  });
 }
+var CARGA_PESADA={listasSubir:'Lista de precios',listasReleer:'Lista de precios',pedLeer:'Compra',pedAnalizar:'Compra',ivaLeerFactura:'Factura',ddjjSubir:'Declaración jurada',ddjjReleer:'Declaración jurada',cmLeer:'Archivo',remitoLeer:'Remito'};
+var cargaN=0,cargaT0=0,cargaTimer=null,cargaTituloOrig=document.title;
+function cargaInicio(){
+  if(!cargaN){cargaT0=Date.now();cargaTimer=setInterval(cargaReloj,1000);}
+  cargaN++;cargaReloj();
+  try{if(window.Notification&&Notification.permission==='default')Notification.requestPermission();}catch(e){}
+}
+function cargaFin(){cargaN=Math.max(0,cargaN-1);if(!cargaN){clearInterval(cargaTimer);var c=document.getElementById('cargaChip');if(c)c.remove();}}
+function cargaReloj(){
+  var c=document.getElementById('cargaChip');
+  if(!c){c=document.createElement('div');c.id='cargaChip';c.className='carga-chip';document.body.appendChild(c);}
+  var seg=Math.round((Date.now()-cargaT0)/1000),mm=Math.floor(seg/60),ss=String(seg%60).padStart(2,'0');
+  c.innerHTML='<span class="carga-spin"></span>Leyendo '+(cargaN>1?cargaN+' archivos':'archivo')+' con IA… <b>'+mm+':'+ss+'</b>'+(seg>90?'<small>los PDF largos pueden tardar 2–3 min</small>':'');
+}
+// Aviso que queda en pantalla hasta cerrarlo (y notificación si estás en otra pestaña)
+function cargaAviso(tipo,titulo,detalle){
+  var box=document.getElementById('cargaAvisos');
+  if(!box){box=document.createElement('div');box.id='cargaAvisos';box.className='carga-avisos';document.body.appendChild(box);}
+  var d=document.createElement('div');d.className='carga-aviso '+tipo;
+  var hora=new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  d.innerHTML='<div><b>'+(tipo==='err'?'&#9888; ':'&#10004; ')+lpEsc(titulo)+'</b><span>'+lpEsc(detalle||'')+'</span><small>'+hora+'</small></div><button title="Cerrar" onclick="this.parentNode.remove()">&#10005;</button>';
+  box.appendChild(d);
+  while(box.children.length>4)box.removeChild(box.firstChild);
+  if(document.hidden){
+    document.title=(tipo==='err'?'⚠ ':'✔ ')+titulo+' · '+cargaTituloOrig;
+    try{if(window.Notification&&Notification.permission==='granted')new Notification((tipo==='err'?'⚠ ':'✔ ')+titulo,{body:detalle||''});}catch(e){}
+  }
+}
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&/^[⚠✔] /.test(document.title))document.title=cargaTituloOrig;});
 function lpEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function lpNum(v){
   var s=String(v==null?'':v).replace(/[^0-9.,-]/g,'');
@@ -6353,13 +6414,13 @@ function lpPrepararArchivo(file){
       if(!esImg){resolve({mime:file.type||'application/pdf',data:dataUrl.split(',')[1],nombre:file.name});return;}
       var img=new Image();
       img.onload=function(){
-        var max=2400,w=img.width,h=img.height,k=Math.min(1,max/Math.max(w,h));
+        var max=2000,w=img.width,h=img.height,k=Math.min(1,max/Math.max(w,h));
         var c=document.createElement('canvas');
         c.width=Math.round(w*k);c.height=Math.round(h*k);
         var ctx=c.getContext('2d');
         ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
         ctx.drawImage(img,0,0,c.width,c.height);
-        resolve({mime:'image/jpeg',data:c.toDataURL('image/jpeg',0.9).split(',')[1],nombre:file.name.replace(/\.[^.]+$/,'')+'.jpg'});
+        resolve({mime:'image/jpeg',data:c.toDataURL('image/jpeg',0.85).split(',')[1],nombre:file.name.replace(/\.[^.]+$/,'')+'.jpg'});
       };
       img.onerror=function(){resolve({mime:file.type,data:dataUrl.split(',')[1],nombre:file.name});};
       img.src=dataUrl;
@@ -6374,28 +6435,31 @@ function lpArchivoElegido(inp){
   var dist=DISTRIBUIDORES[lpActual];
   var reemplazar=lpModo==='reemplazar';
   var marcaSubir=(document.getElementById('lpMarcaSubir').value||'').trim().toUpperCase();
-  var total=files.length,leidos=0,errores=0;
+  var total=files.length,leidos=0,errores=0,hechos=0,prox=0,activos=0;
   lpOcupado=true;lpBotones(true);
-  function siguiente(i){
-    if(i>=total){
-      lpOcupado=false;lpBotones(false);lpEstado('');
-      if(errores)toast('Hubo problemas: revisá los archivos marcados en rojo');
-      else toast('Lista cargada: '+leidos+' modelos');
-      lpCargar();
-      return;
-    }
-    var pref=total>1?'Archivo '+(i+1)+' de '+total+': ':'';
-    lpEstado(pref+'preparando...');
-    lpPrepararArchivo(files[i]).then(function(f){
-      lpEstado(pref+'subiendo y leyendo con IA. Puede tardar hasta 1 minuto...');
+  function estado(){lpEstado(total>1?'Leyendo con IA: '+hechos+' de '+total+' archivos listos...':'Subiendo y leyendo con IA...');}
+  function fin(){
+    lpOcupado=false;lpBotones(false);lpEstado('');
+    if(errores)toast('Hubo problemas: revisá los archivos marcados en rojo');
+    else toast('Lista cargada: '+leidos+' modelos');
+    lpCargar();
+  }
+  function uno(i){
+    activos++;estado();
+    return lpPrepararArchivo(files[i]).then(function(f){
       return apiPost('listasSubir',{distribuidor:dist,nombre:f.nombre,mime:f.mime,data:f.data,reemplazar:reemplazar&&i===0,marca:marcaSubir});
     }).then(function(r){
       if(!r.ok){errores++;toast('Error: '+r.error);}
       else{leidos+=r.items||0;if(r.error_lectura)errores++;}
-      siguiente(i+1);
-    }).catch(function(e){errores++;toast('Error: '+e.message);siguiente(i+1);});
+    }).catch(function(e){errores++;toast('Error: '+e.message);}).then(function(){activos--;hechos++;estado();lanzar();});
   }
-  siguiente(0);
+  // de a 2 archivos a la vez; si es "reemplazar", el primero va solo (borra la lista anterior)
+  function lanzar(){
+    if(hechos>=total){fin();return;}
+    var lim=(reemplazar&&hechos===0)?1:2;
+    while(activos<lim&&prox<total)uno(prox++);
+  }
+  lanzar();
 }
 function lpReleer(id){
   if(lpOcupado)return;

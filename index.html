@@ -1485,7 +1485,7 @@ var nomHojaOk=null,nomCargando=null,nomMigrado=false;
 function nomConstruir(filas){
   var hoja={};(filas||[]).forEach(function(f){hoja[f.campo]=hoja[f.campo]||{};hoja[f.campo][f.clave]={v:f.valor,t:f.t||0};});
   var L=ledgerTodo(),pend=[],res={};
-  ['plNombres','plOcultos','motoNombres','distOrden','marcaOrden','plTabOrden'].forEach(function(c){
+  ['plNombres','plOcultos','motoNombres','distOrden','marcaOrden','plTabOrden','plBusqOc'].forEach(function(c){
     var m={},h=hoja[c]||{},l=L[c]||{};
     Object.keys(h).forEach(function(k){if(h[k].v)m[k]=h[k].v;});
     Object.keys(l).forEach(function(k){var e=l[k];if(!h[k]||e.t>h[k].t){if(e.v===null||e.v==='')delete m[k];else m[k]=e.v;pend.push({campo:c,clave:k,valor:e.v===null?'':String(e.v),t:e.t});}});
@@ -1496,6 +1496,7 @@ function nomConstruir(filas){
 function nomAplicar(res){
   plNom=res.plNombres;
   plOc={};Object.keys(res.plOcultos).forEach(function(k){plOc[k]=1;});
+  plBusqOc={};Object.keys(res.plBusqOc).forEach(function(k){plBusqOc[k]=1;});
   motoNom=motoArmar(res.motoNombres);
   if(res.distOrden&&res.distOrden.global){
     try{lpAplicarOrdenDist(JSON.parse(res.distOrden.global));if(visible('p10'))lpRenderTabs();}catch(e){}
@@ -3087,8 +3088,10 @@ function buscarVehiculo(){
   if(!plCargado)plCargar();
   if(!plNomCargado)plNomCargar();
   if(!plActItems)plActAsegurarCargado(function(){if(visible('p5'))buscarVehiculo();});
-  var bats=buscarBateriasPorTexto(b);
-  if(!res.length&&!bats.length){el.innerHTML='<div class="no-res">No se encontraron resultados</div>';return;}
+  var batsTodo=buscarBateriasPorTexto(b);
+  var bats=batsTodo.filter(function(it){return !plBusqOc[it.k];});
+  var batsOc=batsTodo.filter(function(it){return plBusqOc[it.k];});
+  if(!res.length&&!bats.length&&!batsOc.length){el.innerHTML='<div class="no-res">No se encontraron resultados</div>';return;}
   var h='';
   res.forEach(function(x){
     var editable=x[2]!==undefined;
@@ -3104,15 +3107,28 @@ function buscarVehiculo(){
     if(editable)h+='<div class="lp-row-act"><button title="Editar" onclick="bEditar('+x[2]+')">&#9998;</button><button title="Eliminar" style="color:#f87171" onclick="bEliminar('+x[2]+')">&#10005;</button></div>';
     h+='</div>';
   });
-  if(bats.length){
+  if(bats.length||(batsOc.length&&plBusqVerOc)){
     h+='<div class="bres-sep" style="margin:14px 0 8px;font-weight:800;color:var(--ink-soft)">Baterías que coinciden con "'+lpEsc(b)+'" ('+bats.length+')</div>';
-    h+='<div class="twrap"><table class="ptable"><thead><tr><th>Marca</th><th>Modelo</th><th style="color:#15803d">Venta</th><th style="color:#15803d">Venta c/IVA (21%)</th></tr></thead><tbody>';
+    h+='<div class="twrap"><table class="ptable"><thead><tr><th>Marca</th><th>Modelo</th><th style="color:#15803d">Venta</th><th style="color:#15803d">Venta c/IVA (21%)</th><th></th></tr></thead><tbody>';
     bats.forEach(function(it){
-      h+='<tr><td>'+lpEsc(it.marca.toUpperCase())+'</td><td><b>'+lpEsc(it.nombre)+'</b></td><td class="pventa">$'+formatARS(it.venta)+'</td><td style="font-weight:700;color:#15803d">$'+formatARS(it.venta*1.21)+'</td></tr>';
+      h+='<tr><td>'+lpEsc(it.marca.toUpperCase())+'</td><td><b>'+lpEsc(it.nombre)+'</b></td><td class="pventa">$'+formatARS(it.venta)+'</td><td style="font-weight:700;color:#15803d">$'+formatARS(it.venta*1.21)+'</td><td><button title="No es una batería 12x65 (sacarla de esta búsqueda)" style="color:#f87171" onclick="plBusqOcultar(\''+eqJs(it.k)+'\',\''+eqJs(it.nombre)+'\',true)">&#10005;</button></td></tr>';
+    });
+    if(plBusqVerOc)batsOc.forEach(function(it){
+      h+='<tr class="pla-igual"><td>'+lpEsc(it.marca.toUpperCase())+'</td><td><span class="pl-oc-tag">SACADA</span> '+lpEsc(it.nombre)+'</td><td class="pventa">$'+formatARS(it.venta)+'</td><td style="font-weight:700;color:#15803d">$'+formatARS(it.venta*1.21)+'</td><td><button title="Volver a mostrarla en esta búsqueda" onclick="plBusqOcultar(\''+eqJs(it.k)+'\',\''+eqJs(it.nombre)+'\',false)">&#8634;</button></td></tr>';
     });
     h+='</tbody></table></div>';
   }
+  if(batsOc.length){
+    h+='<div style="font-size:12.5px;color:var(--muted);margin-top:6px">'+(plBusqVerOc?'Mostrando también las <b>'+batsOc.length+'</b> que sacaste de esta búsqueda <button onclick="plBusqVerOc=false;buscarVehiculo()">Esconderlas</button>':'<b>'+batsOc.length+'</b> resultado'+(batsOc.length===1?'':'s')+' que sacaste de esta búsqueda <button onclick="plBusqVerOc=true;buscarVehiculo()">Ver</button>')+'</div>';
+  }
   el.innerHTML=h;
+}
+// ---- Resultados que sacamos a mano del Buscador de Baterías (ej: coincidían con "12x65" pero no son esa medida) ----
+var plBusqOc={},plBusqVerOc=false;
+function plBusqOcultar(k,nombre,ocultar){
+  if(ocultar)plBusqOc[k]=1;else delete plBusqOc[k];
+  buscarVehiculo();
+  nomGuardarUno('plBusqOc',k,ocultar?'1':'',ocultar?'"'+nombre+'" no sale más en el buscador':'"'+nombre+'" vuelve al buscador');
 }
 function bBuscarFila(fila){return BUSCADOR.filter(function(x){return x[2]===fila;})[0];}
 function bEditar(fila){bEditFila=fila;buscarVehiculo();var i=document.getElementById('bEdV');if(i)i.focus();}

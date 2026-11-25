@@ -278,6 +278,9 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .ptabs{display:flex;gap:4px;margin-bottom:12px;background:var(--border2);padding:4px;border-radius:var(--r-md);overflow-x:auto}
 .ptab{flex:1;text-align:center;padding:10px 9px;font-size:13.5px;font-weight:600;border-radius:var(--r-sm);cursor:pointer;border:none;background:transparent;color:var(--muted);white-space:nowrap;transition:background .12s ease,color .12s ease}
 .ptab.active{background:var(--surface);color:var(--ink);box-shadow:0 1px 0 var(--amber) inset,0 2px 6px rgba(27,35,48,.08)}
+.lp-tab-ord{display:flex;align-items:center;gap:4px;color:var(--ink);background:var(--surface)}
+.lp-ord-fl{border:none;background:var(--border2);color:var(--ink);border-radius:6px;padding:2px 6px;font-size:11px;cursor:pointer;line-height:1.4}
+.lp-ord-fl:disabled{opacity:.3;cursor:default}
 .twrap{border-radius:var(--r-lg);border:1px solid var(--border);overflow:auto;max-height:68vh;box-shadow:var(--shadow-card)}
 .bres{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem 1.1rem;margin-bottom:10px;box-shadow:var(--shadow-card)}
 .bres-v{font-size:16px;font-weight:700;margin-bottom:4px}
@@ -944,6 +947,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
 <div id="urgBox"></div>
 <button class="cmp-btn" onclick="mostrarComparador()">&#9878; Comparar precios entre distribuidores</button>
+<div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button id="lpOrdBtn" class="bs" style="padding:4px 10px;font-size:12px" onclick="lpToggleOrdenDist()">↕ Ordenar marcas</button></div>
 <div class="ptabs" id="lpTabs"></div>
 <div id="lpErr"></div>
 <div class="mc lp-info" id="lpInfo"></div>
@@ -1486,7 +1490,7 @@ var nomHojaOk=null,nomCargando=null,nomMigrado=false;
 function nomConstruir(filas){
   var hoja={};(filas||[]).forEach(function(f){hoja[f.campo]=hoja[f.campo]||{};hoja[f.campo][f.clave]={v:f.valor,t:f.t||0};});
   var L=ledgerTodo(),pend=[],res={};
-  ['plNombres','plOcultos','motoNombres'].forEach(function(c){
+  ['plNombres','plOcultos','motoNombres','distOrden'].forEach(function(c){
     var m={},h=hoja[c]||{},l=L[c]||{};
     Object.keys(h).forEach(function(k){if(h[k].v)m[k]=h[k].v;});
     Object.keys(l).forEach(function(k){var e=l[k];if(!h[k]||e.t>h[k].t){if(e.v===null||e.v==='')delete m[k];else m[k]=e.v;pend.push({campo:c,clave:k,valor:e.v===null?'':String(e.v),t:e.t});}});
@@ -1498,6 +1502,9 @@ function nomAplicar(res){
   plNom=res.plNombres;
   plOc={};Object.keys(res.plOcultos).forEach(function(k){plOc[k]=1;});
   motoNom=motoArmar(res.motoNombres);
+  if(res.distOrden&&res.distOrden.global){
+    try{lpAplicarOrdenDist(JSON.parse(res.distOrden.global));if(visible('p10'))lpRenderTabs();}catch(e){}
+  }
   if(plNomEdit===null&&visible('p4'))filtrarPrecios();
   if(motoNomEdit===null&&visible('p9')&&motoTabActual<=3)filtrarMoto();
 }
@@ -4532,7 +4539,34 @@ function mostrarResultadoGarantia(url,telefono){
 }
 
 // ===================== LISTAS DE DISTRIBUIDORES =====================
-var DISTRIBUIDORES=['4K distribuidora','Bari','Dimac','Telmo','Ocean Bat','Mateo','Baterias Ronconi','Varta (Hernan No Oficial)'];
+var DISTRIBUIDORES_BASE=['4K distribuidora','Bari','Dimac','Telmo','Ocean Bat','Mateo','Baterias Ronconi','Varta (Hernan No Oficial)'];
+var DISTRIBUIDORES=DISTRIBUIDORES_BASE.slice();
+var lpOrdenEditando=false;
+// Aplica un orden guardado (nombres de distribuidores en el orden deseado). Los que no estén en la lista guardada
+// quedan al final, en su orden de siempre; si se agrega un distribuidor nuevo más adelante, aparece al final.
+function lpAplicarOrdenDist(orden){
+  if(!orden||!orden.length)return;
+  var activo=DISTRIBUIDORES[lpActual];
+  var resto=DISTRIBUIDORES_BASE.filter(function(d){return orden.indexOf(d)===-1;});
+  var nuevo=orden.filter(function(d){return DISTRIBUIDORES_BASE.indexOf(d)!==-1;}).concat(resto);
+  if(!nuevo.length)return;
+  DISTRIBUIDORES=nuevo;
+  var i=DISTRIBUIDORES.indexOf(activo);
+  lpActual=i===-1?0:i;
+}
+function lpToggleOrdenDist(){
+  lpOrdenEditando=!lpOrdenEditando;
+  lpRenderTabs();
+}
+function lpMoverDist(i,dir){
+  var j=i+dir;
+  if(j<0||j>=DISTRIBUIDORES.length)return;
+  var activo=DISTRIBUIDORES[lpActual];
+  var tmp=DISTRIBUIDORES[i];DISTRIBUIDORES[i]=DISTRIBUIDORES[j];DISTRIBUIDORES[j]=tmp;
+  lpActual=DISTRIBUIDORES.indexOf(activo);
+  lpRenderTabs();
+  nomGuardarUno('distOrden','global',JSON.stringify(DISTRIBUIDORES),'Orden guardado');
+}
 var lpInfoData={},lpInfoEditando=false;
 var lpActual=0,lpData={archivos:[],items:[]},lpMargen=55000,lpModo='agregar',lpOcupado=false,lpPedido=0;
 function apiPostRaw(action,payload){
@@ -6113,6 +6147,7 @@ function mostrarListasDist(){
   titulo('Listas de Distribuidores');
   document.getElementById('busLP').value='';
   lpRenderTabs();
+  if(nomHojaOk!==false)nomCargar();
   lpRenderCarrito();
   lpCargarScrap();
   lpCargar();
@@ -6120,8 +6155,16 @@ function mostrarListasDist(){
 }
 function lpRenderTabs(){
   var h='';
-  DISTRIBUIDORES.forEach(function(d,i){h+='<button class="ptab'+(i===lpActual?' active':'')+'" onclick="lpCambiarDist('+i+')">'+lpEsc(d)+'</button>';});
+  DISTRIBUIDORES.forEach(function(d,i){
+    if(lpOrdenEditando){
+      h+='<span class="ptab lp-tab-ord"><button class="lp-ord-fl" '+(i===0?'disabled':'')+' onclick="lpMoverDist('+i+',-1)">&#9650;</button><button class="lp-ord-fl" '+(i===DISTRIBUIDORES.length-1?'disabled':'')+' onclick="lpMoverDist('+i+',1)">&#9660;</button>'+lpEsc(d)+'</span>';
+    }else{
+      h+='<button class="ptab'+(i===lpActual?' active':'')+'" onclick="lpCambiarDist('+i+')">'+lpEsc(d)+'</button>';
+    }
+  });
   document.getElementById('lpTabs').innerHTML=h;
+  var b=document.getElementById('lpOrdBtn');
+  if(b)b.textContent=lpOrdenEditando?'✓ Listo':'↕ Ordenar marcas';
 }
 function lpCambiarDist(i){
   if(lpOcupado){toast('Espera a que termine la subida');return;}

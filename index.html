@@ -6351,19 +6351,20 @@ function lpOrdenar(items){
 }
 function lpRenderTabla(){
   var items0=lpData.items;
+  var esBari=(DISTRIBUIDORES[lpActual]==='Bari');
   // Columnas extra (codigo, Ah, CCA, borne, neto 30 dias) solo si la lista las trae
   var ext={ah:false,cca:false,borne:false,p30:false};
   items0.forEach(function(it){if(it.ah)ext.ah=true;if(it.cca)ext.cca=true;if(it.borne)ext.borne=true;if(it.p30)ext.p30=true;});
-  var conNetos=ext.p30;
+  var conNetos=ext.p30&&!esBari;
   var conDesc=items0.some(function(it){return it.desc;});
   var th='<tr><th>Marca</th><th>'+(ext.ah||ext.cca?'Código':'Modelo')+'</th>';
   if(ext.ah)th+='<th>Ah</th>';
   if(ext.cca)th+='<th>CCA</th>';
   if(ext.borne)th+='<th>Borne +</th>';
   if(conNetos)th+='<th>Neto 30 días</th>';
-  if(conDesc)th+='<th>Precio lista</th><th>Desc.</th>';
+  if(conDesc)th+='<th>'+(esBari?'SIN IVA':'Precio lista')+'</th><th>Desc.</th>';
   if(conNetos)th+='<th>'+(conDesc?'Contado c/desc.':'Neto contado')+'</th><th style="color:#0e7490">Contado c/IVA (21%)</th>';
-  else th+='<th>'+(conDesc?'Costo c/desc.':'Costo')+'</th><th style="color:#0e7490">Costo c/IVA (21%)</th>';
+  else th+='<th>'+(conDesc?'Costo c/desc.':'Costo')+'</th><th style="color:#0e7490">'+(esBari?'CON IVA':'Costo c/IVA (21%)')+'</th>';
   th+='<th style="color:#15803d">Venta (+$'+formatMoney(lpMargen)+')</th><th style="color:#15803d">Venta c/IVA (21%)</th><th>Pedido</th><th></th></tr>';
   document.getElementById('lpHead').innerHTML=th;
   var ncol=8+(ext.ah?1:0)+(ext.cca?1:0)+(ext.borne?1:0)+(conNetos?1:0)+(conDesc?2:0);

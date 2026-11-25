@@ -226,9 +226,9 @@ h1,h2,h3,p,button,input,a{color:inherit}
 /* Filas de colores suaves: 1ra azul-violeta, 2da verde agua, 3ra ámbar */
 .home-grid .card-hero{background:linear-gradient(135deg,rgba(150,136,255,.42),rgba(96,140,255,.30) 55%,rgba(45,212,191,.22)),#1c1f52;border-color:rgba(167,139,250,.65)}
 .home-grid .card-hero p{color:#dcd8ff}
-.home-grid .card:nth-child(n+2):nth-child(-n+4){background:linear-gradient(135deg,rgba(96,140,255,.13),rgba(96,140,255,.03)),var(--surface);border-color:rgba(96,140,255,.32)}
-.home-grid .card:nth-child(n+5):nth-child(-n+7){background:linear-gradient(135deg,rgba(45,212,191,.12),rgba(45,212,191,.03)),var(--surface);border-color:rgba(45,212,191,.30)}
-.home-grid .card:nth-child(n+8):nth-child(-n+10){background:linear-gradient(135deg,rgba(242,169,60,.12),rgba(242,169,60,.03)),var(--surface);border-color:rgba(242,169,60,.30)}
+.home-grid .card:nth-child(n+3):nth-child(-n+5){background:linear-gradient(135deg,rgba(96,140,255,.13),rgba(96,140,255,.03)),var(--surface);border-color:rgba(96,140,255,.32)}
+.home-grid .card:nth-child(n+6):nth-child(-n+8){background:linear-gradient(135deg,rgba(45,212,191,.12),rgba(45,212,191,.03)),var(--surface);border-color:rgba(45,212,191,.30)}
+.home-grid .card:nth-child(n+9):nth-child(-n+11){background:linear-gradient(135deg,rgba(242,169,60,.12),rgba(242,169,60,.03)),var(--surface);border-color:rgba(242,169,60,.30)}
 
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.4rem 1.5rem;display:flex;align-items:center;gap:16px;cursor:pointer;width:100%;text-align:left;box-shadow:var(--shadow-card);transition:transform .15s ease,box-shadow .15s ease}
 .card:active{transform:scale(.985);box-shadow:0 1px 2px rgba(27,35,48,.06)}
@@ -325,6 +325,14 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .tmini-x{width:28px;height:28px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s ease}
 .tmini-ok{width:28px;height:28px;border-radius:var(--r-sm);border:none;background:var(--panel);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .aviso-box{margin-bottom:12px}
+.home-grid .aviso-box{grid-column:1/-1;margin:0}
+.home-grid .aviso-box:empty{display:none}
+#p0 .aviso{background:#d92d2d;border:1.5px solid #ff6b6b;align-items:center;padding:14px 18px;box-shadow:0 6px 18px rgba(217,45,45,.25);margin-bottom:8px}
+#p0 .aviso:last-child{margin-bottom:0}
+#p0 .aviso-txt{color:#fff;text-align:center;font-size:17px;font-weight:800;letter-spacing:.02em}
+#p0 .aviso-icon{color:#fff}
+#p0 .aviso-x{color:#fff;opacity:.85}
+#p0 .aviso-x:hover{opacity:1;background:rgba(255,255,255,.15)}
 .aviso{background:#fff6e3;border:1px solid #f2cb85;border-radius:var(--r-md);padding:12px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
 .aviso-icon{font-size:18px;flex-shrink:0;line-height:1.3}
 .aviso-txt{flex:1;font-size:13.5px;font-weight:600;color:#8a5a12;line-height:1.35}
@@ -745,10 +753,10 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </div>
 <div class="section">
 <div id="p0" class="hidden">
-<div class="aviso-box" id="avisoBox"></div>
 <button class="aviso-add" onclick="abrirNuevoAviso()">&#128276; + Nuevo aviso</button>
 <div class="grid home-grid">
 <a class="card card-hero" href="#resumen" onclick="return navClick(event,mostrarResumen)"><div class="icon" style="background:#ece7f7">&#128202;</div><div class="ci"><h2>Resumen</h2><p id="resumenSub">Servicios de hoy y la semana</p></div><span class="arr">&#8250;</span></a>
+<div class="aviso-box" id="avisoBox"></div>
 <a class="card" href="#precios" onclick="return navClick(event,mostrarPrecios)"><div class="icon green">&#128200;</div><div class="ci"><h2>Lista de Precios</h2><p>Precios con disponibilidad</p></div><span class="arr">&#8250;</span></a>
 <a class="card" href="#servicio" onclick="return navClick(event,mostrarTipoServicio)"><div class="icon" style="background:#fdeed0">&#128295;</div><div class="ci"><h2>Registrar Servicio</h2><p>Cargar un servicio nuevo</p></div><span class="arr">&#8250;</span></a>
 <a class="card" href="#stock" onclick="return navClick(event,mostrarStock)"><div class="icon">&#128661;</div><div class="ci"><h2>Stock Baterías</h2><p>Ver y gestionar stock</p></div><span class="arr">&#8250;</span></a>
@@ -1447,7 +1455,7 @@ function sincronizar(){
 setInterval(sincronizar,45000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)sincronizar();});
 // ---- Aviso de versión nueva: si subiste un index.html nuevo, las otras PCs ven un cartel para actualizar ----
-var APP_VERSION='2026-11-24-pl-actualizar-desde-listas';
+var APP_VERSION='2026-11-24-aviso-rojo';
 function revisarVersion(){
   if(location.protocol==='file:'||revisarVersion.avisado)return;
   if(Date.now()-(revisarVersion.ult||0)<120000)return;revisarVersion.ult=Date.now();

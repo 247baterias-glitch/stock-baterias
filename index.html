@@ -2781,7 +2781,8 @@ function plActPintar(){
     var nom=typeof plNombre==='function'?plNombre(f.x):f.x.m;
     if(!f.hit){h+='<tr class="pla-no"><td></td><td>'+lpEsc(nom)+'</td><td>$'+formatARS(f.act)+'</td><td colspan="3">No está en esta lista · queda igual</td></tr>';return;}
     var col=f.dif>0.05?'var(--red)':f.dif<-0.05?'var(--green)':'var(--muted)';
-    h+='<tr'+(f.cambia?'':' class="pla-igual"')+'><td>'+(f.cambia?'<input type="checkbox" '+(plActSel[f.i]?'checked':'')+' onchange="plActSel['+f.i+']=this.checked;plActPintar()">':'')+'</td><td><b>'+lpEsc(nom)+'</b></td><td>$'+formatARS(f.act)+'</td><td>'+lpEsc(f.hit.modelo)+'</td><td><b>$'+formatARS(f.nuevo)+'</b></td><td style="color:'+col+';font-weight:800">'+(f.cambia?(f.dif>0?'+':'')+f.dif.toFixed(1).replace('.',',')+'%':'igual')+'</td></tr>';
+    var difTxt=f.cambia?(f.dif===null?'nuevo':(f.dif>0?'+':'')+f.dif.toFixed(1).replace('.',',')+'%'):'igual';
+    h+='<tr'+(f.cambia?'':' class="pla-igual"')+'><td>'+(f.cambia?'<input type="checkbox" '+(plActSel[f.i]?'checked':'')+' onchange="plActSel['+f.i+']=this.checked;plActPintar()">':'')+'</td><td><b>'+lpEsc(nom)+'</b></td><td>$'+formatARS(f.act)+'</td><td>'+lpEsc(f.hit.modelo)+'</td><td><b>$'+formatARS(f.nuevo)+'</b></td><td style="color:'+col+';font-weight:800">'+difTxt+'</td></tr>';
   });
   h+='</tbody></table></div>';
   // descuento del distribuidor para esta marca

@@ -2739,14 +2739,17 @@ function plActAbrir(){
   }).catch(function(e){plActCargando=false;el.innerHTML='<div class="err">'+lpEsc(e.message)+'</div>';});
 }
 // Precios de la marca en cada distribuidor, por modelo (clave del comparador)
+// Ya con el descuento que tiene esa marca en ese distribuidor (el mismo que se ve en Listas de Distribuidores).
 function plActPorDist(mn){
   var out={};
   (plActItems||[]).forEach(function(it){
     if(lpMarcaNorm(it.marca,it.modelo)!==mn)return;
     var k=cmpKey(mn,it.modelo);if(!k)return;
+    var dd=plActDescs[it.d],s=dd&&dd.marcas?(dd.marcas[mn]||''):'',f=s?lpFactorDesc(s):1;
+    var precio=Math.round(Number(it.precio)*f*100)/100;
     var D=out[it.d]||(out[it.d]={});
     // si el modelo aparece dos veces en la misma lista, queda el precio más bajo
-    if(!D[k]||it.precio<D[k].precio)D[k]={precio:Number(it.precio),modelo:it.modelo};
+    if(!D[k]||precio<D[k].precio)D[k]={precio:precio,modelo:it.modelo};
   });
   return out;
 }

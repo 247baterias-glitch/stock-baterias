@@ -812,7 +812,7 @@ if(!localStorage.getItem('clave'))pedirClave(false);
 </div>
 <div id="p5" class="hidden">
 <button class="back" onclick="volverInicio()">&#8592; Volver</button>
-<div class="sbox"><input type="text" id="busV" placeholder="Ej: Sandero, Corolla, Gol..." oninput="buscarVehiculo()"/></div>
+<div class="sbox"><input type="text" id="busV" placeholder="Ej: Sandero, Corolla, Gol... o medida: 12x65" oninput="buscarVehiculo()"/></div>
 <button class="aviso-add" onclick="bNuevoToggle(true)">+ Agregar vehículo</button>
 <div id="bNuevo" class="bres hidden">
 <div class="gfield"><label>Vehículo</label><input type="text" id="bNuevoV" placeholder="Ej: Camioneta S10 Diesel"/></div>
@@ -1510,6 +1510,7 @@ function nomAplicar(res){
   }
   if(plNomEdit===null&&visible('p4'))filtrarPrecios();
   if(motoNomEdit===null&&visible('p9')&&motoTabActual<=3)filtrarMoto();
+  if(visible('p5'))buscarVehiculo();
 }
 function nomEnviar(campo,clave,valor,t){
   return api('nombreSet',{campo:campo,k:clave,valor:valor,t:t}).then(function(r){if(!r||!r.ok)throw new Error((r&&r.error)||'Google no respondió');return r;});
@@ -2666,9 +2667,44 @@ function plCfgMarca(){
   return {margen:(m.margen!==undefined?Number(m.margen):plMargenDefault(plLista())),pct:m.pct!==undefined?m.pct:pctDef};
 }
 function plKey(x){return plMarca()+'|'+String(x.m).trim();}
+// ---- Búsqueda de baterías por medida/modelo (ej: "12x65"), usada en el Buscador de Baterías ----
+// Recorre TODAS las marcas del catálogo (no solo la pestaña abierta), con el mismo cálculo de precio que "Lista de Precios".
+var PL_MARCA_LISTA={'Moura':PMOURA,'Willard / UB':PUB,'Sermat':PSERMAT,'Herbo':PHERBO,'Bari':PBARI,'Volta':PVOLTA,'Bosch':PBOSCH,'Varta':PVARTA};
+function plCfgParaMarca(marca,lista){
+  var m=plCfg.marcas[marca]||{};
+  var pctDef=marca==='Varta'?'-35 -15':'';
+  return {margen:(m.margen!==undefined?Number(m.margen):plMargenDefault(lista)),pct:m.pct!==undefined?m.pct:pctDef};
+}
+function plVentaItem(marca,lista,x){
+  var c=plCfgParaMarca(marca,lista),f=lpFactorDesc(c.pct),mg=c.margen,fac=!!PL_FACTURADO[marca];
+  var mgDef=plMargenDefault(lista);
+  var k=marca+'|'+String(x.m).trim();
+  var precio=plCfg.precios[k]!==undefined?plCfg.precios[k]:plNum(x.l);
+  if(!(precio>0))return null;
+  var costo=Math.round(precio*f*100)/100;
+  var extra=Math.round(plNum(x.p)-plNum(x.l))-mgDef;if(!(plNum(x.p)>0)||Math.abs(extra)<1)extra=0;
+  var venta=(fac?Math.round(costo*1.21*100)/100:costo)+mg+extra;
+  var vk='V:'+k;if(plCfg.precios[vk]!==undefined){venta=plCfg.precios[vk];}
+  return {marca:marca,nombre:(plNom[k]||String(x.m).trim()),venta:venta,k:k};
+}
+function buscarBateriasPorTexto(q){
+  var out=[];
+  Object.keys(PL_MARCA_LISTA).forEach(function(marca){
+    var lista=PL_MARCA_LISTA[marca];
+    lista.forEach(function(x){
+      var k=marca+'|'+String(x.m).trim();
+      if(plOc[k])return; // no mostrar las que se sacaron de la venta
+      var nom=plNom[k]||String(x.m).trim();
+      if((String(x.m)+' '+nom).toLowerCase().indexOf(q)===-1)return;
+      var it=plVentaItem(marca,lista,x);
+      if(it)out.push(it);
+    });
+  });
+  return out;
+}
 function plCargar(){
   apiPost('plGet').then(function(r){
-    if(r&&r.ok&&r.cfg){plCfg={marcas:r.cfg.marcas||{},precios:r.cfg.precios||{}};plCargado=true;filtrarPrecios();}
+    if(r&&r.ok&&r.cfg){plCfg={marcas:r.cfg.marcas||{},precios:r.cfg.precios||{}};plCargado=true;filtrarPrecios();if(visible('p5'))buscarVehiculo();}
   }).catch(function(){});
 }
 function plGuardar(msg){
@@ -2829,7 +2865,7 @@ function plNomCargar(){
   nomCargar().then(function(ok){if(ok)return;plNomCargarCfg();});
 }
 function plNomCargarCfg(){
-  apiPost('cfgGet').then(function(r){if(r&&r.ok){var c=cfgRevisarYReparar(r.cfg);plNom=plNomLeer({cfg:c});plOc=plOcLeer({cfg:c});filtrarPrecios();}}).catch(function(){plNomCargado=false;});
+  apiPost('cfgGet').then(function(r){if(r&&r.ok){var c=cfgRevisarYReparar(r.cfg);plNom=plNomLeer({cfg:c});plOc=plOcLeer({cfg:c});filtrarPrecios();if(visible('p5'))buscarVehiculo();}}).catch(function(){plNomCargado=false;});
 }
 // ---- Modelos ocultos (los que no vendemos). Se pueden volver a mostrar cuando quieras. ----
 var plOc={},plVerOc=false,plOcPend={};
@@ -2922,9 +2958,12 @@ function filtrarPrecios(){
 function buscarVehiculo(){
   var b=document.getElementById('busV').value.toLowerCase().trim();
   var el=document.getElementById('resV');
-  if(b.length<2){el.innerHTML='<div class="no-res">Escribi el nombre del vehiculo</div>';return;}
+  if(b.length<2){el.innerHTML='<div class="no-res">Escribi el nombre del vehiculo, o una medida de batería (ej: 12x65)</div>';return;}
   var res=BUSCADOR.filter(function(x){return String(x[0]).toLowerCase().indexOf(b)!==-1;});
-  if(!res.length){el.innerHTML='<div class="no-res">No se encontraron resultados</div>';return;}
+  if(!plCargado)plCargar();
+  if(!plNomCargado)plNomCargar();
+  var bats=buscarBateriasPorTexto(b);
+  if(!res.length&&!bats.length){el.innerHTML='<div class="no-res">No se encontraron resultados</div>';return;}
   var h='';
   res.forEach(function(x){
     var editable=x[2]!==undefined;
@@ -2940,6 +2979,14 @@ function buscarVehiculo(){
     if(editable)h+='<div class="lp-row-act"><button title="Editar" onclick="bEditar('+x[2]+')">&#9998;</button><button title="Eliminar" style="color:#f87171" onclick="bEliminar('+x[2]+')">&#10005;</button></div>';
     h+='</div>';
   });
+  if(bats.length){
+    h+='<div class="bres-sep" style="margin:14px 0 8px;font-weight:800;color:var(--ink-soft)">Baterías que coinciden con "'+lpEsc(b)+'" ('+bats.length+')</div>';
+    h+='<div class="twrap"><table class="ptable"><thead><tr><th>Marca</th><th>Modelo</th><th style="color:#15803d">Venta</th><th style="color:#15803d">Venta c/IVA (21%)</th></tr></thead><tbody>';
+    bats.forEach(function(it){
+      h+='<tr><td>'+lpEsc(it.marca.toUpperCase())+'</td><td><b>'+lpEsc(it.nombre)+'</b></td><td class="pventa">$'+formatARS(it.venta)+'</td><td style="font-weight:700;color:#15803d">$'+formatARS(it.venta*1.21)+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
   el.innerHTML=h;
 }
 function bBuscarFila(fila){return BUSCADOR.filter(function(x){return x[2]===fila;})[0];}

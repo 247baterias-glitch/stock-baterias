@@ -106,6 +106,20 @@ h1,h2,h3,p,button,input,a{color:inherit}
 .stk-total{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid rgba(242,169,60,.45);border-radius:var(--r-lg);padding:1.1rem 1.6rem;margin-bottom:14px;box-shadow:var(--shadow-card)}
 .stk-total span{font-size:18px;font-weight:700;color:var(--muted)}.stk-total b{font-size:38px;color:var(--amber)}
 .stk-lapiz{background:none;border:1px solid var(--border);color:var(--muted);border-radius:7px;font-size:13px;padding:2px 7px;cursor:pointer;vertical-align:middle}.stk-lapiz:hover{color:var(--amber);border-color:var(--amber)}
+.pla-btn{font-weight:800}
+.pla-box{margin-top:12px;padding:14px;border:1.5px solid rgba(45,212,191,.45);background:rgba(45,212,191,.06);border-radius:var(--r-md)}
+.pla-box.hidden{display:none}
+.pla-tit{font-weight:800;font-size:16px;margin-bottom:6px}
+.pla-nota{font-size:13px;color:var(--muted);margin:6px 0}
+.pla-chips{display:flex;gap:8px;flex-wrap:wrap}
+.pla-chip{border:1.5px solid var(--border);background:var(--bg);color:var(--ink);border-radius:999px;padding:7px 14px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:var(--sans)}
+.pla-chip small{font-weight:600;color:var(--muted);margin-left:4px}
+.pla-chip.on{border-color:#2dd4bf;background:rgba(45,212,191,.15)}
+.pla-tabla td,.pla-tabla th{padding:8px 10px!important;font-size:14px!important}
+.pla-tabla tr.pla-igual td{opacity:.55}
+.pla-tabla tr.pla-no td{opacity:.4;font-style:italic}
+.pla-desc{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px;margin-top:10px;cursor:pointer}
+.pla-desc input{width:auto}
 .urg-pl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
 .urg-btn{background:#dc2626;color:#fff;border:0;border-radius:var(--r-sm);padding:11px 16px;font-weight:800;font-size:14.5px;cursor:pointer;font-family:var(--sans);letter-spacing:.02em}
 .urg-chips{display:flex;gap:6px;flex-wrap:wrap}.urg-chip{background:rgba(220,38,38,.15);color:#fca5a5;border-radius:99px;padding:5px 6px 5px 12px;font-size:13px;font-weight:700}
@@ -1433,7 +1447,7 @@ function sincronizar(){
 setInterval(sincronizar,45000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)sincronizar();});
 // ---- Aviso de versión nueva: si subiste un index.html nuevo, las otras PCs ven un cartel para actualizar ----
-var APP_VERSION='2026-11-20-recordatorios-base';
+var APP_VERSION='2026-11-24-pl-actualizar-desde-listas';
 function revisarVersion(){
   if(location.protocol==='file:'||revisarVersion.avisado)return;
   if(Date.now()-(revisarVersion.ult||0)<120000)return;revisarVersion.ult=Date.now();
@@ -2663,12 +2677,113 @@ function plRenderCtrl(){
   var h='<div class="lp-margen" style="margin-bottom:10px"><span>Venta de '+lpEsc(m)+' = costo + $</span><input type="text" inputmode="numeric" id="plMargen" value="'+formatMoney(c.margen)+'" onkeydown="if(event.key===\'Enter\')plGuardarCtrl()"/></div>';
   h+='<div class="lp-margen"><span>% sobre el precio de cada batería</span><input type="text" id="plPct" value="'+lpEsc(c.pct)+'" placeholder="Ej: +4 -3" style="width:140px" onkeydown="if(event.key===\'Enter\')plGuardarCtrl()"/><button class="bs" onclick="plGuardarCtrl()">Guardar</button>';
   h+='<span style="font-size:12.5px;color:var(--muted)">'+(f!==1?'<b style="color:#a78bfa">'+lpDescTexto(c.pct)+'</b> → pagás el '+(f*100).toLocaleString('es-AR',{maximumFractionDigits:2})+'% del precio':'+4 = aumento · -14 = descuento · +4 -3 = aumento y después descuento')+'</span></div>';
+  h+='<div class="urg-pl"><button class="bs pla-btn" onclick="plActAbrir()">&#128260; Actualizar precios desde una lista de distribuidor</button></div>';
+  h+='<div id="plAct" class="pla-box'+(plActMarca===m?'':' hidden')+'"></div>';
   h+='<div class="urg-pl"><button class="urg-btn" onclick="urgAbrir()">&#128680; URGENTE COMPRAR</button><div id="urgPl" class="urg-chips"></div></div>';
   h+='<div id="urgForm" class="urg-form hidden"><input type="text" id="urgModelo" placeholder="Modelo de batería de '+lpEsc(m)+' (ej: M22GD 12X65)" onkeydown="if(event.key===\'Enter\')urgGuardar()"/><input type="text" id="urgNota" placeholder="Nota (opcional): cantidad, para quién..." onkeydown="if(event.key===\'Enter\')urgGuardar()"/><button class="bp" id="urgBtn" onclick="urgGuardar()">Guardar</button></div>';
   if(PL_FACTURADO[m])h+='<div class="pl-fac">&#129534; '+lpEsc(PL_FACTURADO[m])+': la venta se calcula sobre el <b>costo con IVA (21%)</b> + $'+formatMoney(c.margen)+'.</div>';
   if(!plCargado)h+='<div style="font-size:12px;color:var(--muted);margin-top:6px">Cargando ajustes guardados...</div>';
   document.getElementById('plCtrl').innerHTML=h;
   if(urgCargado)urgPintar();else urgCargar();
+  if(plActMarca===m)plActPintar();
+}
+// ---- Actualizar precios desde las listas que subiste en Listas de Distribuidores ----
+var PL_MARCA_NORM={'Moura':'MOURA','Willard / UB':'WILLARD','Sermat':'SERMAT','Herbo':'HERBO','Bari':'BARI','Volta':'VOLTA','Bosch':'BOSCH','Varta':'VARTA'};
+var plActItems=null,plActDescs={},plActMarca=null,plActDist='',plActSel={},plActCopiarDesc=false,plActCargando=false;
+function plActFuenteGuardada(m){try{return localStorage.getItem('plActFuente_'+m)||'';}catch(e){return '';}}
+function plActAbrir(){
+  var m=plMarca();
+  if(plActMarca===m){plActMarca=null;document.getElementById('plAct').classList.add('hidden');return;}
+  plActMarca=m;plActDist='';plActSel={};plActCopiarDesc=false;
+  var el=document.getElementById('plAct');el.classList.remove('hidden');
+  if(plActItems){plActPintar();return;}
+  el.innerHTML='<div class="loading">Leyendo las listas de los distribuidores...</div>';
+  if(plActCargando)return;plActCargando=true;
+  apiPost('listasTodos').then(function(r){
+    plActCargando=false;
+    if(!r||!r.ok){el.innerHTML='<div class="err">No se pudieron leer las listas: '+lpEsc(r?r.error:'')+'</div>';return;}
+    plActItems=(r.items||[]).filter(function(it){return Number(it.precio)>0;});
+    lpNormItems(plActItems);
+    plActDescs=r.descs||{};
+    if(plActMarca)plActPintar();
+  }).catch(function(e){plActCargando=false;el.innerHTML='<div class="err">'+lpEsc(e.message)+'</div>';});
+}
+// Precios de la marca en cada distribuidor, por modelo (clave del comparador)
+function plActPorDist(mn){
+  var out={};
+  (plActItems||[]).forEach(function(it){
+    if(lpMarcaNorm(it.marca,it.modelo)!==mn)return;
+    var k=cmpKey(mn,it.modelo);if(!k)return;
+    var D=out[it.d]||(out[it.d]={});
+    // si el modelo aparece dos veces en la misma lista, queda el precio más bajo
+    if(!D[k]||it.precio<D[k].precio)D[k]={precio:Number(it.precio),modelo:it.modelo};
+  });
+  return out;
+}
+function plActPintar(){
+  var el=document.getElementById('plAct');if(!el||!plActItems)return;
+  var m=plMarca(),mn=PL_MARCA_NORM[m]||m.toUpperCase(),lista=plLista();
+  var por=plActPorDist(mn),dists=Object.keys(por);
+  var h='<div class="pla-tit">&#128260; Actualizar precios de '+lpEsc(m)+'</div>';
+  if(!dists.length){el.innerHTML=h+'<div class="pla-nota">No hay ninguna lista subida con baterías '+lpEsc(m)+'. Subila en <b>Listas de Distribuidores</b> y volvé acá.</div><button class="bs" onclick="plActAbrir()">Cerrar</button>';return;}
+  // cuántos modelos de esta lista coinciden con cada distribuidor
+  var coinc={};
+  dists.forEach(function(d){coinc[d]=lista.filter(function(x){return por[d][cmpKey(mn,x.m)];}).length;});
+  dists.sort(function(a,b){return coinc[b]-coinc[a];});
+  if(!plActDist||!por[plActDist]){var g=plActFuenteGuardada(m);plActDist=por[g]?g:dists[0];}
+  h+='<div class="pla-nota">Elegí de qué distribuidor tomar el precio de lista:</div><div class="pla-chips">';
+  dists.forEach(function(d){h+='<button class="pla-chip'+(d===plActDist?' on':'')+'" onclick="plActElegir(\''+lpEsc(d).replace(/'/g,"\\'")+'\')">'+lpEsc(d)+' <small>'+coinc[d]+' de '+lista.length+' modelos</small></button>';});
+  h+='</div>';
+  var P=por[plActDist],filas=[],cambios=0;
+  lista.forEach(function(x,i){
+    var k=plKey(x),orig=plNum(x.l),act=plCfg.precios[k]!==undefined?plCfg.precios[k]:orig;
+    var hit=P[cmpKey(mn,x.m)],nuevo=hit?hit.precio:0;
+    var dif=hit&&act>0?(nuevo-act)/act*100:null;
+    var cambia=hit&&Math.abs(nuevo-act)>=1;
+    if(plActSel[i]===undefined)plActSel[i]=!!cambia;
+    if(cambia&&plActSel[i])cambios++;
+    filas.push({i:i,x:x,act:act,hit:hit,nuevo:nuevo,dif:dif,cambia:cambia});
+  });
+  // primero los que cambian, después iguales, al final los que no están en la lista
+  filas.sort(function(a,b){var ra=a.cambia?0:a.hit?1:2,rb=b.cambia?0:b.hit?1:2;return ra-rb||a.i-b.i;});
+  h+='<div class="twrap" style="max-height:46vh;margin-top:10px"><table class="ptable pla-tabla"><thead><tr><th></th><th>Modelo</th><th>Precio actual</th><th>En la lista de '+lpEsc(plActDist)+'</th><th>Nuevo precio</th><th>Cambio</th></tr></thead><tbody>';
+  filas.forEach(function(f){
+    var nom=typeof plNombre==='function'?plNombre(f.x):f.x.m;
+    if(!f.hit){h+='<tr class="pla-no"><td></td><td>'+lpEsc(nom)+'</td><td>$'+formatARS(f.act)+'</td><td colspan="3">No está en esta lista · queda igual</td></tr>';return;}
+    var col=f.dif>0.05?'var(--red)':f.dif<-0.05?'var(--green)':'var(--muted)';
+    h+='<tr'+(f.cambia?'':' class="pla-igual"')+'><td>'+(f.cambia?'<input type="checkbox" '+(plActSel[f.i]?'checked':'')+' onchange="plActSel['+f.i+']=this.checked;plActPintar()">':'')+'</td><td><b>'+lpEsc(nom)+'</b></td><td>$'+formatARS(f.act)+'</td><td>'+lpEsc(f.hit.modelo)+'</td><td><b>$'+formatARS(f.nuevo)+'</b></td><td style="color:'+col+';font-weight:800">'+(f.cambia?(f.dif>0?'+':'')+f.dif.toFixed(1).replace('.',',')+'%':'igual')+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  // descuento del distribuidor para esta marca
+  var dd=plActDescs[plActDist],sd=dd&&dd.marcas?(dd.marcas[mn]||''):'',pctAct=plCfgMarca().pct||'';
+  if(sd&&lpDescTexto(sd)!==lpDescTexto(pctAct)){
+    h+='<label class="pla-desc"><input type="checkbox" '+(plActCopiarDesc?'checked':'')+' onchange="plActCopiarDesc=this.checked"> Copiar también el descuento que tiene '+lpEsc(plActDist)+' para '+lpEsc(m)+': <b>'+lpDescTexto(sd)+'</b> (ahora tenés '+(pctAct?lpDescTexto(pctAct):'sin %')+')</label>';
+  }else if(sd)h+='<div class="pla-nota">El % de '+lpEsc(m)+' ya coincide con el descuento de '+lpEsc(plActDist)+' ('+lpDescTexto(sd)+').</div>';
+  h+='<div class="pla-nota">Se toma el <b>precio de lista</b> del distribuidor (antes de descuentos). Sobre ese precio se sigue aplicando el "% sobre el precio" de arriba.</div>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="bp" style="width:auto;padding:10px 18px" '+(cambios||plActCopiarDesc?'':'disabled')+' onclick="plActAplicar()">Aplicar '+cambios+' cambio'+(cambios===1?'':'s')+'</button><button class="bs" onclick="plActAbrir()">Cancelar</button></div>';
+  el.innerHTML=h;
+}
+function plActElegir(d){plActDist=d;plActSel={};plActCopiarDesc=false;try{localStorage.setItem('plActFuente_'+plMarca(),d);}catch(e){}plActPintar();}
+function plActAplicar(){
+  var m=plMarca(),mn=PL_MARCA_NORM[m]||m.toUpperCase(),lista=plLista(),P=plActPorDist(mn)[plActDist]||{},n=0;
+  var nSel=lista.filter(function(x,i){return plActSel[i]&&P[cmpKey(mn,x.m)];}).length;
+  if(!confirm('¿Actualizar '+nSel+' precio'+(nSel===1?'':'s')+' de '+m+' con la lista de '+plActDist+'?'+(plActCopiarDesc?'\nTambién se copia el descuento.':'')))return;
+  lista.forEach(function(x,i){
+    if(!plActSel[i])return;
+    var hit=P[cmpKey(mn,x.m)];if(!hit)return;
+    var k=plKey(x);
+    // si vuelve a ser igual al precio original del sistema, no hace falta guardarlo aparte
+    if(Math.abs(hit.precio-plNum(x.l))<1)delete plCfg.precios[k];else plCfg.precios[k]=hit.precio;
+    n++;
+  });
+  if(plActCopiarDesc){
+    var dd=plActDescs[plActDist],sd=dd&&dd.marcas?(dd.marcas[mn]||''):'';
+    var c=plCfgMarca();
+    // se guarda con signos: descuento = "-35", aumento = "+4"
+    plCfg.marcas[m]={margen:c.margen,pct:lpParseDesc(sd).map(function(d){return (d<0?'+':'-')+String(Math.abs(d));}).join(' ')};
+  }
+  plActMarca=null;
+  plGuardar(n+' precio'+(n===1?'':'s')+' de '+m+' actualizado'+(n===1?'':'s')+' desde '+plActDist);
 }
 // ---- Nombres editables en Lista de Precios ----
 // Solo cambia el nombre que se ve. El stock y los precios siguen atados al código original, así nada se desconecta.

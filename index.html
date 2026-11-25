@@ -3039,17 +3039,17 @@ function filtrarPrecios(){
   if(plRefDist(marcaAct)&&!plActItems){
     plRenderCtrl();
     document.getElementById('preciosHead').innerHTML='';
-    document.getElementById('preciosBody').innerHTML='<tr><td colspan="11" style="text-align:center;padding:1rem;color:#94a0af">Cargando lista de '+lpEsc(marcaAct)+' desde Listas de Distribuidores...</td></tr>';
+    document.getElementById('preciosBody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Cargando lista de '+lpEsc(marcaAct)+' desde Listas de Distribuidores...</td></tr>';
     plActAsegurarCargado(function(){if(visible('p4')&&plMarca()===marcaAct)filtrarPrecios();});
     return;
   }
   var lista=plLista(),c=plCfgMarca(),f=lpFactorDesc(c.pct),hayDesc=f!==1,mg=c.margen,fac=!!PL_FACTURADO[plMarca()];
   var mgDef=plMargenDefault(lista);
   plRenderCtrl();
-  document.getElementById('preciosHead').innerHTML='<tr><th>Marca</th><th>Modelo</th><th>Precio</th>'+(hayDesc?'<th>Desc.</th><th>Costo c/desc.</th>':'')+'<th style="color:#2dd4bf">Costo c/IVA (21%)</th><th style="color:#15803d">Venta con envío ('+(fac?'costo c/IVA ':'')+'+$'+formatMoney(mg)+')</th><th style="color:#15803d">Venta c/IVA (21%)</th><th style="color:#0e7490" title="Venta con envío − $'+formatMoney(RETIRO_DESC)+'">Retirando por depósito</th><th style="color:#dc2626">Si llama decidido</th><th>Stock</th></tr>';
+  document.getElementById('preciosHead').innerHTML='<tr><th>Marca</th><th>Modelo</th><th>Precio</th>'+(hayDesc?'<th>Desc.</th><th>Costo c/desc.</th>':'')+'<th style="color:#15803d">Venta con envío ('+(fac?'costo c/IVA ':'')+'+$'+formatMoney(mg)+')</th><th style="color:#0e7490" title="Venta con envío − $'+formatMoney(RETIRO_DESC)+'">Retirando por depósito</th><th>Stock</th></tr>';
   if(!plNomCargado)plNomCargar();
   if(plRefDist(marcaAct)&&!lista.length){
-    document.getElementById('preciosBody').innerHTML='<tr><td colspan="11" style="text-align:center;padding:1rem;color:#94a0af">No hay modelos de '+lpEsc(marcaAct)+' cargados en la lista de "'+lpEsc(plRefDist(marcaAct))+'" en Listas de Distribuidores.</td></tr>';
+    document.getElementById('preciosBody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">No hay modelos de '+lpEsc(marcaAct)+' cargados en la lista de "'+lpEsc(plRefDist(marcaAct))+'" en Listas de Distribuidores.</td></tr>';
     return;
   }
   var nOc=lista.filter(function(x){return plOc[plKey(x)];}).length,bar=document.getElementById('plOcBar');
@@ -3068,7 +3068,7 @@ function filtrarPrecios(){
     // Modelos que en la lista original tenían una venta distinta al margen general conservan esa diferencia
     var extra=Math.round(plNum(x.p)-plNum(x.l))-mgDef;if(!(plNum(x.p)>0)||Math.abs(extra)<1)extra=0;
     if(!(precio>0)){
-      h+='<tr><td>'+lpEsc(plMarca().toUpperCase())+'</td><td>'+plNomCelda(x,badge)+'</td><td colspan="'+(hayDesc?8:6)+'"><button class="bs" style="padding:8px 14px;font-size:14px" onclick="plEditarPrecio('+i+')">&#9998; Cargar precio de lista</button> <span style="color:var(--muted);font-size:13px">Falta el precio de este modelo</span></td><td><div class="stk-info '+cls+'" style="margin-top:0">'+stk+'</div></td></tr>';
+      h+='<tr><td>'+lpEsc(plMarca().toUpperCase())+'</td><td>'+plNomCelda(x,badge)+'</td><td colspan="'+(hayDesc?5:3)+'"><button class="bs" style="padding:8px 14px;font-size:14px" onclick="plEditarPrecio('+i+')">&#9998; Cargar precio de lista</button> <span style="color:var(--muted);font-size:13px">Falta el precio de este modelo</span></td><td><div class="stk-info '+cls+'" style="margin-top:0">'+stk+'</div></td></tr>';
       return;
     }
     var costo=Math.round(precio*f*100)/100,venta=(fac?Math.round(costo*1.21*100)/100:costo)+mg+extra;
@@ -3077,10 +3077,10 @@ function filtrarPrecios(){
     h+='<tr><td>'+lpEsc(plMarca().toUpperCase())+'</td><td>'+plNomCelda(x,badge)+'</td>';
     h+='<td style="white-space:nowrap"><span'+(hayDesc?' style="color:var(--muted);text-decoration:line-through"':' style="font-weight:700"')+'>$'+formatARS(precio)+'</span>'+(corr?' <span title="Precio corregido a mano" style="color:var(--amber);text-decoration:none">●</span>':'')+' <button class="pl-lapiz" title="Corregir precio de lista" onclick="plEditarPrecio('+i+')">&#9998;</button></td>';
     if(hayDesc)h+='<td><span class="lp-desc-tag">'+lpDescTexto(c.pct)+'</span></td><td style="font-weight:800">$'+formatARS(costo)+'</td>';
-    h+='<td style="font-weight:700;color:#2dd4bf">$'+formatARS(costo*1.21)+'</td><td class="pventa" style="white-space:nowrap"'+(extra?' title="Este modelo tiene $'+formatARS(extra)+' extra sobre el margen"':'')+'>$'+formatARS(venta)+(vMan?' <span title="Venta puesta a mano" style="color:var(--amber)">●</span>':'')+(extra?' <span style="color:var(--muted);font-size:12px">('+(extra>0?'+':'−')+'$'+formatMoney(Math.abs(extra))+')</span>':'')+' <button class="pl-lapiz" title="Modificar precio de venta" onclick="plEditarVenta('+i+')">&#9998;</button></td><td style="font-weight:700;color:#15803d">$'+formatARS(venta*1.21)+'</td><td style="font-weight:700;color:#0e7490">$'+formatARS(venta-RETIRO_DESC)+'</td><td class="pnoche">$'+formatARS(venta+8000)+'</td>';
+    h+='<td class="pventa" style="white-space:nowrap"'+(extra?' title="Este modelo tiene $'+formatARS(extra)+' extra sobre el margen"':'')+'>$'+formatARS(venta)+(vMan?' <span title="Venta puesta a mano" style="color:var(--amber)">●</span>':'')+(extra?' <span style="color:var(--muted);font-size:12px">('+(extra>0?'+':'−')+'$'+formatMoney(Math.abs(extra))+')</span>':'')+' <button class="pl-lapiz" title="Modificar precio de venta" onclick="plEditarVenta('+i+')">&#9998;</button></td><td style="font-weight:700;color:#0e7490">$'+formatARS(venta-RETIRO_DESC)+'</td>';
     h+='<td><div class="stk-info '+cls+'" style="margin-top:0">'+stk+'</div></td></tr>';
   });
-  document.getElementById('preciosBody').innerHTML=h||'<tr><td colspan="11" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';
+  document.getElementById('preciosBody').innerHTML=h||'<tr><td colspan="8" style="text-align:center;padding:1rem;color:#94a0af">Sin resultados</td></tr>';
 }
 function buscarVehiculo(){
   var b=document.getElementById('busV').value.toLowerCase().trim();
